@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "webrtc-native", "webrtc-native\webrtc-native.vcxproj", "{31CC4ECC-E4A0-448B-8969-3C08C951A461}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "webrtc-dotnet", "webrtc-dotnet\webrtc-dotnet.csproj", "{21F815B4-9154-4472-B03C-E1C2D1F98A26}"
+	ProjectSection(ProjectDependencies) = postProject
+		{31CC4ECC-E4A0-448B-8969-3C08C951A461} = {31CC4ECC-E4A0-448B-8969-3C08C951A461}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nv-encode-api", "nv-encode-api\nv-encode-api.vcxproj", "{0F1351B4-738A-4BC3-BA74-E146FE1B3765}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webrtc-dotnet-web-demo", "webrtc-dotnet-web-demo\webrtc-dotnet-web-demo.csproj", "{B3FFA253-FE93-48C6-8506-CF296BD04835}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "webrtc-dotnet-console-demo", "webrtc-dotnet-console-demo\webrtc-dotnet-console-demo.csproj", "{12ECC036-0488-4A87-B5AC-958163D7AB22}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{31CC4ECC-E4A0-448B-8969-3C08C951A461}.Debug|x64.ActiveCfg = Debug|x64
+		{31CC4ECC-E4A0-448B-8969-3C08C951A461}.Debug|x64.Build.0 = Debug|x64
+		{31CC4ECC-E4A0-448B-8969-3C08C951A461}.Release|x64.ActiveCfg = Release|x64
+		{31CC4ECC-E4A0-448B-8969-3C08C951A461}.Release|x64.Build.0 = Release|x64
+		{21F815B4-9154-4472-B03C-E1C2D1F98A26}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{21F815B4-9154-4472-B03C-E1C2D1F98A26}.Debug|x64.Build.0 = Debug|Any CPU
+		{21F815B4-9154-4472-B03C-E1C2D1F98A26}.Release|x64.ActiveCfg = Release|Any CPU
+		{21F815B4-9154-4472-B03C-E1C2D1F98A26}.Release|x64.Build.0 = Release|Any CPU
+		{0F1351B4-738A-4BC3-BA74-E146FE1B3765}.Debug|x64.ActiveCfg = Debug|x64
+		{0F1351B4-738A-4BC3-BA74-E146FE1B3765}.Debug|x64.Build.0 = Debug|x64
+		{0F1351B4-738A-4BC3-BA74-E146FE1B3765}.Release|x64.ActiveCfg = Release|x64
+		{0F1351B4-738A-4BC3-BA74-E146FE1B3765}.Release|x64.Build.0 = Release|x64
+		{B3FFA253-FE93-48C6-8506-CF296BD04835}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B3FFA253-FE93-48C6-8506-CF296BD04835}.Debug|x64.Build.0 = Debug|Any CPU
+		{B3FFA253-FE93-48C6-8506-CF296BD04835}.Release|x64.ActiveCfg = Release|Any CPU
+		{B3FFA253-FE93-48C6-8506-CF296BD04835}.Release|x64.Build.0 = Release|Any CPU
+		{12ECC036-0488-4A87-B5AC-958163D7AB22}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{12ECC036-0488-4A87-B5AC-958163D7AB22}.Debug|x64.Build.0 = Debug|Any CPU
+		{12ECC036-0488-4A87-B5AC-958163D7AB22}.Release|x64.ActiveCfg = Release|Any CPU
+		{12ECC036-0488-4A87-B5AC-958163D7AB22}.Release|x64.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {51174990-FC99-4732-8EDE-9081955C38C9}
+	EndGlobalSection
+EndGlobal

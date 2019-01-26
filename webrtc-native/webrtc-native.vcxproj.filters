@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{9d2fda62-8d75-4652-8c3f-dbe47743a76b}</UniqueIdentifier>
+      <Extensions>h;cpp;cc</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CapturerTrackSource.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="DummySetSessionDescriptionObserver.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="NativeInterface.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="SimplePeerConnection.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="TestVideoCapturer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoCameraCapturer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoObserver.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameGenerator.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameUtils.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameGeneratorCapturer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="NvEncoderFactory.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="NvEncoderH264.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="CapturerTrackSource.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="DummySetSessionDescriptionObserver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="libs.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeInterface.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="SimplePeerConnection.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="TestVideoCapturer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoCameraCapturer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoObserver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameGenerator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameUtils.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameGeneratorCapturer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="NvEncoderFactory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="NvEncoderH264.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="create_pdb_links.bat" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="LICENSE" />
+  </ItemGroup>
+</Project>
