@@ -7,9 +7,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CapturerTrackSource.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="DummySetSessionDescriptionObserver.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -31,26 +28,17 @@
     <ClInclude Include="VideoObserver.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="FrameGenerator.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="FrameUtils.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="FrameGeneratorCapturer.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="NvEncoderFactory.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="NvEncoderH264.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="InjectableVideoTrackSource.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CapturerTrackSource.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="DummySetSessionDescriptionObserver.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -75,19 +63,13 @@
     <ClCompile Include="VideoObserver.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="FrameGenerator.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="FrameUtils.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="FrameGeneratorCapturer.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="NvEncoderFactory.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="NvEncoderH264.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="InjectableVideoTrackSource.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

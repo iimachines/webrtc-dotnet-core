@@ -17,4 +17,5 @@ namespace webrtc_dotnet_standard
 
     public delegate void LocalSdpReadyToSendDelegate(SimplePeerConnection pc, SessionDescription sd);
 
+    public delegate void RegisterSignalingStateChangedDelegate(SimplePeerConnection pc, SignalingState state);
 }

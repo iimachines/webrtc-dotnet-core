@@ -1,4 +1,6 @@
-﻿namespace webrtc_dotnet_standard
+﻿using Newtonsoft.Json.Linq;
+
+namespace webrtc_dotnet_standard
 {
     public sealed class IceCandidate
     {
@@ -7,6 +9,13 @@
             Candidate = candidate;
             SdpMlineIndex = sdpMlineIndex;
             SdpMid = sdpMid;
+        }
+
+        public IceCandidate(JToken json, string keyCandidate = "candidate", string keySdpMlineIndex = "sdpMlineIndex", string keySdpMid = "sdpMid")
+        {
+            Candidate = json.Value<string>(keyCandidate);
+            SdpMlineIndex = json.Value<int>(keySdpMlineIndex);
+            SdpMid = json.Value<string>(keySdpMid);
         }
 
         public string Candidate { get; }

@@ -11,6 +11,8 @@
  *
  */
 
+#ifdef WEBRTC_USE_H264
+
 #include "NvEncoderH264.h"
 
 namespace webrtc {
@@ -630,3 +632,5 @@ namespace webrtc {
     }
 
 }  // namespace webrtc
+
+#endif

@@ -50,9 +50,11 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
+    <SourcePath>$(VC_SourcePath);C:\wc\src</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <SourcePath>$(VC_SourcePath);C:\wc\src</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -68,7 +70,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_USE_H264;WEBRTC_WIN;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -99,7 +101,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_USE_H264;WEBRTC_WIN;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NOMINMAX;WEBRTC_WIN;_HAS_ITERATOR_DEBUGGING=0;_ITERATOR_DEBUG_LEVEL=0;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -117,11 +119,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CapturerTrackSource.h" />
     <ClInclude Include="DummySetSessionDescriptionObserver.h" />
-    <ClInclude Include="FrameGenerator.h" />
-    <ClInclude Include="FrameGeneratorCapturer.h" />
-    <ClInclude Include="FrameUtils.h" />
+    <ClInclude Include="InjectableVideoTrackSource.h" />
     <ClInclude Include="NvEncoderH264.h" />
     <ClInclude Include="NativeInterface.h" />
     <ClInclude Include="NvEncoderFactory.h" />
@@ -132,11 +131,8 @@
     <ClInclude Include="VideoObserver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CapturerTrackSource.cpp" />
     <ClCompile Include="DummySetSessionDescriptionObserver.cpp" />
-    <ClCompile Include="FrameGenerator.cpp" />
-    <ClCompile Include="FrameGeneratorCapturer.cpp" />
-    <ClCompile Include="FrameUtils.cpp" />
+    <ClCompile Include="InjectableVideoTrackSource.cpp" />
     <ClCompile Include="NvEncoderH264.cpp" />
     <ClCompile Include="libs.cpp" />
     <ClCompile Include="NativeInterface.cpp" />

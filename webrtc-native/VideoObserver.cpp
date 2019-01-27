@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "VideoObserver.h"
 
-void VideoObserver::SetVideoCallback(I420FRAMEREADY_CALLBACK callback)
+void VideoObserver::SetVideoCallback(I420FrameReadyCallback callback)
 {
     std::lock_guard<std::mutex> lock(mutex);
     OnI420FrameReady = callback;

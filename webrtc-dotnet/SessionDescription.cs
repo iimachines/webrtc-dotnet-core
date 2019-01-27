@@ -1,19 +1,27 @@
-﻿namespace webrtc_dotnet_standard
+﻿using Newtonsoft.Json.Linq;
+
+namespace webrtc_dotnet_standard
 {
     public sealed class SessionDescription
     {
-        public SessionDescription(string type, string content)
+        public SessionDescription(string type, string sdp)
         {
             Type = type;
-            Content = content;
+            Sdp = sdp;
+        }
+
+        public SessionDescription(JToken json, string keyType = "type", string keySdp = "sdp")
+        {
+            Type = json.Value<string>(keyType);
+            Sdp = json.Value<string>(keySdp);
         }
 
         public string Type { get; }
-        public string Content { get; }
+        public string Sdp { get; }
 
         public override string ToString()
         {
-            return $"{nameof(Type)}: {Type}, {nameof(Content)}: {Content}";
+            return $"{nameof(Type)}: {Type}, {nameof(Sdp)}: {Sdp}";
         }
     }
 }

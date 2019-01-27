@@ -3,6 +3,8 @@
 #pragma warning( push )
 #pragma warning( disable : 4244 )
 
+#undef WEBRTC_USE_H264
+
 #include <cstdio>
 #include <cstdint>
 
@@ -35,7 +37,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "common_video/h264/h264_bitstream_parser.h"
 
 #include "media/base/video_adapter.h"
 #include "media/base/video_broadcaster.h"
@@ -76,6 +77,11 @@
 #include "third_party/openh264/src/codec/api/svc/codec_ver.h"
 
 #include "third_party/libyuv/include/libyuv/scale.h"
+
+#ifdef WEBRTC_USE_H264
+#   include "common_video/h264/h264_bitstream_parser.h"
+#   include "media/base/h264_profile_level_id.h"
+#endif
 
 
 #pragma warning( pop )

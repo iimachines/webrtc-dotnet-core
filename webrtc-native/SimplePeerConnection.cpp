@@ -1,10 +1,10 @@
 #include "pch.h"
 
 #include "SimplePeerConnection.h"
-#include "CapturerTrackSource.h"
+#include "InjectableVideoTrackSource.h"
 #include "DummySetSessionDescriptionObserver.h"
-#include "FrameGeneratorCapturer.h"
 #include "NvEncoderFactory.h"
+#include "libyuv/convert.h"
 
 // Names used for media stream ids.
 // TODO: Implement getUserMedia like in the web api!
@@ -161,7 +161,10 @@ bool SimplePeerConnection::CreatePeerConnection(
     RTC_DCHECK(g_peer_connection_factory.get() != nullptr);
     RTC_DCHECK(peer_connection_.get() == nullptr);
 
+#ifdef HAS_LOCAL_VIDEO_OBSERVER
     local_video_observer_.reset(new VideoObserver());
+#endif
+
     remote_video_observer_.reset(new VideoObserver());
 
     // Add the turn server.
@@ -275,53 +278,53 @@ void SimplePeerConnection::OnIceCandidate(
             candidate->sdp_mid().c_str());
 }
 
-void SimplePeerConnection::RegisterOnLocalI420FrameReady(
-    I420FRAMEREADY_CALLBACK callback) const
+void SimplePeerConnection::RegisterOnLocalI420FrameReady(I420FrameReadyCallback callback) const
 {
+#ifdef HAS_LOCAL_VIDEO_OBSERVER
     if (local_video_observer_)
         local_video_observer_->SetVideoCallback(callback);
+#endif
 }
 
-void SimplePeerConnection::RegisterOnRemoteI420FrameReady(
-    I420FRAMEREADY_CALLBACK callback) const
+void SimplePeerConnection::RegisterOnRemoteI420FrameReady(I420FrameReadyCallback callback) const
 {
     if (remote_video_observer_)
         remote_video_observer_->SetVideoCallback(callback);
 }
 
-void SimplePeerConnection::RegisterOnLocalDataChannelReady(
-    LOCALDATACHANNELREADY_CALLBACK callback)
+void SimplePeerConnection::RegisterOnLocalDataChannelReady(LocalDataChannelReadyCallback callback)
 {
     OnLocalDataChannelReady = callback;
 }
 
-void SimplePeerConnection::RegisterOnDataFromDataChannelReady(
-    DATAFROMEDATECHANNELREADY_CALLBACK callback)
+void SimplePeerConnection::RegisterOnDataFromDataChannelReady(DataAvailableCallback callback)
 {
     OnDataFromDataChannelReady = callback;
 }
 
-void SimplePeerConnection::RegisterOnFailure(FAILURE_CALLBACK callback)
+void SimplePeerConnection::RegisterOnFailure(FailureCallback callback)
 {
     OnFailureMessage = callback;
 }
 
-void SimplePeerConnection::RegisterOnAudioBusReady(
-    AUDIOBUSREADY_CALLBACK callback)
+void SimplePeerConnection::RegisterOnAudioBusReady(AudioBusReadyCallback callback)
 {
     OnAudioReady = callback;
 }
 
-void SimplePeerConnection::RegisterOnLocalSdpReadyToSend(
-    LOCALSDPREADYTOSEND_CALLBACK callback)
+void SimplePeerConnection::RegisterOnLocalSdpReadyToSend(LocalSdpReadyToSendCallback callback)
 {
     OnLocalSdpReadyToSend = callback;
 }
 
-void SimplePeerConnection::RegisterOnIceCandidateReadyToSend(
-    ICECANDIDATEREADYTOSEND_CALLBACK callback)
+void SimplePeerConnection::RegisterOnIceCandidateReadyToSend(IceCandidateReadyToSendCallback callback)
 {
     OnIceCandidateReady = callback;
+}
+
+void SimplePeerConnection::RegisterSignalingStateChanged(SignalingStateChangedCallback callback)
+{
+    OnSignalingStateChanged = callback;
 }
 
 bool SimplePeerConnection::SetRemoteDescription(const char* type, const char* sdp) const
@@ -405,6 +408,12 @@ bool SimplePeerConnection::SetAudioControl()
     return true;
 }
 
+void SimplePeerConnection::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state)
+{
+    if (OnSignalingStateChanged)
+        OnSignalingStateChanged(new_state);
+}
+
 void SimplePeerConnection::OnAddStream(
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
@@ -412,55 +421,45 @@ void SimplePeerConnection::OnAddStream(
     remote_stream_ = stream;
     if (remote_video_observer_ && !remote_stream_->GetVideoTracks().empty())
     {
-        remote_stream_->GetVideoTracks()[0]->AddOrUpdateSink(
-            remote_video_observer_.get(), rtc::VideoSinkWants());
+        rtc::VideoSinkWants wants = rtc::VideoSinkWants();
+        remote_stream_->GetVideoTracks()[0]->AddOrUpdateSink(remote_video_observer_.get(), wants);
+        RTC_LOG(INFO) << __FUNCTION__ << " remote stream wants black frames: " << wants.black_frames << ", rotation applied" << wants.rotation_applied << ", max FPS " << wants.max_framerate_fps;
     }
 
     SetAudioControl();
 }
 
-bool SimplePeerConnection::AddStreams(bool audio_only)
+bool SimplePeerConnection::AddStreams(bool audio, bool video)
 {
-    if (active_streams_.find(kStreamId) != active_streams_.end())
+    if (active_streams_.count(kStreamId))
         return false; // Already added.
 
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
         g_peer_connection_factory->CreateLocalMediaStream(kStreamId);
 
-    const rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-        g_peer_connection_factory->CreateAudioTrack(
-            kAudioLabel, g_peer_connection_factory->CreateAudioSource(
-                cricket::AudioOptions())));
-    std::string id = audio_track->id();
-    stream->AddTrack(audio_track);
-
-    if (!audio_only)
+    if (audio)
     {
-        std::unique_ptr<webrtc::FrameGeneratorCapturer> video_generator;
-        video_generator.reset(
-            webrtc::FrameGeneratorCapturer::Create(640, 480,
-                webrtc::FrameGenerator::OutputType::I420,
-                4,
-                30,
-                webrtc::Clock::GetRealTimeClock()));
+        const rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
+            g_peer_connection_factory->CreateAudioTrack(
+                kAudioLabel, g_peer_connection_factory->CreateAudioSource(
+                    cricket::AudioOptions())));
+        std::string id = audio_track->id();
+        stream->AddTrack(audio_track);
+    }
 
-        const rtc::scoped_refptr<CapturerTrackSource<webrtc::FrameGeneratorCapturer>> video_device =
-            new rtc::RefCountedObject<CapturerTrackSource<webrtc::FrameGeneratorCapturer>>(move(video_generator));
+    if (video)
+    {
+        video_track_source_ = new rtc::RefCountedObject<webrtc::InjectableVideoTrackSource>();
+        auto video_track = g_peer_connection_factory->CreateVideoTrack(kVideoLabel, video_track_source_);
+        stream->AddTrack(video_track);
 
-        if (video_device)
-        {
-            const rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
-                g_peer_connection_factory->CreateVideoTrack(kVideoLabel,
-                    video_device));
-
-            stream->AddTrack(video_track);
-        }
-
+#ifdef HAS_LOCAL_VIDEO_OBSERVER
         if (local_video_observer_ && !stream->GetVideoTracks().empty())
         {
             stream->GetVideoTracks()[0]->AddOrUpdateSink(local_video_observer_.get(),
                 rtc::VideoSinkWants());
         }
+#endif
     }
 
     if (!peer_connection_->AddStream(stream))
@@ -468,12 +467,7 @@ bool SimplePeerConnection::AddStreams(bool audio_only)
         RTC_LOG(LS_ERROR) << "Adding stream to PeerConnection failed";
     }
 
-    typedef std::pair<std::string,
-        rtc::scoped_refptr<webrtc::MediaStreamInterface>>
-        MediaStreamPair;
-
-    active_streams_.insert(MediaStreamPair(stream->id(), stream));
-
+    active_streams_.emplace(stream->id(), stream);
     return true;
 }
 
@@ -524,6 +518,30 @@ bool SimplePeerConnection::SendData(const char* label, const std::string& data)
 
     const webrtc::DataBuffer buffer(data);
     return it->second->channel->Send(buffer);
+}
+
+bool SimplePeerConnection::SendVideoFrameRGBA(const uint8_t* rgbaPixels, int stride, int width, int height) const
+{
+    auto yuvBuffer = webrtc::I420Buffer::Create(width, height);
+
+    libyuv::RGBAToI420(rgbaPixels, stride,
+        yuvBuffer->MutableDataY(), yuvBuffer->StrideY(),
+        yuvBuffer->MutableDataU(), yuvBuffer->StrideU(),
+        yuvBuffer->MutableDataV(), yuvBuffer->StrideV(),
+        width,
+        height);
+
+    const auto clock = webrtc::Clock::GetRealTimeClock();
+
+    const auto yuvFrame = webrtc::VideoFrame::Builder()
+        .set_video_frame_buffer(yuvBuffer)
+        .set_rotation(webrtc::kVideoRotation_0)
+        .set_timestamp_us(clock->TimeInMicroseconds())
+        .build();
+
+    video_track_source_->OnFrame(yuvFrame);
+
+    return true;
 }
 
 void SimplePeerConnection::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)

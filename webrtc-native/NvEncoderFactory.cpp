@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "NvEncoderH264.h"
 #include "NvEncoderFactory.h"
-#include "media/base/h264_profile_level_id.h"
+
 
 using namespace webrtc;
 
@@ -22,6 +22,8 @@ namespace
         return false;
     }
 }
+
+#ifdef WEBRTC_USE_H264
 
 SdpVideoFormat CreateH264Format(H264::Profile profile, H264::Level level, const std::string& packetization_mode) {
     const absl::optional<std::string> profile_string = H264::ProfileLevelIdToString(H264::ProfileLevelId(profile, level));
@@ -75,3 +77,12 @@ std::unique_ptr<VideoEncoderFactory> CreateNvEncoderFactory()
 {
     return std::make_unique<NvEncoderFactory>();
 }
+
+#else
+
+std::unique_ptr<VideoEncoderFactory> CreateNvEncoderFactory()
+{
+    return std::make_unique<InternalEncoderFactory>();
+}
+
+#endif

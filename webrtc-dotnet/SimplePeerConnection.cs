@@ -8,14 +8,15 @@ namespace webrtc_dotnet_standard
     public class SimplePeerConnection : IDisposable
     {
         // ReSharper disable NotAccessedField.Local
-        private readonly AudioBusReadyInternalDelegate _audioBusReadyDelegate;
-        private readonly DataAvailableInternalDelegate _dataAvailableDelegate;
-        private readonly FailureMessageInternalDelegate _failureMessageDelegate;
-        private readonly IceCandidateReadyToSendInternalDelegate _iceCandidateReadyToSendDelegate;
-        private readonly LocalDataChannelReadyInternalDelegate _localDataChannelReadyDelegate;
-        private readonly I420FrameReadyInternalDelegate _localI420FrameReadyDelegate;
-        private readonly LocalSdpReadyToSendInternalDelegate _localSdpReadyToSendDelegate;
-        private I420FrameReadyInternalDelegate _remoteI420FrameReadyDelegate;
+        private readonly Native.AudioBusReadyCallback _audioBusReadyDelegate;
+        private readonly Native.DataAvailableCallback _dataAvailableDelegate;
+        private readonly Native.FailureMessageCallback _failureMessageDelegate;
+        private readonly Native.IceCandidateReadyToSendCallback _iceCandidateReadyToSendDelegate;
+        private readonly Native.LocalDataChannelReadyCallback _localDataChannelReadyDelegate;
+        private readonly Native.I420FrameReadyCallback _localI420FrameReadyDelegate;
+        private readonly Native.LocalSdpReadyToSendCallback _localSdpReadyToSendDelegate;
+        private readonly Native.I420FrameReadyCallback _remoteI420FrameReadyDelegate;
+        private readonly Native.SignalingStateChangedCallback _signalingStateChangedCallback;
         // ReSharper restore NotAccessedField.Local
 
         private IntPtr _nativePtr;
@@ -25,7 +26,7 @@ namespace webrtc_dotnet_standard
         /// </summary>
         public static void InitializeThreading(ThreadingOptions options)
         {
-            Check(InitializeThreading(options.UseSignalingThread, options.UseWorkerThread));
+            Check(Native.InitializeThreading(options.UseSignalingThread, options.UseWorkerThread));
         }
 
         public static void InitializeThreading(Action<ThreadingOptions> configure)
@@ -35,7 +36,7 @@ namespace webrtc_dotnet_standard
 
         public SimplePeerConnection(PeerConnectionOptions options)
         {
-            _nativePtr = CreatePeerConnection(
+            _nativePtr = Native.CreatePeerConnection(
                 options.TurnServers.ToArray(),
                 options.TurnServers.Count,
                 options.StunServers.ToArray(),
@@ -48,14 +49,15 @@ namespace webrtc_dotnet_standard
 
             Check(_nativePtr != IntPtr.Zero);
 
-            RegisterCallback(out _localDataChannelReadyDelegate, RegisterOnLocalDataChannelReady, RaiseLocalDataChannelReady);
-            RegisterCallback(out _dataAvailableDelegate, RegisterOnDataFromDataChannelReady, RaiseDataAvailable);
-            RegisterCallback(out _failureMessageDelegate, RegisterOnFailure, RaiseFailureMessage);
-            RegisterCallback(out _audioBusReadyDelegate, RegisterOnAudioBusReady, RaiseAudioBusReady);
-            RegisterCallback(out _localI420FrameReadyDelegate, RegisterOnLocalI420FrameReady, RaiseLocalVideoFrameReady);
-            RegisterCallback(out _remoteI420FrameReadyDelegate, RegisterOnRemoteI420FrameReady, RaiseRemoteVideoFrameReady);
-            RegisterCallback(out _localSdpReadyToSendDelegate, RegisterOnLocalSdpReadyToSend, RaiseLocalSdpReadyToSend);
-            RegisterCallback(out _iceCandidateReadyToSendDelegate, RegisterOnIceCandidateReadyToSend, RaiseIceCandidateReadyToSend);
+            RegisterCallback(out _localDataChannelReadyDelegate, Native.RegisterOnLocalDataChannelReady, RaiseLocalDataChannelReady);
+            RegisterCallback(out _dataAvailableDelegate, Native.RegisterOnDataFromDataChannelReady, RaiseDataAvailable);
+            RegisterCallback(out _failureMessageDelegate, Native.RegisterOnFailure, RaiseFailureMessage);
+            RegisterCallback(out _audioBusReadyDelegate, Native.RegisterOnAudioBusReady, RaiseAudioBusReady);
+            RegisterCallback(out _localI420FrameReadyDelegate, Native.RegisterOnLocalI420FrameReady, RaiseLocalVideoFrameReady);
+            RegisterCallback(out _remoteI420FrameReadyDelegate, Native.RegisterOnRemoteI420FrameReady, RaiseRemoteVideoFrameReady);
+            RegisterCallback(out _localSdpReadyToSendDelegate, Native.RegisterOnLocalSdpReadyToSend, RaiseLocalSdpReadyToSend);
+            RegisterCallback(out _iceCandidateReadyToSendDelegate, Native.RegisterOnIceCandidateReadyToSend, RaiseIceCandidateReadyToSend);
+            RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseRegisterSignalingStateChange);
         }
 
         public SimplePeerConnection(Action<PeerConnectionOptions> configure) : this(configure.Options())
@@ -71,7 +73,7 @@ namespace webrtc_dotnet_standard
 
         public static bool PumpQueuedMessages(TimeSpan timeout)
         {
-            return PumpQueuedMessages((int)timeout.TotalMilliseconds);
+            return Native.PumpQueuedMessages((int)timeout.TotalMilliseconds);
         }
 
         public void Dispose()
@@ -93,8 +95,9 @@ namespace webrtc_dotnet_standard
             RemoteVideoFrameReady = null;
             LocalSdpReadyToSend = null;
             IceCandidateReadyToSend = null;
+            SignalingStateChanged = null;
 
-            ClosePeerConnection(ptr);
+            Native.ClosePeerConnection(ptr);
         }
 
         ~SimplePeerConnection()
@@ -102,60 +105,65 @@ namespace webrtc_dotnet_standard
             Dispose(false);
         }
 
-        public void AddStream(bool audioOnly)
+        public void AddStream(StreamTrack tracks)
         {
-            Check(AddStream(_nativePtr, audioOnly));
+            Check(Native.AddStream(_nativePtr, tracks.HasFlag(StreamTrack.Audio), tracks.HasFlag(StreamTrack.Video)));
         }
 
         public void AddDataChannel(string label, DataChannelFlag flag)
         {
-            Check(AddDataChannel(_nativePtr, label,
+            Check(Native.AddDataChannel(_nativePtr, label,
                 flag.HasFlag(DataChannelFlag.Ordered), flag.HasFlag(DataChannelFlag.Reliable)));
         }
 
         public void CreateOffer()
         {
-            Check(CreateOffer(_nativePtr));
+            Check(Native.CreateOffer(_nativePtr));
         }
 
         public void CreateAnswer()
         {
-            Check(CreateAnswer(_nativePtr));
+            Check(Native.CreateAnswer(_nativePtr));
         }
 
         public void SendData(string label, string data)
         {
-            Check(SendData(_nativePtr, label, data));
+            Check(Native.SendData(_nativePtr, label, data));
         }
 
         public void SendData(DataMessage msg)
         {
-            Check(SendData(_nativePtr, msg.Label, msg.Content));
+            Check(Native.SendData(_nativePtr, msg.Label, msg.Content));
+        }
+
+        public void SendVideoFrameRgba(IntPtr rgbaPixels, int stride, int width, int height)
+        {
+            Check(Native.SendVideoFrameRGBA(_nativePtr, rgbaPixels, stride, width, height));
         }
 
         public void SetAudioControl(bool isMute, bool isRecord)
         {
-            Check(SetAudioControl(_nativePtr, isMute, isRecord));
+            Check(Native.SetAudioControl(_nativePtr, isMute, isRecord));
         }
 
         public void SetRemoteDescription(string type, string sdp)
         {
-            Check(SetRemoteDescription(_nativePtr, type, sdp));
+            Check(Native.SetRemoteDescription(_nativePtr, type, sdp));
         }
 
         public void SetRemoteDescription(SessionDescription sd)
         {
-            Check(SetRemoteDescription(_nativePtr, sd.Type, sd.Content));
+            Check(Native.SetRemoteDescription(_nativePtr, sd.Type, sd.Sdp));
         }
 
         public void AddIceCandidate(string candidate, int sdpMlineindex, string sdpMid)
         {
-            Check(AddIceCandidate(_nativePtr, candidate, sdpMlineindex, sdpMid));
+            Check(Native.AddIceCandidate(_nativePtr, candidate, sdpMlineindex, sdpMid));
         }
 
         public void AddIceCandidate(IceCandidate ice)
         {
-            Check(AddIceCandidate(_nativePtr, ice.Candidate, ice.SdpMlineIndex, ice.SdpMid));
+            Check(Native.AddIceCandidate(_nativePtr, ice.Candidate, ice.SdpMlineIndex, ice.SdpMid));
         }
 
         private void RegisterCallback<T>(out T delegateField, Func<IntPtr, T, bool> register, T raiseMethod) where T : Delegate
@@ -218,6 +226,11 @@ namespace webrtc_dotnet_standard
             IceCandidateReadyToSend?.Invoke(this, new IceCandidate(candidate, sdpMlineIndex, sdpMid));
         }
 
+        private void RaiseRegisterSignalingStateChange(int state)
+        {
+            SignalingStateChanged?.Invoke(this, (SignalingState)state);
+        }
+
         //public void AddQueuedIceCandidate(IEnumerable<IceCandidate> iceCandidateQueue)
         //{
         //    if (iceCandidateQueue != null)
@@ -237,8 +250,8 @@ namespace webrtc_dotnet_standard
         public event I420FrameReadyDelegate RemoteVideoFrameReady;
         public event LocalSdpReadyToSendDelegate LocalSdpReadyToSend;
         public event IceCandidateReadyToSendDelegate IceCandidateReadyToSend;
+        public event RegisterSignalingStateChangedDelegate SignalingStateChanged;
 
-        #region Interop
         private static void Check(bool result, [CallerMemberName] string caller = null)
         {
             if (!result)
@@ -247,107 +260,10 @@ namespace webrtc_dotnet_standard
             }
         }
 
-        private const string DllPath = "webrtc-native";
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void LocalDataChannelReadyInternalDelegate(string label);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void DataAvailableInternalDelegate(string label, string data);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void FailureMessageInternalDelegate(string msg);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void AudioBusReadyInternalDelegate(IntPtr data, int bitsPerSample,
-            int sampleRate, int numberOfChannels, int numberOfFrames);
+        #region Interop
 
         // Video callbacks.
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void I420FrameReadyInternalDelegate(
-            IntPtr dataY, IntPtr dataU, IntPtr dataV, IntPtr dataA,
-            int strideY, int strideU, int strideV, int strideA,
-            int width, int height, long timeStampUs);
 
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void LocalSdpReadyToSendInternalDelegate(string type, string sdp);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate void IceCandidateReadyToSendInternalDelegate(
-            string candidate, int sdpMlineIndex, string sdpMid);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool InitializeThreading(bool hasSignallingThread, bool hasWorkerThread);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool PumpQueuedMessages(int timeoutInMS);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr CreatePeerConnection(
-            string[] turnUrlArray, int turnUrlCount,
-            string[] stunUrlArray, int stunUrlCount,
-            string username, string credential,
-            bool canReceiveAudio, bool canReceiveVideo,
-            bool isDtlsSrtpEnabled);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool ClosePeerConnection(IntPtr nativePtr);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool AddStream(IntPtr nativePtr, bool audioOnly);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool AddDataChannel(IntPtr nativePtr, string label, bool isOrdered, bool isReliable);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool CreateOffer(IntPtr nativePtr);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool CreateAnswer(IntPtr nativePtr);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool SendData(IntPtr nativePtr, string label, string data);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool SetAudioControl(IntPtr nativePtr, bool isMute, bool isRecord);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool RegisterOnLocalDataChannelReady(
-            IntPtr nativePtr, LocalDataChannelReadyInternalDelegate callback);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool RegisterOnDataFromDataChannelReady(
-            IntPtr nativePtr, DataAvailableInternalDelegate callback);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool RegisterOnFailure(IntPtr nativePtr,
-            FailureMessageInternalDelegate callback);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool RegisterOnAudioBusReady(IntPtr nativePtr,
-            AudioBusReadyInternalDelegate callback);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool RegisterOnLocalI420FrameReady(IntPtr nativePtr,
-            I420FrameReadyInternalDelegate callback);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool RegisterOnRemoteI420FrameReady(IntPtr nativePtr,
-            I420FrameReadyInternalDelegate callback);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool RegisterOnLocalSdpReadyToSend(IntPtr nativePtr,
-            LocalSdpReadyToSendInternalDelegate callback);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool RegisterOnIceCandidateReadyToSend(
-            IntPtr nativePtr, IceCandidateReadyToSendInternalDelegate callback);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool SetRemoteDescription(IntPtr nativePtr, string type, string sdp);
-
-        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        private static extern bool AddIceCandidate(IntPtr nativePtr, string sdp, int sdpMlineindex, string sdpMid);
         #endregion
     }
 }

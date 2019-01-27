@@ -30,6 +30,7 @@ namespace VideoGeneratorServer
                 using (var senderOutgoingMessages = new ReplaySubject<DataMessage>())
                 using (var sender = new ObservablePeerConnection("Sender", options => { }))
                 using (var receiver = new ObservablePeerConnection("Receiver", options => { options.CanReceiveVideo = true; }))
+                using (var background = Image.Load("background-small.jpg"))
                 using (receiver.ReceivedVideoStream.Buffer(2).Subscribe(frames =>
                 {
                     var frame0 = frames[0];
@@ -69,15 +70,21 @@ namespace VideoGeneratorServer
                     receiver.Connect(receiverOutgoingMessages, sender.LocalSessionDescriptionStream, sender.LocalIceCandidateStream);
 
                     sender.AddDataChannel("data", DataChannelFlag.None);
-                    sender.AddStream(false);
+                    sender.AddStream(StreamTrack.Video);
 
                     sender.CreateOffer();
 
                     WriteLine("Press any key to exit");
 
-                    var timeout = TimeSpan.FromMilliseconds(10);
+                    var timeout = TimeSpan.FromMilliseconds(1000 / 25.0);
                     while (!KeyAvailable && SimplePeerConnection.PumpQueuedMessages(timeout))
                     {
+                        var frame = background.Frames[0];
+                        var pixels = frame.GetPixelSpan();
+                        fixed (Rgba32* ptr = &MemoryMarshal.GetReference(pixels))
+                        {
+                            sender.SendVideoFrameRgba(new IntPtr(ptr), frame.Width * 4, frame.Width, frame.Height);
+                        }
                     }
                 }
             }

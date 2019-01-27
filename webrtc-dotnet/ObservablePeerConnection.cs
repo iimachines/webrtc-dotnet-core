@@ -15,12 +15,14 @@ namespace webrtc_dotnet_standard
         private readonly CompositeDisposable _disposables = new CompositeDisposable();
         private readonly Subject<SessionDescription> _localSessionDescriptionStream = new Subject<SessionDescription>();
         private readonly Subject<IceCandidate> _localIceCandidateStream = new Subject<IceCandidate>();
+        private readonly BehaviorSubject<SignalingState> _signalingStateStream = new BehaviorSubject<SignalingState>(SignalingState.Closed);
 
         private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
         private readonly Subject<VideoFrameYuvAlpha> _receivedVideoStream = new Subject<VideoFrameYuvAlpha>();
 
         public IObservable<SessionDescription> LocalSessionDescriptionStream => _localSessionDescriptionStream;
         public IObservable<IceCandidate> LocalIceCandidateStream => _localIceCandidateStream;
+        public IObservable<SignalingState> SignalingStateStream => _signalingStateStream;
 
         public IObservable<DataMessage> ReceivedDataStream => _receivedDataStream;
         public IObservable<VideoFrameYuvAlpha> ReceivedVideoStream => _receivedVideoStream;
@@ -37,6 +39,8 @@ namespace webrtc_dotnet_standard
         }
 
         public string Name { get; }
+
+        public SignalingState SignalingState => _signalingStateStream.Value;
 
         public void Connect(
             IObservable<DataMessage> outgoingMessages,
@@ -78,9 +82,17 @@ namespace webrtc_dotnet_standard
                 _localIceCandidateStream.OnNext(ice);
             };
 
-            _connection.RemoteVideoFrameReady += (pc, frame) =>
+            _connection.RemoteVideoFrameReady += (pc, frame) => { _receivedVideoStream.OnNext(frame); };
+
+            _connection.SignalingStateChanged += (pc, state) =>
             {
-                _receivedVideoStream.OnNext(frame);
+                DebugLog($"{Name} signaling state changed: {state}");
+                _signalingStateStream.OnNext(state);
+
+                if (SignalingState == SignalingState.HaveRemoteOffer)
+                {
+                    _connection.CreateAnswer();
+                }
             };
 
             _disposables.Add(receivedIceCandidates.Subscribe(ice =>
@@ -93,7 +105,6 @@ namespace webrtc_dotnet_standard
             {
                 DebugLog($"{Name} received remote session description: {sd}");
                 _connection.SetRemoteDescription(sd);
-                _connection.CreateAnswer();
             }));
         }
 
@@ -103,14 +114,19 @@ namespace webrtc_dotnet_standard
             Console.WriteLine(msg);
         }
 
-        public void AddStream(bool audioOnly)
+        public void AddStream(StreamTrack tracks)
         {
-            _connection.AddStream(audioOnly);
+            _connection.AddStream(tracks);
         }
 
         public void AddDataChannel(string label, DataChannelFlag flag)
         {
             _connection.AddDataChannel(label, flag);
+        }
+
+        public void SendVideoFrameRgba(IntPtr rgbaPixels, int stride, int width, int height)
+        {
+            _connection.SendVideoFrameRgba(rgbaPixels, stride, width, height);
         }
 
         public void CreateOffer()

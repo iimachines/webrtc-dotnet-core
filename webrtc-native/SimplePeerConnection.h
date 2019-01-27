@@ -2,6 +2,9 @@
 
 #include "NativeInterface.h"
 #include "VideoObserver.h"
+#include "InjectableVideoTrackSource.h"
+
+#undef HAS_LOCAL_VIDEO_OBSERVER
 
 class SimplePeerConnection final
     : public webrtc::PeerConnectionObserver
@@ -13,13 +16,14 @@ public:
     ~SimplePeerConnection() override;
 
     bool InitializePeerConnection(const char** turn_url_array,
-                                  const int turn_url_count,
-                                  const char** stun_url_array,
-                                  const int stun_url_count,
-                                  const char* username,
-                                  const char* credential, bool can_receive_audio, bool canReceiveVideo, bool enable_dtls_srtp);
+        const int turn_url_count,
+        const char** stun_url_array,
+        const int stun_url_count,
+        const char* username,
+        const char* credential, bool can_receive_audio, bool canReceiveVideo, bool enable_dtls_srtp);
 
-    bool AddStreams(bool audio_only);
+    // TODO: Allow the user to select what stream!
+    bool AddStreams(bool audio, bool video);
     bool CreateOffer();
     bool CreateAnswer();
     bool SetAudioControl(bool is_mute, bool is_record);
@@ -27,17 +31,19 @@ public:
     bool CreateDataChannel(const char* label, bool is_ordered, bool is_reliable);
     bool SendData(const char* label, const std::string& data);
 
+    bool SendVideoFrameRGBA(const uint8_t* rgbaPixels, int stride, int width, int height) const;
+
     // Register callback functions.
-    void RegisterOnLocalI420FrameReady(I420FRAMEREADY_CALLBACK callback) const;
-    void RegisterOnRemoteI420FrameReady(I420FRAMEREADY_CALLBACK callback) const;
-    void RegisterOnLocalDataChannelReady(LOCALDATACHANNELREADY_CALLBACK callback);
-    void RegisterOnDataFromDataChannelReady(
-        DATAFROMEDATECHANNELREADY_CALLBACK callback);
-    void RegisterOnFailure(FAILURE_CALLBACK callback);
-    void RegisterOnAudioBusReady(AUDIOBUSREADY_CALLBACK callback);
-    void RegisterOnLocalSdpReadyToSend(LOCALSDPREADYTOSEND_CALLBACK callback);
-    void RegisterOnIceCandidateReadyToSend(
-        ICECANDIDATEREADYTOSEND_CALLBACK callback);
+    void RegisterOnLocalI420FrameReady(I420FrameReadyCallback callback) const;
+    void RegisterOnRemoteI420FrameReady(I420FrameReadyCallback callback) const;
+    void RegisterOnLocalDataChannelReady(LocalDataChannelReadyCallback callback);
+    void RegisterOnDataFromDataChannelReady(DataAvailableCallback callback);
+    void RegisterOnFailure(FailureCallback callback);
+    void RegisterOnAudioBusReady(AudioBusReadyCallback callback);
+    void RegisterOnLocalSdpReadyToSend(LocalSdpReadyToSendCallback callback);
+    void RegisterOnIceCandidateReadyToSend(IceCandidateReadyToSendCallback callback);
+    void RegisterSignalingStateChanged(SignalingStateChangedCallback callback);
+
     bool SetRemoteDescription(const char* type, const char* sdp) const;
     bool AddIceCandidate(const char* sdp,
         const int sdp_mlineindex,
@@ -52,18 +58,16 @@ protected:
     // create a peer connection and add the turn servers info to the configuration.
     bool CreatePeerConnection(
         const char** turn_url_array, const int turn_url_count,
-        const char** stun_url_array, const int stun_url_count, 
-        const char* username, const char* credential, 
+        const char** stun_url_array, const int stun_url_count,
+        const char* username, const char* credential,
         bool enable_dtls_srtp);
 
     void CloseDataChannel(const char* name);
-    
+
     bool SetAudioControl();
 
     // PeerConnectionObserver implementation.
-    void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override
-    {
-    }
+    void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
 
     void OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
 
@@ -131,19 +135,26 @@ private:
     std::map<std::string, std::unique_ptr<DataChannelEntry>> data_channels_;
     std::map<std::string, rtc::scoped_refptr<webrtc::MediaStreamInterface>> active_streams_;
 
+    rtc::scoped_refptr<webrtc::InjectableVideoTrackSource> video_track_source_;
+
+#ifdef HAS_LOCAL_VIDEO_OBSERVER
     std::unique_ptr<VideoObserver> local_video_observer_;
+#endif
+
     std::unique_ptr<VideoObserver> remote_video_observer_;
 
-    webrtc::MediaStreamInterface* remote_stream_ = nullptr;
+    rtc::scoped_refptr<webrtc::MediaStreamInterface> remote_stream_;
+
     webrtc::PeerConnectionInterface::RTCConfiguration config_;
 
-    LOCALDATACHANNELREADY_CALLBACK OnLocalDataChannelReady = nullptr;
-    DATAFROMEDATECHANNELREADY_CALLBACK OnDataFromDataChannelReady = nullptr;
-    FAILURE_CALLBACK OnFailureMessage = nullptr;
-    AUDIOBUSREADY_CALLBACK OnAudioReady = nullptr;
+    LocalDataChannelReadyCallback OnLocalDataChannelReady = nullptr;
+    DataAvailableCallback OnDataFromDataChannelReady = nullptr;
+    FailureCallback OnFailureMessage = nullptr;
+    AudioBusReadyCallback OnAudioReady = nullptr;
 
-    LOCALSDPREADYTOSEND_CALLBACK OnLocalSdpReadyToSend = nullptr;
-    ICECANDIDATEREADYTOSEND_CALLBACK OnIceCandidateReady = nullptr;
+    LocalSdpReadyToSendCallback OnLocalSdpReadyToSend = nullptr;
+    IceCandidateReadyToSendCallback OnIceCandidateReady = nullptr;
+    SignalingStateChangedCallback OnSignalingStateChanged = nullptr;
 
     bool is_mute_audio_ = false;
     bool is_record_audio_ = false;
