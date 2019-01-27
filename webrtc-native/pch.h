@@ -77,6 +77,7 @@
 #include "third_party/openh264/src/codec/api/svc/codec_ver.h"
 
 #include "third_party/libyuv/include/libyuv/scale.h"
+#include "third_party/libyuv/include/libyuv/convert.h"
 
 #ifdef WEBRTC_USE_H264
 #   include "common_video/h264/h264_bitstream_parser.h"

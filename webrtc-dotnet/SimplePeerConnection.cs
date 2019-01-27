@@ -131,9 +131,9 @@ namespace webrtc_dotnet_standard
             Check(Native.SendData(_nativePtr, msg.Label, msg.Content));
         }
 
-        public void SendVideoFrameRgba(in uint rgbaPixels, int stride, int width, int height)
+        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, PixelFormat pixelFormat)
         {
-            Check(Native.SendVideoFrameRGBA(_nativePtr, rgbaPixels, stride, width, height));
+            Check(Native.SendVideoFrame(_nativePtr, rgbaPixels, stride, width, height, pixelFormat));
         }
 
         public void SetAudioControl(bool isMute, bool isRecord)

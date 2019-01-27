@@ -125,9 +125,9 @@ namespace webrtc_dotnet_standard
             _connection.AddDataChannel(label, flag);
         }
 
-        public void SendVideoFrameRgba(in uint rgbaPixels, int stride, int width, int height)
+        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, PixelFormat pixelFormat)
         {
-            _connection.SendVideoFrameRgba(rgbaPixels, stride, width, height);
+            _connection.SendVideoFrame(rgbaPixels, stride, width, height, pixelFormat);
         }
 
         public void CreateOffer()

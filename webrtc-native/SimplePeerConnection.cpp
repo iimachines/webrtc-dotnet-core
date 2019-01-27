@@ -4,7 +4,7 @@
 #include "InjectableVideoTrackSource.h"
 #include "DummySetSessionDescriptionObserver.h"
 #include "NvEncoderFactory.h"
-#include "libyuv/convert.h"
+#include "NativeVideoBuffer.h"
 
 // Names used for media stream ids.
 // TODO: Implement getUserMedia like in the web api!
@@ -50,6 +50,18 @@ namespace
         }
     }
 
+    auto getYuvConverter(PixelFormat pf)
+    {
+        switch (pf)
+        {
+        case PixelFormat::BGRA32: return libyuv::ARGBToI420;
+        case PixelFormat::RGBA32: return libyuv::ABGRToI420;
+        case PixelFormat::ARGB32: return libyuv::BGRAToI420;
+        case PixelFormat::ABGR32: return libyuv::RGBAToI420;
+        default:
+            throw std::runtime_error("No YUV converter for pixel format " + std::to_string(static_cast<int>(pf)));
+        }
+    }
 
     std::string GetEnvVarOrDefault(const char* env_var_name, const char* default_value)
     {
@@ -520,27 +532,40 @@ bool SimplePeerConnection::SendData(const char* label, const std::string& data)
     return it->second->channel->Send(buffer);
 }
 
-bool SimplePeerConnection::SendVideoFrameRGBA(const uint8_t* rgbaPixels, int stride, int width, int height) const
+bool SimplePeerConnection::SendVideoFrame(const uint8_t* pixels, int stride, int width, int height, PixelFormat format) const
 {
-    auto yuvBuffer = webrtc::I420Buffer::Create(width, height);
-
-    libyuv::RGBAToI420(rgbaPixels, stride,
-        yuvBuffer->MutableDataY(), yuvBuffer->StrideY(),
-        yuvBuffer->MutableDataU(), yuvBuffer->StrideU(),
-        yuvBuffer->MutableDataV(), yuvBuffer->StrideV(),
-        width,
-        height);
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer;
 
     const auto clock = webrtc::Clock::GetRealTimeClock();
 
+    if (format == PixelFormat::Texture)
+    {
+        buffer = new rtc::RefCountedObject<webrtc::NativeVideoBuffer>(
+            width, height, static_cast<const void*>(pixels));
+    }
+    else
+    {
+        auto yuvBuffer = webrtc::I420Buffer::Create(width, height);
+
+        const auto convertToYUV = getYuvConverter(format);
+
+        convertToYUV(pixels, stride,
+            yuvBuffer->MutableDataY(), yuvBuffer->StrideY(),
+            yuvBuffer->MutableDataU(), yuvBuffer->StrideU(),
+            yuvBuffer->MutableDataV(), yuvBuffer->StrideV(),
+            width,
+            height);
+
+        buffer = yuvBuffer;
+    }
+
     const auto yuvFrame = webrtc::VideoFrame::Builder()
-        .set_video_frame_buffer(yuvBuffer)
+        .set_video_frame_buffer(buffer)
         .set_rotation(webrtc::kVideoRotation_0)
         .set_timestamp_us(clock->TimeInMicroseconds())
         .build();
 
     video_track_source_->OnFrame(yuvFrame);
-
     return true;
 }
 

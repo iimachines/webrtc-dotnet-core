@@ -71,7 +71,7 @@ namespace webrtc_dotnet_standard
         internal static extern bool SendData(IntPtr nativePtr, string label, string data);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SendVideoFrameRGBA(IntPtr nativePtr, in uint rgbaPixels, int stride, int width, int height);
+        internal static extern bool SendVideoFrame(IntPtr nativePtr, in uint rgbaPixels, int stride, int width, int height, PixelFormat pixelFormat);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool SetAudioControl(IntPtr nativePtr, bool isMute, bool isRecord);

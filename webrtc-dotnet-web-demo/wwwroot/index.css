@@ -1,0 +1,21 @@
+body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    background: skyblue;
+}
+
+#log {
+    width: 50%;
+    float: left;
+    height: 100%;
+    overflow: scroll;
+}
+
+#video {
+    width: 50%;
+    float: right;
+    background: #aaa;
+    height: 100%;
+}

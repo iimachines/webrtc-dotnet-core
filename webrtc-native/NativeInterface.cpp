@@ -130,9 +130,9 @@ extern "C"
         return connection->SendData(label, data);
     }
     
-    WEBRTC_PLUGIN_API bool SendVideoFrameRGBA(SimplePeerConnection* connection, const uint8_t* rgbaPixels, int stride, int width, int height)
+    WEBRTC_PLUGIN_API bool SendVideoFrame(SimplePeerConnection* connection, const uint8_t* pixels, int stride, int width, int height, PixelFormat format)
     {
-        return connection->SendVideoFrameRGBA(rgbaPixels, stride, width, height);
+        return connection->SendVideoFrame(pixels, stride, width, height, format);
     }
 
     WEBRTC_PLUGIN_API bool SetAudioControl(SimplePeerConnection* connection, bool is_mute, bool is_record)

@@ -1,5 +1,14 @@
 #pragma once
 
+enum class PixelFormat
+{
+    RGBA32, // 8-bit R G B A in memory 
+    BGRA32, // 8-bit B G R A in memory 
+    ARGB32, // 8-bit A R G B in memory 
+    ABGR32, // 8-bit A B G R in memory 
+    Texture // A native texture, not supported yet
+};
+
 // Definitions of callback functions.
 typedef void(*I420FrameReadyCallback)(
     const uint8_t* data_y,

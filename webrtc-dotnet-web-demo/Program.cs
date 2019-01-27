@@ -19,6 +19,8 @@ namespace webrtc_dotnet_demo
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
+                .UseSetting("https_port", "5000")
+                .UseUrls("https://0.0.0.0:5000")
                 .UseStartup<Startup>();
     }
 }

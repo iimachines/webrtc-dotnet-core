@@ -121,6 +121,7 @@
   <ItemGroup>
     <ClInclude Include="DummySetSessionDescriptionObserver.h" />
     <ClInclude Include="InjectableVideoTrackSource.h" />
+    <ClInclude Include="NativeVideoBuffer.h" />
     <ClInclude Include="NvEncoderH264.h" />
     <ClInclude Include="NativeInterface.h" />
     <ClInclude Include="NvEncoderFactory.h" />
@@ -133,6 +134,7 @@
   <ItemGroup>
     <ClCompile Include="DummySetSessionDescriptionObserver.cpp" />
     <ClCompile Include="InjectableVideoTrackSource.cpp" />
+    <ClCompile Include="NativeVideoBuffer.cpp" />
     <ClCompile Include="NvEncoderH264.cpp" />
     <ClCompile Include="libs.cpp" />
     <ClCompile Include="NativeInterface.cpp" />

@@ -19,9 +19,6 @@
     <ClInclude Include="SimplePeerConnection.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="TestVideoCapturer.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="VideoCameraCapturer.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -35,6 +32,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="InjectableVideoTrackSource.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="NativeVideoBuffer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="TestVideoCapturer.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -54,9 +57,6 @@
     <ClCompile Include="SimplePeerConnection.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="TestVideoCapturer.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="VideoCameraCapturer.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -70,6 +70,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="InjectableVideoTrackSource.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="NativeVideoBuffer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="TestVideoCapturer.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

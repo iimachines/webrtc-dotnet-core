@@ -18,49 +18,62 @@ namespace webrtc_dotnet_demo
     {
         private static void VideoRenderer(object parameter)
         {
-            var pc = (ObservablePeerConnection)parameter;
-
-            using (var background = Image.Load<Bgra32>("background-small.jpg"))
+            try
             {
-                var frame = background.Frames[0];
+                var pc = (ObservablePeerConnection) parameter;
 
-                TimeSpan startTime = TimeSpan.Zero;
-                TimeSpan nextFrameTime = TimeSpan.Zero;
-                TimeSpan frameDuration = TimeSpan.FromSeconds(1.0 / 60);
-
-                while (Thread.CurrentThread.IsAlive && !pc.IsDisposed)
+                using (var background = Image.Load("background-small.jpg"))
                 {
-                    if (pc.SignalingState == SignalingState.Stable)
+                    var frame = background.Frames[0];
+
+                    TimeSpan startTime = TimeSpan.Zero;
+                    TimeSpan nextFrameTime = TimeSpan.Zero;
+                    TimeSpan frameDuration = TimeSpan.FromSeconds(1.0 / 60);
+
+                    while (Thread.CurrentThread.IsAlive && !pc.IsDisposed)
                     {
-                        var currentTime = SimplePeerConnection.GetRealtimeClockTimeInMicroseconds();
-
-                        if (startTime == TimeSpan.Zero)
+                        if (pc.SignalingState == SignalingState.Stable)
                         {
-                            startTime = currentTime;
-                        }
+                            var currentTime = SimplePeerConnection.GetRealtimeClockTimeInMicroseconds();
 
-                        if (currentTime >= nextFrameTime)
-                        {
-                            var pixels = MemoryMarshal.Cast<Bgra32, uint>(frame.GetPixelSpan());
-                            pc.SendVideoFrameRgba(MemoryMarshal.GetReference(pixels), frame.Width * 4, frame.Width, frame.Height);
+                            if (startTime == TimeSpan.Zero)
+                            {
+                                startTime = currentTime;
+                            }
 
-                            // TODO: Use Math.DivRem and take remainder into account?
-                            // TODO: Should get feedback from connected peer about frame-rate and resolution.
-                            var frameIndex = (currentTime.Ticks - startTime.Ticks) / frameDuration.Ticks;
-                            nextFrameTime = startTime + (frameIndex + 1) * frameDuration;
+                            if (currentTime >= nextFrameTime)
+                            {
+                                var pixels = MemoryMarshal.Cast<Rgba32, uint>(frame.GetPixelSpan());
+                                pc.SendVideoFrame(
+                                    MemoryMarshal.GetReference(pixels), 
+                                    frame.Width * 4, 
+                                    frame.Width,
+                                    frame.Height,
+                                    PixelFormat.Rgba32);
+
+                                // TODO: Use Math.DivRem and take remainder into account?
+                                // TODO: Should get feedback from connected peer about frame-rate and resolution.
+                                var frameIndex = (currentTime.Ticks - startTime.Ticks) / frameDuration.Ticks;
+                                nextFrameTime = startTime + (frameIndex + 1) * frameDuration;
+                            }
+                            else
+                            {
+                                // TODO: Use Win32 waitable timers, or expose webrtc's high-precision (?) TaskQueue
+                                Thread.Sleep(0);
+                            }
                         }
                         else
                         {
-                            // TODO: Use Win32 waitable timers, or expose webrtc's high-precision (?) TaskQueue
-                            Thread.Sleep(0);
+                            // Wait until peer connection is stable before sending frames.
+                            Thread.Sleep(500);
                         }
                     }
-                    else
-                    {
-                        // Wait until peer connection is stable before sending frames.
-                        Thread.Sleep(500);
-                    }
                 }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
 

@@ -1,18 +1,27 @@
 ﻿'use strict';
 
 const video = document.querySelector('video');
+const logElem = document.getElementById('log');
+
+function log(text: string) {
+    console.log(text);
+
+    const line = document.createElement("pre");
+    line.innerText = text;
+    logElem.appendChild(line);
+}
 
 video.addEventListener("readystatechange", () => {
-    console.info(`Video ready state = ${video.readyState}`);
+    log(`Video ready state = ${video.readyState}`);
 });
 
 video.oncanplay = async e => {
-    console.info(`Video can play`);
+    log(`Video can play`);
 
     //try {
     //    await video.play();
     //} catch (err) {
-    //    console.error(`Video failed to play: ${err}`);
+    //    log(`Video failed to play: ${err}`);
     //}
 }
 
@@ -29,9 +38,9 @@ const ws = new WebSocket(getSignalingSocketUrl());
 ws.binaryType = "arraybuffer";
 
 function send(action: "ice" | "sdp", payload: any) {
-    const msg = { action, payload };
-    console.log("send", msg);
-    ws.send(JSON.stringify(msg));
+    const msg = JSON.stringify({ action, payload });
+    log(`send ${msg}`);
+    ws.send(msg);
 }
 
 ws.onopen = e => {
@@ -40,7 +49,7 @@ ws.onopen = e => {
     };
 
     pc.oniceconnectionstatechange = e => {
-        console.info(`ice connection state = ${pc.iceConnectionState}`);
+        log(`ice connection state = ${pc.iceConnectionState}`);
     };
 
     pc.ontrack = e => {
@@ -48,35 +57,35 @@ ws.onopen = e => {
         if (video.srcObject !== stream) {
             video.srcObject = stream;
             video.play();
-            console.info(`✔: received media stream`);
+            log(`✔: received media stream`);
         }
     }
 }
 
 ws.onmessage = async e => {
     const { action, payload } = JSON.parse(e.data);
-    console.log("msg", { action, payload });
+    log(`receive: ${e.data}`);
 
     try {
         switch (action) {
             case "ice": {
                 await pc.addIceCandidate(payload);
-                console.info(`✔: addIceCandidate`);
+                log(`✔: addIceCandidate`);
                 break;
             }
 
             case "sdp": {
                 await pc.setRemoteDescription(payload);
-                console.info(`✔: setRemoteDescription`);
+                log(`✔: setRemoteDescription`);
                 const sdp = await pc.createAnswer({ offerToReceiveVideo: true });
-                console.info(`✔: createAnswer`);
+                log(`✔: createAnswer`);
                 await pc.setLocalDescription(sdp);
-                console.info(`✔: setLocalDescription`);
+                log(`✔: setLocalDescription`);
                 send("sdp", sdp);
             }
         }
     } catch (err) {
-        console.error(err);
+        log(err);
     }
 }
 
