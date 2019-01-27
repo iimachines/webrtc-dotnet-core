@@ -6,7 +6,8 @@ using System.Reactive.Subjects;
 
 namespace webrtc_dotnet_standard
 {
-    public class ObservablePeerConnection : IDisposable
+
+    public class ObservablePeerConnection : Disposable
     {
         private readonly PeerConnectionOptions _options;
 
@@ -124,7 +125,7 @@ namespace webrtc_dotnet_standard
             _connection.AddDataChannel(label, flag);
         }
 
-        public void SendVideoFrameRgba(IntPtr rgbaPixels, int stride, int width, int height)
+        public void SendVideoFrameRgba(in uint rgbaPixels, int stride, int width, int height)
         {
             _connection.SendVideoFrameRgba(rgbaPixels, stride, width, height);
         }
@@ -134,13 +135,16 @@ namespace webrtc_dotnet_standard
             _connection.CreateOffer();
         }
 
-        public void Dispose()
+        protected override void OnDispose(bool isDisposing)
         {
-            // First dispose the connection to break all event handlers
-            _connection?.Dispose();
+            if (isDisposing)
+            {
+                // First dispose the connection to break all event handlers
+                _connection?.Dispose();
 
-            // Then dispose the rest.
-            _disposables?.Dispose();
+                // Then dispose the rest.
+                _disposables?.Dispose();
+            }
         }
     }
 }

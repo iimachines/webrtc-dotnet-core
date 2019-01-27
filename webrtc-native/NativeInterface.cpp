@@ -205,4 +205,10 @@ extern "C"
         connection->RegisterSignalingStateChanged(callback);
         return true;
     }
+
+    WEBRTC_PLUGIN_API int64_t GetRealtimeClockTimeInMicroseconds()
+    {
+        const auto clock = webrtc::Clock::GetRealTimeClock();
+        return clock->TimeInMicroseconds();
+    }
 }

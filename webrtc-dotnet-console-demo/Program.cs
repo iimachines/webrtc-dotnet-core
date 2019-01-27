@@ -80,11 +80,8 @@ namespace VideoGeneratorServer
                     while (!KeyAvailable && SimplePeerConnection.PumpQueuedMessages(timeout))
                     {
                         var frame = background.Frames[0];
-                        var pixels = frame.GetPixelSpan();
-                        fixed (Rgba32* ptr = &MemoryMarshal.GetReference(pixels))
-                        {
-                            sender.SendVideoFrameRgba(new IntPtr(ptr), frame.Width * 4, frame.Width, frame.Height);
-                        }
+                        var pixels = MemoryMarshal.Cast<Rgba32, uint>(frame.GetPixelSpan());
+                        sender.SendVideoFrameRgba(MemoryMarshal.GetReference(pixels), frame.Width * 4, frame.Width, frame.Height);
                     }
                 }
             }

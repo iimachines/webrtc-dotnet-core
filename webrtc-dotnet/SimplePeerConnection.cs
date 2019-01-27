@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace webrtc_dotnet_standard
 {
-    public class SimplePeerConnection : IDisposable
+    public class SimplePeerConnection : Disposable
     {
         // ReSharper disable NotAccessedField.Local
         private readonly Native.AudioBusReadyCallback _audioBusReadyDelegate;
@@ -76,13 +75,14 @@ namespace webrtc_dotnet_standard
             return Native.PumpQueuedMessages((int)timeout.TotalMilliseconds);
         }
 
-        public void Dispose()
+        public static TimeSpan GetRealtimeClockTimeInMicroseconds()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            var timeInMicroseconds = Native.GetRealtimeClockTimeInMicroseconds();
+            const long microsecondsPerTick = TimeSpan.TicksPerMillisecond / 1000;
+            return TimeSpan.FromTicks(timeInMicroseconds * microsecondsPerTick);
         }
 
-        private void Dispose(bool disposing)
+        protected override void OnDispose(bool isDisposing)
         {
             var ptr = Interlocked.Exchange(ref _nativePtr, default);
 
@@ -98,11 +98,6 @@ namespace webrtc_dotnet_standard
             SignalingStateChanged = null;
 
             Native.ClosePeerConnection(ptr);
-        }
-
-        ~SimplePeerConnection()
-        {
-            Dispose(false);
         }
 
         public void AddStream(StreamTrack tracks)
@@ -136,7 +131,7 @@ namespace webrtc_dotnet_standard
             Check(Native.SendData(_nativePtr, msg.Label, msg.Content));
         }
 
-        public void SendVideoFrameRgba(IntPtr rgbaPixels, int stride, int width, int height)
+        public void SendVideoFrameRgba(in uint rgbaPixels, int stride, int width, int height)
         {
             Check(Native.SendVideoFrameRGBA(_nativePtr, rgbaPixels, stride, width, height));
         }

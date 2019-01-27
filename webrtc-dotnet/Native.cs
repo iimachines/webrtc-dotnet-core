@@ -42,6 +42,9 @@ namespace webrtc_dotnet_standard
         internal static extern bool PumpQueuedMessages(int timeoutInMS);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern long GetRealtimeClockTimeInMicroseconds();
+
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr CreatePeerConnection(
             string[] turnUrlArray, int turnUrlCount,
             string[] stunUrlArray, int stunUrlCount,
@@ -68,7 +71,7 @@ namespace webrtc_dotnet_standard
         internal static extern bool SendData(IntPtr nativePtr, string label, string data);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SendVideoFrameRGBA(IntPtr nativePtr, IntPtr rgbaPixels, int stride, int width, int height);
+        internal static extern bool SendVideoFrameRGBA(IntPtr nativePtr, in uint rgbaPixels, int stride, int width, int height);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool SetAudioControl(IntPtr nativePtr, bool isMute, bool isRecord);
@@ -114,5 +117,7 @@ namespace webrtc_dotnet_standard
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterSignalingStateChanged(
             IntPtr nativePtr, SignalingStateChangedCallback callback);
+
+
     }
 }

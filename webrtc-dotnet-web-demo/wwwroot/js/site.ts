@@ -2,6 +2,20 @@
 
 const video = document.querySelector('video');
 
+video.addEventListener("readystatechange", () => {
+    console.info(`Video ready state = ${video.readyState}`);
+});
+
+video.oncanplay = async e => {
+    console.info(`Video can play`);
+
+    //try {
+    //    await video.play();
+    //} catch (err) {
+    //    console.error(`Video failed to play: ${err}`);
+    //}
+}
+
 function getSignalingSocketUrl() {
     const scheme = location.protocol === "https:" ? "wss" : "ws";
     const port = location.port ? (":" + location.port) : "";
@@ -33,6 +47,7 @@ ws.onopen = e => {
         const stream = e.streams[0];
         if (video.srcObject !== stream) {
             video.srcObject = stream;
+            video.play();
             console.info(`✔: received media stream`);
         }
     }
