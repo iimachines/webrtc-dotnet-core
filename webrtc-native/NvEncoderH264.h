@@ -13,7 +13,6 @@ namespace webrtc {
             bool key_frame_request = false;
             float max_frame_rate = 0;
             uint32_t target_bps = 0;
-            uint32_t max_bps = 0;
             bool frame_dropping_on = false;
             int key_frame_interval = 0;
 
@@ -54,14 +53,15 @@ namespace webrtc {
 
     private:
         H264BitstreamParser h264_bitstream_parser_;
+        
         // Reports statistics with histograms.
         void ReportInit();
         void ReportError();
+        void SetStreamState(bool send_stream);
 
-        std::vector<void*> encoders_;
+        void* encoder_;
         std::vector<uint8_t> encoded_output_buffer_;
-        std::vector<LayerConfig> configurations_;
-        std::vector<EncodedImage> encoded_images_;
+        EncodedImage encoded_image_;
 
         VideoCodec codec_;
         size_t max_payload_size_;
@@ -69,6 +69,9 @@ namespace webrtc {
 
         bool has_reported_init_;
         bool has_reported_error_;
+
+        bool is_sending_ = false;
+        bool key_frame_request_ = false;
 
         FILE* debug_output_file = nullptr;
     };

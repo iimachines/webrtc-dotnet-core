@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Numerics;
@@ -31,7 +32,7 @@ namespace webrtc_dotnet_demo
 
                 using (var background = Image.Load<PixelColor>("background-small.jpg"))
                 {
-                    background.Mutate(ctx => ctx.Resize(640, 480));
+                    background.Mutate(ctx => ctx.Resize(320, 240));
 
                     // Pre-created bouncing ball frames.
                     // ImageSharp is not that fast yet, and our goal is to benchmark webrtc and NvEnc, not ImageSharp.
@@ -65,6 +66,10 @@ namespace webrtc_dotnet_demo
                         TimeSpan startTime = TimeSpan.Zero;
                         TimeSpan nextFrameTime = TimeSpan.Zero;
 
+                        long nextFrameIndex = 0;
+
+                        var sw = new Stopwatch();
+
                         while (Thread.CurrentThread.IsAlive && !pc.IsDisposed)
                         {
                             if (pc.SignalingState == SignalingState.Stable)
@@ -74,11 +79,24 @@ namespace webrtc_dotnet_demo
                                 if (startTime == TimeSpan.Zero)
                                 {
                                     startTime = currentTime;
+                                    sw.Start();
                                 }
 
                                 if (currentTime >= nextFrameTime)
                                 {
+                                    Console.Write($"{sw.ElapsedMilliseconds:D06}\t");
+                                    sw.Restart();
+
                                     var frameIndex = (currentTime - startTime).Ticks * framesPerSecond / TimeSpan.TicksPerSecond;
+
+                                    var skippedFrameCount = frameIndex - nextFrameIndex;
+                                    Debug.Assert(skippedFrameCount >= 0);
+
+                                    if (skippedFrameCount >= 1)
+                                    {
+                                        Console.WriteLine($"Skipped {skippedFrameCount} frames!");
+                                    }
+
                                     var imageFrame = videoFrames[frameIndex % frameCount].Frames[0];
                                     var pixels = MemoryMarshal.Cast<PixelColor, uint>(imageFrame.GetPixelSpan());
 
@@ -89,11 +107,13 @@ namespace webrtc_dotnet_demo
                                         imageFrame.Height,
                                         VideoFrameFormat.CpuTexture);
 
+                                    nextFrameIndex = frameIndex + 1;
+
                                     // TODO: Use Math.DivRem and take remainder into account?
                                     // TODO: Should get feedback from connected peer about frame-rate and resolution.
                                     nextFrameTime =
                                         startTime + TimeSpan.FromTicks(
-                                            (frameIndex + 1) * TimeSpan.TicksPerSecond / framesPerSecond);
+                                            nextFrameIndex * TimeSpan.TicksPerSecond / framesPerSecond);
                                 }
                                 else
                                 {
@@ -121,6 +141,8 @@ namespace webrtc_dotnet_demo
         {
             var receiveBuffer = new byte[1024 * 4];
             var renderThread = new Thread(VideoRenderer);
+
+            SimplePeerConnection.Configure(options => options.IsSingleThreaded = true);
 
             using (var pc = new ObservablePeerConnection("server", options => { }))
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice)))

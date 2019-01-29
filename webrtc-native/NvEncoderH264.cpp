@@ -30,13 +30,9 @@ namespace webrtc {
         : max_payload_size_(0)
         , encoded_image_callback_(nullptr)
         , has_reported_init_(false)
-        , has_reported_error_(false) 
+        , has_reported_error_(false)
     {
-        encoded_images_.reserve(kMaxSimulcastStreams);
-        encoders_.reserve(kMaxSimulcastStreams);
-        configurations_.reserve(kMaxSimulcastStreams);
-
-        debug_output_file = fopen("c:\\temp\\debug.h264", "wb");
+        // debug_output_file = fopen("c:\\temp\\debug.h264", "wb");
     }
 
     NvEncoderH264::~NvEncoderH264() {
@@ -48,8 +44,6 @@ namespace webrtc {
             debug_output_file = nullptr;
         }
     }
-
-
 
     int32_t NvEncoderH264::InitEncode(const VideoCodec* inst, int32_t number_of_cores, size_t max_payload_size) {
         ReportInit();
@@ -66,22 +60,18 @@ namespace webrtc {
             return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
         }
 
-        int32_t release_ret = Release();
+        const int32_t release_ret = Release();
         if (release_ret != WEBRTC_VIDEO_CODEC_OK) {
             ReportError();
             return release_ret;
         }
 
-        int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
+        const int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
         if (number_of_streams > 1)
         {
             // TODO: Support simulcast
             return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
         }
-
-        encoded_images_.resize(number_of_streams);
-        encoders_.resize(number_of_streams);
-        configurations_.resize(number_of_streams);
 
         max_payload_size_ = max_payload_size;
         codec_ = *inst;
@@ -93,60 +83,48 @@ namespace webrtc {
             codec_.simulcastStream[0].height = codec_.height;
         }
 
-        for (int i = 0, idx = number_of_streams - 1; i < number_of_streams; ++i, --idx) {
-            assert(i == 0);
-
-            // Temporal layers still not supported.
-            if (inst->simulcastStream[i].numberOfTemporalLayers > 1) {
-                Release();
-                return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
-            }
-
-            const auto width = codec_.simulcastStream[idx].width;
-            const auto height = codec_.simulcastStream[idx].height;
-
-            // Set internal settings from codec_settings
-            configurations_[i].simulcast_idx = idx;
-            configurations_[i].sending = false;
-            configurations_[i].width = width;
-            configurations_[i].height = height;
-            configurations_[i].max_frame_rate = static_cast<float>(codec_.maxFramerate);
-            configurations_[i].frame_dropping_on = codec_.H264()->frameDroppingOn;
-            configurations_[i].key_frame_interval = codec_.H264()->keyFrameInterval;
-
-            // Codec_settings uses kbits/second; encoder uses bits/second.
-            // TODO: Figure out how these settings can be configured.
-            configurations_[i].max_bps = 128 * 1000 * 1000; //  width * height * codec_.maxFramerate * 4 * 7 / 100;
-            configurations_[i].target_bps = configurations_[i].max_bps / 2;
-
-            auto nvEncoder = NvPipe_CreateEncoder(
-                NVPIPE_BGRA32, NVPIPE_H264, NVPIPE_LOSSY,
-                configurations_[i].target_bps, configurations_[i].max_frame_rate);
-
-            if (!nvEncoder)
-            {
-                // Failed to create encoder.
-                RTC_LOG(LS_ERROR) << "Failed to create NVENC H264 encoder";
-                RTC_DCHECK(!nvEncoder);
-                Release();
-                ReportError();
-                return WEBRTC_VIDEO_CODEC_ERROR;
-            }
-
-            // Store h264 encoder.
-            encoders_[i] = nvEncoder;
-
-            // Create encoded output buffer
-            const size_t new_capacity = 4 * width * height;
-            encoded_output_buffer_.resize(new_capacity);
-            //encoded_images_[i].set_buffer(new uint8_t[new_capacity], new_capacity);
-
-            encoded_images_[i]._completeFrame = true;
-            encoded_images_[i]._encodedWidth = width;
-            encoded_images_[i]._encodedHeight = height;
-            encoded_images_[i].set_buffer(&encoded_output_buffer_[0], new_capacity);
-            encoded_images_[i].set_size(0);
+        // Temporal layers not supported.
+        if (inst->simulcastStream[0].numberOfTemporalLayers > 1) {
+            Release();
+            return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
         }
+
+        const auto width = codec_.simulcastStream[0].width;
+        const auto height = codec_.simulcastStream[0].height;
+
+        is_sending_ = false;
+        key_frame_request_ = false;
+
+        // TODO: Figure out how these settings can be configured.
+        const auto target_bps = width * height * codec_.maxFramerate * 4 * 7 / 100;
+        const auto nvEncoder = NvPipe_CreateEncoder(NVPIPE_BGRA32, NVPIPE_H264, NVPIPE_LOSSY, target_bps, codec_.maxFramerate);
+
+        // HACK: Remove when we figure out how to deal with the bit-rates!
+        //codec_.maxBitrate = target_bps * 2 / 1000;
+        //codec_.minBitrate = target_bps / 2 / 1000;
+        //codec_.startBitrate = target_bps / 1000;
+
+        if (!nvEncoder)
+        {
+            // Failed to create encoder.
+            RTC_LOG(LS_ERROR) << "Failed to create NVENC H264 encoder";
+            RTC_DCHECK(!nvEncoder);
+            Release();
+            ReportError();
+            return WEBRTC_VIDEO_CODEC_ERROR;
+        }
+
+        // Store h264 encoder.
+        encoder_ = nvEncoder;
+
+        // Create encoded output buffer
+        const size_t new_capacity = 4 * width * height;
+        encoded_output_buffer_.resize(new_capacity);
+        encoded_image_._completeFrame = true;
+        encoded_image_._encodedWidth = width;
+        encoded_image_._encodedHeight = height;
+        encoded_image_.set_buffer(&encoded_output_buffer_[0], new_capacity);
+        encoded_image_.set_size(0);
 
         SimulcastRateAllocator init_allocator(codec_);
         VideoBitrateAllocation allocation = init_allocator.GetAllocation(codec_.startBitrate * 1000, codec_.maxFramerate);
@@ -154,14 +132,18 @@ namespace webrtc {
     }
 
     int32_t NvEncoderH264::Release() {
-        while (!encoders_.empty()) {
-            const auto nvEncoder = encoders_.back();
-            NvPipe_Destroy(nvEncoder);
-            encoders_.pop_back();
+        if (encoder_)
+        {
+            NvPipe_Destroy(encoder_);
+            encoder_ = nullptr;
         }
-        configurations_.clear();
-        encoded_images_.clear();
+
         encoded_output_buffer_.clear();
+        encoded_image_.set_buffer(&encoded_output_buffer_[0], 0);
+
+        is_sending_ = false;
+        key_frame_request_ = false;
+
         return WEBRTC_VIDEO_CODEC_OK;
     }
 
@@ -172,7 +154,7 @@ namespace webrtc {
     }
 
     int32_t NvEncoderH264::SetRateAllocation(const VideoBitrateAllocation& bitrate, uint32_t new_framerate) {
-        if (encoders_.empty())
+        if (!encoder_)
             return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
         if (new_framerate < 1)
@@ -180,8 +162,7 @@ namespace webrtc {
 
         if (bitrate.get_sum_bps() == 0) {
             // Encoder paused, turn off all encoding.
-            for (size_t i = 0; i < configurations_.size(); ++i)
-                configurations_[i].SetStreamState(false);
+            SetStreamState(false);
             return WEBRTC_VIDEO_CODEC_OK;
         }
 
@@ -194,22 +175,15 @@ namespace webrtc {
 
         codec_.maxFramerate = new_framerate;
 
-        size_t stream_idx = encoders_.size() - 1;
-        for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
-            // Update layer config.
-            // TODO: Figure out how to pass bitrate
-            configurations_[i].max_frame_rate = static_cast<float>(new_framerate);
-            configurations_[i].max_bps = configurations_[i].width * configurations_[i].height * new_framerate * 4 * 7 / 100;
-            configurations_[i].target_bps = configurations_[i].max_bps / 2;
-
-            if (configurations_[i].target_bps) {
-                configurations_[i].SetStreamState(true);
-                // Reconfigure encoder
-                // NvPipe_SetBitrate(encoders_[i], configurations_[i].target_bps, new_framerate);
-            }
-            else {
-                configurations_[i].SetStreamState(false);
-            }
+        // TODO: Figure out how to pass bitrate
+        const auto target_bps = encoded_image_._encodedWidth * encoded_image_._encodedHeight * new_framerate * 4 * 7 / 100;
+        if (target_bps) {
+            // Reconfigure encoder
+            SetStreamState(true);
+            NvPipe_SetBitrate(encoder_, target_bps, new_framerate);
+        }
+        else {
+            SetStreamState(false);
         }
 
         return WEBRTC_VIDEO_CODEC_OK;
@@ -218,7 +192,7 @@ namespace webrtc {
     int32_t NvEncoderH264::Encode(const VideoFrame& input_frame,
         const CodecSpecificInfo* codec_specific_info,
         const std::vector<FrameType>* frame_types) {
-        if (encoders_.empty()) {
+        if (!encoder_) {
             ReportError();
             return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
         }
@@ -231,60 +205,40 @@ namespace webrtc {
         }
 
         const auto frame_buffer = input_frame.video_frame_buffer();
-        assert(frame_buffer->type() == VideoFrameBuffer::Type::kNative);
+        RTC_CHECK(frame_buffer->type() == VideoFrameBuffer::Type::kNative);
         const auto native_buffer = dynamic_cast<NativeVideoBuffer*>(frame_buffer.get());
-        assert(native_buffer);
+        RTC_CHECK(native_buffer != nullptr);
 
         bool send_key_frame = false;
-        for (size_t i = 0; i < configurations_.size(); ++i) {
-            if (configurations_[i].key_frame_request && configurations_[i].sending) {
-                send_key_frame = true;
-                break;
-            }
+        if (key_frame_request_ && is_sending_) {
+            send_key_frame = true;
         }
-        if (!send_key_frame && frame_types) {
-            for (size_t i = 0; i < frame_types->size() && i < configurations_.size();
-                ++i) {
-                if ((*frame_types)[i] == kVideoFrameKey && configurations_[i].sending) {
-                    send_key_frame = true;
-                    break;
-                }
+
+        if (!send_key_frame && frame_types && !frame_types->empty()) {
+            if ((*frame_types)[0] == kVideoFrameKey && is_sending_) {
+                send_key_frame = true;
             }
         }
 
         const auto width = frame_buffer->width();
         const auto height = frame_buffer->height();
 
-        RTC_DCHECK_EQ(configurations_[0].width, width);
-        RTC_DCHECK_EQ(configurations_[0].height, height);
+        RTC_DCHECK_EQ(encoded_image_._encodedWidth, width);
+        RTC_DCHECK_EQ(encoded_image_._encodedHeight, height);
 
-        // Encode image for each layer.
-        for (size_t i = 0; i < encoders_.size(); ++i) {
-            assert(i == 0);
-
-            auto timeStamp = input_frame.ntp_time_ms();
-
-            if (!configurations_[i].sending) {
-                continue;
-            }
-            if (frame_types != nullptr) {
-                // Skip frame?
-                if ((*frame_types)[i] == kEmptyFrame) {
-                    continue;
-                }
-            }
-
-            auto encoded_buffer_ptr = &encoded_output_buffer_[0];
+        if (is_sending_ && (frame_types == nullptr || frame_types->at(0) != kEmptyFrame))
+        {
+            const auto encoded_buffer_ptr = &encoded_output_buffer_[0];
 
             // Encode!
-            auto encoded_buffer_size = NvPipe_Encode(encoders_[i],
+            auto encoded_buffer_size = NvPipe_Encode(encoder_,
                 native_buffer->texture(), width * 4,
                 encoded_buffer_ptr, encoded_output_buffer_.size(),
                 width, height, send_key_frame);
 
             if (encoded_buffer_size == 0)
             {
-                RTC_LOG(LS_ERROR) << "NVENC H264 frame encoding failed, EncodeFrame returned " << NvPipe_GetError(encoders_[i]);
+                RTC_LOG(LS_ERROR) << "NVENC H264 frame encoding failed, EncodeFrame returned " << NvPipe_GetError(encoder_);
                 ReportError();
                 return WEBRTC_VIDEO_CODEC_ERROR;
             }
@@ -295,22 +249,21 @@ namespace webrtc {
                 fflush(debug_output_file);
             }
 
-            encoded_images_[i].set_size(encoded_buffer_size);
-            encoded_images_[i].qp_ = 5;
-
-            encoded_images_[i]._encodedWidth = width;
-            encoded_images_[i]._encodedHeight = height;
-            encoded_images_[i].SetTimestamp(input_frame.timestamp());
-            encoded_images_[i].ntp_time_ms_ = input_frame.ntp_time_ms();
-            encoded_images_[i].capture_time_ms_ = input_frame.render_time_ms();
-            encoded_images_[i].rotation_ = input_frame.rotation();
-            encoded_images_[i].SetColorSpace(input_frame.color_space());
-            encoded_images_[i].content_type_ =
+            encoded_image_.set_size(encoded_buffer_size);
+            encoded_image_.qp_ = 5; // TODO: Why was this hardcoded by Microsoft's 3D streaming toolkit? It seems it is replaced anyway by code below (GetLastSliceQp)
+            encoded_image_._encodedWidth = width;
+            encoded_image_._encodedHeight = height;
+            encoded_image_.SetTimestamp(input_frame.timestamp());
+            encoded_image_.ntp_time_ms_ = input_frame.ntp_time_ms();
+            encoded_image_.capture_time_ms_ = input_frame.render_time_ms();
+            encoded_image_.rotation_ = input_frame.rotation();
+            encoded_image_.SetColorSpace(input_frame.color_space());
+            encoded_image_.content_type_ =
                 (codec_.mode == VideoCodecMode::kScreensharing)
                 ? VideoContentType::SCREENSHARE
                 : VideoContentType::UNSPECIFIED;
-            encoded_images_[i].timing_.flags = VideoSendTiming::kInvalid;
-            encoded_images_[i].SetSpatialIndex(configurations_[i].simulcast_idx);
+            encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
+            encoded_image_.SetSpatialIndex(0);
 
             RTPFragmentationHeader frag_header;
 
@@ -341,9 +294,7 @@ namespace webrtc {
                 uint32_t totalNaluIndex = 0;
                 for (size_t nal_index = 0; nal_index < i_nal; nal_index++)
                 {
-                    size_t currentNaluSize = 0;
-                    currentNaluSize = NALUidx[nal_index].payload_size; //i_frame_size
-
+                    const size_t currentNaluSize = NALUidx[nal_index].payload_size; //i_frame_size
                     frag_header.fragmentationOffset[totalNaluIndex] = NALUidx[nal_index].payload_start_offset;
                     frag_header.fragmentationLength[totalNaluIndex] = currentNaluSize;
                     frag_header.fragmentationPlType[totalNaluIndex] = H264::ParseNaluType(p_nal[NALUidx[nal_index].payload_start_offset]);
@@ -354,17 +305,16 @@ namespace webrtc {
 
             // Encoder can skip frames to save bandwidth in which case
             // |encoded_images_[i]._length| == 0.
-            if (encoded_images_[i].size() > 0) {
+            if (encoded_image_.size() > 0) {
                 // Parse QP.
-                h264_bitstream_parser_.ParseBitstream(encoded_images_[i].data(),
-                    encoded_images_[i].size());
-                h264_bitstream_parser_.GetLastSliceQp(&encoded_images_[i].qp_);
+                h264_bitstream_parser_.ParseBitstream(encoded_image_.data(), encoded_image_.size());
+                h264_bitstream_parser_.GetLastSliceQp(&encoded_image_.qp_);
 
                 // Deliver encoded image.
                 CodecSpecificInfo codec_specific;
                 codec_specific.codecType = kVideoCodecH264;
                 codec_specific.codecSpecific.H264.packetization_mode = H264PacketizationMode::NonInterleaved;
-                encoded_image_callback_->OnEncodedImage(encoded_images_[i], &codec_specific, &frag_header);
+                encoded_image_callback_->OnEncodedImage(encoded_image_, &codec_specific, &frag_header);
             }
         }
         return WEBRTC_VIDEO_CODEC_OK;
@@ -398,12 +348,12 @@ namespace webrtc {
         return info;
     }
 
-    void NvEncoderH264::LayerConfig::SetStreamState(bool send_stream) {
-        if (send_stream && !sending) {
+    void NvEncoderH264::SetStreamState(bool send_stream) {
+        if (send_stream && !is_sending_) {
             // Need a key frame if we have not sent this stream before.
-            key_frame_request = true;
+            key_frame_request_ = true;
         }
-        sending = send_stream;
+        is_sending_ = send_stream;
     }
 
     bool NvEncoderH264::IsAvailable()

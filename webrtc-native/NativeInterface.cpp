@@ -17,12 +17,12 @@ namespace
         {
             // TODO: Allow configuration of error level!
 #ifdef NDEBUG
-            rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::LS_ERROR);
-#else
             rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::LS_WARNING);
+#else
+            rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::LS_INFO);
 #endif
 
-            rtc::LogMessage::SetLogToStderr(false);
+            rtc::LogMessage::SetLogToStderr(true);
 
 #ifdef WEBRTC_WIN
             WSADATA data;

@@ -3,7 +3,7 @@
         "web-demo (mixed)": {
             "commandName": "Project",
             "nativeDebugging": true,
-            "launchBrowser": true,
+            "launchBrowser": false,
             "environmentVariables": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             },
@@ -12,7 +12,7 @@
         "web-demo (managed)": {
             "commandName": "Project",
             "nativeDebugging": false,
-            "launchBrowser": true,
+            "launchBrowser": false,
             "environmentVariables": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             },
