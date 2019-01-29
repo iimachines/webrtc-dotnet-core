@@ -69,9 +69,9 @@ public:
     }
 };
 
-std::unique_ptr<VideoEncoderFactory> CreateEncoderFactory()
+std::unique_ptr<VideoEncoderFactory> CreateEncoderFactory(bool force_software_encoder)
 {
-    if (NvEncoderH264::IsAvailable())
+    if (!force_software_encoder && NvEncoderH264::IsAvailable())
         return std::make_unique<NvEncoderFactory>();
 
     // Fallback to VP8 if no licensed NVEnc hardware encoder is found.

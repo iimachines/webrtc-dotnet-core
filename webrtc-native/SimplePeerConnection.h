@@ -52,7 +52,7 @@ public:
     void AddRef() const override;
     rtc::RefCountReleaseStatus Release() const override;
 
-    static bool InitializeThreading(bool use_signaling_thread, bool use_worker_thread);
+    static bool Configure(bool use_signaling_thread, bool use_worker_thread, bool forceSoftwareVideoEncoder);
 
 protected:
     // create a peer connection and add the turn servers info to the configuration.

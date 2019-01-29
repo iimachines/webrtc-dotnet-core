@@ -67,10 +67,10 @@ extern "C"
         return rtc::Thread::Current()->ProcessMessages(timeoutInMS);
     }
 
-    WEBRTC_PLUGIN_API bool InitializeThreading(bool useSignalingThread, bool useWorkerThread)
+    WEBRTC_PLUGIN_API bool Configure(bool useSignalingThread, bool useWorkerThread, bool forceSoftwareVideoEncoder)
     {
         initializeModule();
-        return SimplePeerConnection::InitializeThreading(useSignalingThread, useWorkerThread);
+        return SimplePeerConnection::Configure(useSignalingThread, useWorkerThread, forceSoftwareVideoEncoder);
     }
 
     WEBRTC_PLUGIN_API SimplePeerConnection* CreatePeerConnection(

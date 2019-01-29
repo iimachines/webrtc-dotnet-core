@@ -21,16 +21,16 @@ namespace WonderMediaProductions.WebRtc
         private IntPtr _nativePtr;
 
         /// <summary>
-        /// Initializes the threading model, must be called before the first peer connection is created.
+        /// Configures all peer connections. Must be called before the first peer connection is created.
         /// </summary>
-        public static void InitializeThreading(ThreadingOptions options)
+        public static void Configure(GlobalOptions options)
         {
-            Check(Native.InitializeThreading(options.UseSignalingThread, options.UseWorkerThread));
+            Check(Native.Configure(options.UseSignalingThread, options.UseWorkerThread, options.ForceSoftwareVideoEncoder));
         }
 
-        public static void InitializeThreading(Action<ThreadingOptions> configure)
+        public static void Configure(Action<GlobalOptions> configure)
         {
-            InitializeThreading(configure.Options());
+            Configure(configure.Options());
         }
 
         public static bool SupportsHardwareTextureEncoding => Native.CanEncodeHardwareTextures();

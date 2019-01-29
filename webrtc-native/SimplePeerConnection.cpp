@@ -14,15 +14,17 @@ const char kStreamId[] = "stream_id";
 
 namespace
 {
-    // TODO: This should not be part of our peer connection class!
+    // TODO: This should not be part of our peer connection file!
     int g_peer_count = 0;
 
     bool g_use_worker_thread = true;
     bool g_use_signaling_thread = true;
+    bool g_force_software_encoder = false;
 
     std::unique_ptr<rtc::Thread> g_worker_thread;
     std::unique_ptr<rtc::Thread> g_signaling_thread;
 
+    // TODO: Give each peer connection its own factory, with different configuration?
     rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> g_peer_connection_factory;
 
     void startThread(std::unique_ptr<rtc::Thread>& thread, bool isUsed)
@@ -120,7 +122,7 @@ bool SimplePeerConnection::InitializePeerConnection(
 
         const auto audioEncoderFactory = webrtc::CreateBuiltinAudioEncoderFactory();
         const auto audioDecoderFactory = webrtc::CreateBuiltinAudioDecoderFactory();
-        auto videoEncoderFactory = CreateEncoderFactory();
+        auto videoEncoderFactory = CreateEncoderFactory(g_force_software_encoder);
         auto videoDecoderFactory = std::make_unique<webrtc::InternalDecoderFactory>();
 
         const std::nullptr_t default_adm = nullptr;
@@ -679,7 +681,7 @@ rtc::RefCountReleaseStatus SimplePeerConnection::Release() const
     return rtc::RefCountReleaseStatus::kOtherRefsRemained;
 }
 
-bool SimplePeerConnection::InitializeThreading(bool use_signaling_thread, bool use_worker_thread)
+bool SimplePeerConnection::Configure(bool use_signaling_thread, bool use_worker_thread, bool forceSoftwareVideoEncoder)
 {
     if (g_worker_thread || g_signaling_thread)
     {
@@ -689,5 +691,6 @@ bool SimplePeerConnection::InitializeThreading(bool use_signaling_thread, bool u
 
     g_use_signaling_thread = use_signaling_thread;
     g_use_worker_thread = use_worker_thread;
+    g_force_software_encoder = forceSoftwareVideoEncoder;
     return true;
 }

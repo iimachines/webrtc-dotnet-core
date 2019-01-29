@@ -6,7 +6,6 @@ using System.Text;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using WonderMediaProductions.WebRtc;
 using static System.Console;
 
@@ -22,7 +21,12 @@ namespace VideoGeneratorServer
                 // For debugging, run everything on this thread. 
                 // Should never be done in production.
                 // Note that webrtc callbacks are done on the signaling thread, and must return asap.
-                // SimplePeerConnection.InitializeThreading(options => options.UseWorkerThread = options.UseSignalingThread = false);
+                SimplePeerConnection.Configure(options =>
+                {
+                    options.UseWorkerThread = false;
+                    options.UseSignalingThread = false;
+                    options.ForceSoftwareVideoEncoder = true;
+                });
 
                 OutputEncoding = Encoding.UTF8;
 

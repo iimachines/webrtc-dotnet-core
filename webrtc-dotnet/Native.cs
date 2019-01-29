@@ -36,7 +36,7 @@ namespace WonderMediaProductions.WebRtc
         internal delegate void SignalingStateChangedCallback(int state);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool InitializeThreading(bool hasSignallingThread, bool hasWorkerThread);
+        internal static extern bool Configure(bool hasSignallingThread, bool hasWorkerThread, bool forceSoftwareVideoEncoder);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool PumpQueuedMessages(int timeoutInMS);
