@@ -31,7 +31,7 @@ public:
     bool CreateDataChannel(const char* label, bool is_ordered, bool is_reliable);
     bool SendData(const char* label, const std::string& data);
 
-    bool SendVideoFrame(const uint8_t* pixels, int stride, int width, int height, PixelFormat format) const;
+    bool SendVideoFrame(const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format) const;
 
     // Register callback functions.
     void RegisterOnLocalI420FrameReady(I420FrameReadyCallback callback) const;

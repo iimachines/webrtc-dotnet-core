@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SimplePeerConnection.h"
+#include "NvEncoderH264.h"
 
 #if defined(WEBRTC_WIN)
 #   define WEBRTC_PLUGIN_API __declspec(dllexport)
@@ -53,7 +54,7 @@ namespace
         }
     };
 
-    static void initializeModule()
+    void initializeModule()
     {
         static ModuleInitializer init;
     }
@@ -130,7 +131,7 @@ extern "C"
         return connection->SendData(label, data);
     }
     
-    WEBRTC_PLUGIN_API bool SendVideoFrame(SimplePeerConnection* connection, const uint8_t* pixels, int stride, int width, int height, PixelFormat format)
+    WEBRTC_PLUGIN_API bool SendVideoFrame(SimplePeerConnection* connection, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format)
     {
         return connection->SendVideoFrame(pixels, stride, width, height, format);
     }
@@ -210,5 +211,10 @@ extern "C"
     {
         const auto clock = webrtc::Clock::GetRealTimeClock();
         return clock->TimeInMicroseconds();
+    }
+
+    WEBRTC_PLUGIN_API bool CanEncodeHardwareTextures()
+    {
+        return webrtc::NvEncoderH264::IsAvailable();
     }
 }

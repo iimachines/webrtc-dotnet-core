@@ -16,6 +16,7 @@ namespace webrtc
         Type type() const override;
         int width() const override;
         int height() const override;
+        const void *texture() const { return texture_;  }
 
     private:
         rtc::scoped_refptr<I420BufferInterface> ToI420() override;

@@ -58,10 +58,10 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)nv-encode-api;$(SolutionDir)dependencies\webrtc-build\include;$(SolutionDir)dependencies\webrtc-build\include\webrtc;$(SolutionDir)dependencies\webrtc-build\include\third_party\libyuv\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\nvpipe-build\include;c:\wc\src;c:\wc\src\third_party\libyuv\include;c:\wc\src\third_party\abseil-cpp;$(SolutionDir)dependencies\webrtc-build\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(SolutionDir)dependencies\webrtc-build\lib\windows_$(Configuration)_$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>c:\wc\windows_msvc_$(Configuration)_$(Platform)\obj;$(SolutionDir)dependencies\webrtc-build\lib\windows_$(Configuration)_$(Platform);$(SolutionDir)dependencies\nvpipe-build\lib\windows_$(Configuration)_$(Platform);$(SolutionDir)dependencies\nvpipe-build\lib\windows_cuda_$(Platform)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -121,10 +121,11 @@
   <ItemGroup>
     <ClInclude Include="DummySetSessionDescriptionObserver.h" />
     <ClInclude Include="InjectableVideoTrackSource.h" />
+    <ClInclude Include="macros.h" />
     <ClInclude Include="NativeVideoBuffer.h" />
     <ClInclude Include="NvEncoderH264.h" />
     <ClInclude Include="NativeInterface.h" />
-    <ClInclude Include="NvEncoderFactory.h" />
+    <ClInclude Include="EncoderFactory.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="SimplePeerConnection.h" />
     <ClInclude Include="TestVideoCapturer.h" />
@@ -138,7 +139,7 @@
     <ClCompile Include="NvEncoderH264.cpp" />
     <ClCompile Include="libs.cpp" />
     <ClCompile Include="NativeInterface.cpp" />
-    <ClCompile Include="NvEncoderFactory.cpp" />
+    <ClCompile Include="EncoderFactory.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -153,11 +154,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="LICENSE" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\nv-encode-api\nv-encode-api.vcxproj">
-      <Project>{0f1351b4-738a-4bc3-ba74-e146fe1b3765}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

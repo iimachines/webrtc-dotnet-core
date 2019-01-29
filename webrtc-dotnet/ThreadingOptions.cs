@@ -1,4 +1,4 @@
-﻿namespace webrtc_dotnet_standard
+﻿namespace WonderMediaProductions.WebRtc
 {
     public class ThreadingOptions
     {

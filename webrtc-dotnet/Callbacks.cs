@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
     public delegate void AudioBusReadyDelegate(SimplePeerConnection pc, IntPtr data, int bitsPerSample,
         int sampleRate, int numberOfChannels, int numberOfFrames);

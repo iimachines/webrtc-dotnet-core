@@ -1,4 +1,4 @@
-﻿namespace webrtc_dotnet_standard
+﻿namespace WonderMediaProductions.WebRtc
 {
     /// <summary>
     /// See https://w3c.github.io/webrtc-pc/#dom-rtcsignalingstate

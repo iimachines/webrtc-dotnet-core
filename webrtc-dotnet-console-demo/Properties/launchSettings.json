@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "webrtc-dotnet-console-demo": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

@@ -2,6 +2,11 @@
 
 #pragma comment(lib, "webrtc.lib")
 
+#pragma comment(lib, "nvpipe.lib")
+#pragma comment(lib, "cuda.lib")
+#pragma comment(lib, "cudart.lib")
+#pragma comment(lib, "nvcuvid.lib")
+
 #pragma comment(lib, "secur32.lib")
 #pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "dmoguids.lib")

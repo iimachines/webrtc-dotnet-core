@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
     public sealed class IceCandidate
     {

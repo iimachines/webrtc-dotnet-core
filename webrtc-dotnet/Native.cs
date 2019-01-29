@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
     public class Native
     {
@@ -71,7 +71,7 @@ namespace webrtc_dotnet_standard
         internal static extern bool SendData(IntPtr nativePtr, string label, string data);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SendVideoFrame(IntPtr nativePtr, in uint rgbaPixels, int stride, int width, int height, PixelFormat pixelFormat);
+        internal static extern bool SendVideoFrame(IntPtr nativePtr, in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool SetAudioControl(IntPtr nativePtr, bool isMute, bool isRecord);
@@ -119,5 +119,7 @@ namespace webrtc_dotnet_standard
             IntPtr nativePtr, SignalingStateChangedCallback callback);
 
 
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern bool CanEncodeHardwareTextures();
     }
 }

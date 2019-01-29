@@ -1,3 +1,6 @@
 [submodule "dependencies/webrtc-build"]
 	path = dependencies/webrtc-build
 	url = https://github.com/WonderMediaProductions/webrtc-build.git
+[submodule "dependencies/nvpipe-build"]
+	path = dependencies/nvpipe-build
+	url = https://github.com/WonderMediaProductions/nvpipe-build.git

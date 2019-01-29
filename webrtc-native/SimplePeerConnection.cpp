@@ -3,7 +3,7 @@
 #include "SimplePeerConnection.h"
 #include "InjectableVideoTrackSource.h"
 #include "DummySetSessionDescriptionObserver.h"
-#include "NvEncoderFactory.h"
+#include "EncoderFactory.h"
 #include "NativeVideoBuffer.h"
 
 // Names used for media stream ids.
@@ -50,14 +50,14 @@ namespace
         }
     }
 
-    auto getYuvConverter(PixelFormat pf)
+    auto getYuvConverter(VideoFrameFormat pf)
     {
         switch (pf)
         {
-        case PixelFormat::BGRA32: return libyuv::ARGBToI420;
-        case PixelFormat::RGBA32: return libyuv::ABGRToI420;
-        case PixelFormat::ARGB32: return libyuv::BGRAToI420;
-        case PixelFormat::ABGR32: return libyuv::RGBAToI420;
+        case VideoFrameFormat::BGRA32: return libyuv::ARGBToI420;
+        case VideoFrameFormat::RGBA32: return libyuv::ABGRToI420;
+        case VideoFrameFormat::ARGB32: return libyuv::BGRAToI420;
+        case VideoFrameFormat::ABGR32: return libyuv::RGBAToI420;
         default:
             throw std::runtime_error("No YUV converter for pixel format " + std::to_string(static_cast<int>(pf)));
         }
@@ -120,8 +120,7 @@ bool SimplePeerConnection::InitializePeerConnection(
 
         const auto audioEncoderFactory = webrtc::CreateBuiltinAudioEncoderFactory();
         const auto audioDecoderFactory = webrtc::CreateBuiltinAudioDecoderFactory();
-        //auto videoEncoderFactory = std::make_unique<webrtc::InternalEncoderFactory>();
-        auto videoEncoderFactory = CreateNvEncoderFactory();
+        auto videoEncoderFactory = CreateEncoderFactory();
         auto videoDecoderFactory = std::make_unique<webrtc::InternalDecoderFactory>();
 
         const std::nullptr_t default_adm = nullptr;
@@ -532,13 +531,13 @@ bool SimplePeerConnection::SendData(const char* label, const std::string& data)
     return it->second->channel->Send(buffer);
 }
 
-bool SimplePeerConnection::SendVideoFrame(const uint8_t* pixels, int stride, int width, int height, PixelFormat format) const
+bool SimplePeerConnection::SendVideoFrame(const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format) const
 {
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer;
 
     const auto clock = webrtc::Clock::GetRealTimeClock();
 
-    if (format == PixelFormat::Texture)
+    if (format == VideoFrameFormat::CpuTexture)
     {
         buffer = new rtc::RefCountedObject<webrtc::NativeVideoBuffer>(
             width, height, static_cast<const void*>(pixels));

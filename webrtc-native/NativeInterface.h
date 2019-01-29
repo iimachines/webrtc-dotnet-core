@@ -1,12 +1,12 @@
 #pragma once
 
-enum class PixelFormat
+enum class VideoFrameFormat
 {
-    RGBA32, // 8-bit R G B A in memory 
-    BGRA32, // 8-bit B G R A in memory 
-    ARGB32, // 8-bit A R G B in memory 
-    ABGR32, // 8-bit A B G R in memory 
-    Texture // A native texture, not supported yet
+    RGBA32, 
+    BGRA32,
+    ARGB32,
+    ABGR32,
+    CpuTexture
 };
 
 // Definitions of callback functions.

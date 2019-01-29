@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
     public class SimplePeerConnection : Disposable
     {
@@ -32,6 +32,8 @@ namespace webrtc_dotnet_standard
         {
             InitializeThreading(configure.Options());
         }
+
+        public static bool SupportsHardwareTextureEncoding => Native.CanEncodeHardwareTextures();
 
         public SimplePeerConnection(PeerConnectionOptions options)
         {
@@ -131,9 +133,9 @@ namespace webrtc_dotnet_standard
             Check(Native.SendData(_nativePtr, msg.Label, msg.Content));
         }
 
-        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, PixelFormat pixelFormat)
+        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
         {
-            Check(Native.SendVideoFrame(_nativePtr, rgbaPixels, stride, width, height, pixelFormat));
+            Check(Native.SendVideoFrame(_nativePtr, rgbaPixels, stride, width, height, videoFrameFormat));
         }
 
         public void SetAudioControl(bool isMute, bool isRecord)

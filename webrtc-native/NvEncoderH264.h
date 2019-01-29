@@ -1,34 +1,9 @@
 #pragma once
-
-/*
- *  Copyright (c) 2015 The WebRTC project authors. All Rights Reserved.
- *
- *  Use of this source code is governed by a BSD-style license
- *  that can be found in the LICENSE file in the root of the source
- *  tree. An additional intellectual property rights grant can be found
- *  in the file PATENTS.  All contributing project authors may
- *  be found in the AUTHORS file in the root of the source tree.
- *
- */
-
-#ifndef MODULES_VIDEO_CODING_CODECS_H264_H264_ENCODER_IMPL_H_
-#define MODULES_VIDEO_CODING_CODECS_H264_H264_ENCODER_IMPL_H_
-
-#include <memory>
-#include <vector>
-
-#include "api/video/i420_buffer.h"
-#include "common_video/h264/h264_bitstream_parser.h"
-#include "modules/video_coding/codecs/h264/include/h264.h"
-#include "modules/video_coding/utility/quality_scaler.h"
-
-#include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
-
-class ISVCEncoder;
+#include "macros.h"
 
 namespace webrtc {
 
-    class NvEncoderH264 : public H264Encoder {
+    class NvEncoderH264 final : public VideoEncoder {
     public:
         struct LayerConfig {
             int simulcast_idx = 0;
@@ -45,9 +20,12 @@ namespace webrtc {
             void SetStreamState(bool send_stream);
         };
 
-    public:
-        explicit NvEncoderH264(const cricket::VideoCodec& codec);
+        static bool IsAvailable();
+
+        explicit NvEncoderH264();
         ~NvEncoderH264() override;
+
+        DISALLOW_COPY_MOVE_ASSIGN(NvEncoderH264);
 
         // |max_payload_size| is ignored.
         // The following members of |codec_settings| are used. The rest are ignored.
@@ -56,7 +34,7 @@ namespace webrtc {
         // - maxFramerate
         // - width
         // - height
-        int32_t InitEncode(const VideoCodec* codec_settings,
+        int32_t InitEncode(const VideoCodec* inst,
             int32_t number_of_cores,
             size_t max_payload_size) override;
         int32_t Release() override;
@@ -74,36 +52,25 @@ namespace webrtc {
 
         EncoderInfo GetEncoderInfo() const override;
 
-        // Exposed for testing.
-        H264PacketizationMode PacketizationModeForTesting() const {
-            return packetization_mode_;
-        }
-
     private:
-        SEncParamExt CreateEncoderParams(size_t i) const;
-
-        webrtc::H264BitstreamParser h264_bitstream_parser_;
+        H264BitstreamParser h264_bitstream_parser_;
         // Reports statistics with histograms.
         void ReportInit();
         void ReportError();
 
-        std::vector<ISVCEncoder*> encoders_;
-        std::vector<SSourcePicture> pictures_;
-        std::vector<rtc::scoped_refptr<I420Buffer>> downscaled_buffers_;
+        std::vector<void*> encoders_;
+        std::vector<uint8_t> encoded_output_buffer_;
         std::vector<LayerConfig> configurations_;
         std::vector<EncodedImage> encoded_images_;
-        std::vector<std::unique_ptr<uint8_t[]>> encoded_image_buffers_;
 
         VideoCodec codec_;
-        H264PacketizationMode packetization_mode_;
         size_t max_payload_size_;
-        int32_t number_of_cores_;
         EncodedImageCallback* encoded_image_callback_;
 
         bool has_reported_init_;
         bool has_reported_error_;
+
+        FILE* debug_output_file = nullptr;
     };
 
 }  // namespace webrtc
-
-#endif  // MODULES_VIDEO_CODING_CODECS_H264_H264_ENCODER_IMPL_H_

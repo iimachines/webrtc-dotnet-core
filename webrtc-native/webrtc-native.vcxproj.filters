@@ -25,9 +25,6 @@
     <ClInclude Include="VideoObserver.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="NvEncoderFactory.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="NvEncoderH264.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -38,6 +35,12 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="TestVideoCapturer.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="EncoderFactory.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="macros.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -63,9 +66,6 @@
     <ClCompile Include="VideoObserver.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="NvEncoderFactory.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="NvEncoderH264.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -76,6 +76,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="TestVideoCapturer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="EncoderFactory.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

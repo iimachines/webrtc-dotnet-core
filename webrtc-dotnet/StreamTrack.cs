@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
     [Flags]
     public enum StreamTrack

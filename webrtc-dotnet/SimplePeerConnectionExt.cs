@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
     public static class SimplePeerConnectionExt
     {

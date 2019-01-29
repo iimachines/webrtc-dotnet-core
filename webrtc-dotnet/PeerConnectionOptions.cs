@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
     public class PeerConnectionOptions
     {

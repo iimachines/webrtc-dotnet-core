@@ -4,7 +4,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
 
     public class ObservablePeerConnection : Disposable
@@ -125,9 +125,9 @@ namespace webrtc_dotnet_standard
             _connection.AddDataChannel(label, flag);
         }
 
-        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, PixelFormat pixelFormat)
+        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
         {
-            _connection.SendVideoFrame(rgbaPixels, stride, width, height, pixelFormat);
+            _connection.SendVideoFrame(rgbaPixels, stride, width, height, videoFrameFormat);
         }
 
         public void CreateOffer()

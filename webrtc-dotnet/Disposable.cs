@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace webrtc_dotnet_standard
+namespace WonderMediaProductions.WebRtc
 {
     public abstract class Disposable : IDisposable
     {

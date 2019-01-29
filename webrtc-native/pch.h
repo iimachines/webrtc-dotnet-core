@@ -3,8 +3,6 @@
 #pragma warning( push )
 #pragma warning( disable : 4244 )
 
-#undef WEBRTC_USE_H264
-
 #include <cstdio>
 #include <cstdint>
 
@@ -71,18 +69,12 @@
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 
-#include "third_party/openh264/src/codec/api/svc/codec_api.h"
-#include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
-#include "third_party/openh264/src/codec/api/svc/codec_def.h"
-#include "third_party/openh264/src/codec/api/svc/codec_ver.h"
-
 #include "third_party/libyuv/include/libyuv/scale.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 
-#ifdef WEBRTC_USE_H264
-#   include "common_video/h264/h264_bitstream_parser.h"
-#   include "media/base/h264_profile_level_id.h"
-#endif
-
+#include "common_video/h264/h264_bitstream_parser.h"
+#include "common_video/h264/h264_common.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "media/base/h264_profile_level_id.h"
 
 #pragma warning( pop )

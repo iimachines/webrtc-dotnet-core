@@ -2,6 +2,8 @@
 using System;
 using System.Linq;
 using System.Net.WebSockets;
+using System.Numerics;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
@@ -13,7 +15,9 @@ using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
-using webrtc_dotnet_standard;
+using SixLabors.Shapes;
+using WonderMediaProductions.WebRtc;
+using PixelColor = SixLabors.ImageSharp.PixelFormats.Bgra32;
 
 namespace webrtc_dotnet_demo
 {
@@ -25,30 +29,41 @@ namespace webrtc_dotnet_demo
             {
                 var pc = (ObservablePeerConnection)parameter;
 
-                var font = SystemFonts.CreateFont("Courier New", 20, FontStyle.Bold);
-
-                var textGraphicOptions = new TextGraphicsOptions(true)
-                {
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Top
-                };
-
-                var drawImageOptions = new GraphicsOptions(false)
-                {
-                    BlenderMode = PixelBlenderMode.Src
-                };
-
-                using (var background = Image.Load("background-small.jpg"))
+                using (var background = Image.Load<PixelColor>("background-small.jpg"))
                 {
                     background.Mutate(ctx => ctx.Resize(640, 480));
 
-                    using (var image = background.Clone())
-                    {
-                        var frame = image.Frames[0];
+                    // Pre-created bouncing ball frames.
+                    // ImageSharp is not that fast yet, and our goal is to benchmark webrtc and NvEnc, not ImageSharp.
 
+                    var ballRadius = background.Width / 20f;
+                    var ballPath = new EllipsePolygon(0, 0, ballRadius);
+                    var ballColor = new PixelColor(255, 255, 128);
+
+                    const int frameCount = 60;
+                    const int framesPerSecond = 60;
+
+                    var videoFrames = Enumerable
+                        .Range(0, frameCount)
+                        .Select(i =>
+                        {
+                            var image = background.Clone();
+
+                            var a = Math.PI * i / frameCount;
+                            var h = image.Height - ballRadius;
+                            var y = image.Height - (float)(Math.Abs(Math.Sin(a) * h));
+
+                            image.Mutate(ctx => ctx
+                                .Fill(GraphicsOptions.Default, ballColor, ballPath.Translate(image.Width/2f, y)));
+
+                            return image;
+                        })
+                        .ToArray();
+
+                    using (new CompositeDisposable(videoFrames.Cast<IDisposable>()))
+                    {
                         TimeSpan startTime = TimeSpan.Zero;
                         TimeSpan nextFrameTime = TimeSpan.Zero;
-                        TimeSpan frameDuration = TimeSpan.FromSeconds(1.0 / 60);
 
                         while (Thread.CurrentThread.IsAlive && !pc.IsDisposed)
                         {
@@ -63,30 +78,22 @@ namespace webrtc_dotnet_demo
 
                                 if (currentTime >= nextFrameTime)
                                 {
-                                    var pixels = MemoryMarshal.Cast<Rgba32, uint>(frame.GetPixelSpan());
+                                    var frameIndex = (currentTime - startTime).Ticks * framesPerSecond / TimeSpan.TicksPerSecond;
+                                    var imageFrame = videoFrames[frameIndex % frameCount].Frames[0];
+                                    var pixels = MemoryMarshal.Cast<PixelColor, uint>(imageFrame.GetPixelSpan());
 
                                     pc.SendVideoFrame(
                                         MemoryMarshal.GetReference(pixels),
-                                        frame.Width * 4,
-                                        frame.Width,
-                                        frame.Height,
-                                        PixelFormat.Rgba32);
+                                        imageFrame.Width * 4,
+                                        imageFrame.Width,
+                                        imageFrame.Height,
+                                        VideoFrameFormat.CpuTexture);
 
                                     // TODO: Use Math.DivRem and take remainder into account?
                                     // TODO: Should get feedback from connected peer about frame-rate and resolution.
-                                    var frameIndex = (currentTime.Ticks - startTime.Ticks) / frameDuration.Ticks;
-                                    nextFrameTime = startTime + (frameIndex + 1) * frameDuration;
-
-                                    image.Mutate(ctx => ctx
-                                        .DrawImage(drawImageOptions, background));
-
-                                    var y = image.Height - (float)(Math.Abs(Math.Sin((currentTime - startTime).TotalSeconds)) * image.Height);
-
-                                    image.Mutate(ctx => ctx
-                                        .DrawText(textGraphicOptions,
-                                            frameIndex.ToString("D6"),
-                                            font, Rgba32.Black,
-                                            new PointF(image.Width * 0.5f, y)));
+                                    nextFrameTime =
+                                        startTime + TimeSpan.FromTicks(
+                                            (frameIndex + 1) * TimeSpan.TicksPerSecond / framesPerSecond);
                                 }
                                 else
                                 {
@@ -118,14 +125,8 @@ namespace webrtc_dotnet_demo
             using (var pc = new ObservablePeerConnection("server", options => { }))
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice)))
             using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd)))
-            using (pc.SignalingStateStream.Subscribe(ss =>
             {
-                if (renderThread.ThreadState == ThreadState.Unstarted && ss == SignalingState.Stable)
-                {
-                    renderThread.Start(pc);
-                }
-            }))
-            {
+                renderThread.Start(pc);
 
                 var msgStream = Observable.Never<DataMessage>();
                 var iceStream = new Subject<IceCandidate>();

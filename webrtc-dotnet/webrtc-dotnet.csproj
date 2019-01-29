@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>webrtc_dotnet_standard</RootNamespace>
+    <RootNamespace>WonderMediaProductions.WebRtc</RootNamespace>
     <OutputPath>$(SolutionDir)out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
