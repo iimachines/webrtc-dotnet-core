@@ -4,7 +4,7 @@
 
 #pragma comment(lib, "nvpipe.lib")
 #pragma comment(lib, "cuda.lib")
-#pragma comment(lib, "cudart.lib")
+#pragma comment(lib, "cudart_static.lib")
 #pragma comment(lib, "nvcuvid.lib")
 
 #pragma comment(lib, "secur32.lib")
