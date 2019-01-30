@@ -45,17 +45,17 @@ namespace webrtc {
         }
     }
 
-    int32_t NvEncoderH264::InitEncode(const VideoCodec* inst, int32_t number_of_cores, size_t max_payload_size) {
+    int32_t NvEncoderH264::InitEncode(const VideoCodec* codec_settings, int32_t number_of_cores, size_t max_payload_size) {
         ReportInit();
-        if (!inst || inst->codecType != kVideoCodecH264) {
+        if (!codec_settings || codec_settings->codecType != kVideoCodecH264) {
             ReportError();
             return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
         }
-        if (inst->maxFramerate == 0) {
+        if (codec_settings->maxFramerate == 0) {
             ReportError();
             return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
         }
-        if (inst->width < 1 || inst->height < 1) {
+        if (codec_settings->width < 1 || codec_settings->height < 1) {
             ReportError();
             return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
         }
@@ -66,7 +66,7 @@ namespace webrtc {
             return release_ret;
         }
 
-        const int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
+        const int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*codec_settings);
         if (number_of_streams > 1)
         {
             // TODO: Support simulcast
@@ -74,7 +74,7 @@ namespace webrtc {
         }
 
         max_payload_size_ = max_payload_size;
-        codec_ = *inst;
+        codec_ = *codec_settings;
 
         // Code expects simulcastStream resolutions to be correct, make sure they are
         // filled even when there are no simulcast layers.
@@ -84,7 +84,7 @@ namespace webrtc {
         }
 
         // Temporal layers not supported.
-        if (inst->simulcastStream[0].numberOfTemporalLayers > 1) {
+        if (codec_settings->simulcastStream[0].numberOfTemporalLayers > 1) {
             Release();
             return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
         }
@@ -95,14 +95,8 @@ namespace webrtc {
         is_sending_ = false;
         key_frame_request_ = false;
 
-        // TODO: Figure out how these settings can be configured.
-        const auto target_bps = width * height * codec_.maxFramerate * 4 * 7 / 100;
-        const auto nvEncoder = NvPipe_CreateEncoder(NVPIPE_BGRA32, NVPIPE_H264, NVPIPE_LOSSY, target_bps, codec_.maxFramerate);
-
-        // HACK: Remove when we figure out how to deal with the bit-rates!
-        //codec_.maxBitrate = target_bps * 2 / 1000;
-        //codec_.minBitrate = target_bps / 2 / 1000;
-        //codec_.startBitrate = target_bps / 1000;
+        const auto nvEncoder = NvPipe_CreateEncoder(NVPIPE_BGRA32, NVPIPE_H264, NVPIPE_LOSSY, 
+            codec_.startBitrate * 1000, codec_.maxFramerate);
 
         if (!nvEncoder)
         {
@@ -175,8 +169,8 @@ namespace webrtc {
 
         codec_.maxFramerate = new_framerate;
 
-        // TODO: Figure out how to pass bitrate
-        const auto target_bps = encoded_image_._encodedWidth * encoded_image_._encodedHeight * new_framerate * 4 * 7 / 100;
+        const auto target_bps = bitrate.get_sum_bps();
+
         if (target_bps) {
             // Reconfigure encoder
             SetStreamState(true);

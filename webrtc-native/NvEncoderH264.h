@@ -5,20 +5,6 @@ namespace webrtc {
 
     class NvEncoderH264 final : public VideoEncoder {
     public:
-        struct LayerConfig {
-            int simulcast_idx = 0;
-            int width = -1;
-            int height = -1;
-            bool sending = true;
-            bool key_frame_request = false;
-            float max_frame_rate = 0;
-            uint32_t target_bps = 0;
-            bool frame_dropping_on = false;
-            int key_frame_interval = 0;
-
-            void SetStreamState(bool send_stream);
-        };
-
         static bool IsAvailable();
 
         explicit NvEncoderH264();
@@ -33,7 +19,7 @@ namespace webrtc {
         // - maxFramerate
         // - width
         // - height
-        int32_t InitEncode(const VideoCodec* inst,
+        int32_t InitEncode(const VideoCodec* codec_settings,
             int32_t number_of_cores,
             size_t max_payload_size) override;
         int32_t Release() override;

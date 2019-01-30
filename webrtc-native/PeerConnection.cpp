@@ -431,22 +431,27 @@ void PeerConnection::OnSignalingChange(webrtc::PeerConnectionInterface::Signalin
         OnSignalingStateChanged(new_state);
 }
 
-void PeerConnection::OnAddTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+void PeerConnection::OnAddTrack(
+    rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver, 
     const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams)
 {
     RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id();
 
 #ifdef HAS_REMOTE_VIDEO_OBSERVER
-    remote_stream_ = stream;
-    if (remote_video_observer_ && !remote_stream_->GetVideoTracks().empty())
+    if (remote_video_observer_)
     {
-        rtc::VideoSinkWants wants = rtc::VideoSinkWants();
-        remote_stream_->GetVideoTracks()[0]->AddOrUpdateSink(remote_video_observer_.get(), wants);
-        RTC_LOG(INFO) << __FUNCTION__ << " remote stream wants black frames: " << wants.black_frames << ", rotation applied" << wants.rotation_applied << ", max FPS " << wants.max_framerate_fps;
+        auto track = receiver->track();
+        auto video_track = dynamic_cast<webrtc::VideoTrackInterface*>(track.get());
+
+        if (video_track)
+        {
+            video_track->AddOrUpdateSink(remote_video_observer_.get(), rtc::VideoSinkWants());
+        }
     }
-#endif
 
     SetAudioControl();
+#endif
+
 }
 
 void PeerConnection::OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver)

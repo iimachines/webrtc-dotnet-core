@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace WonderMediaProductions.WebRtc
@@ -6,6 +7,24 @@ namespace WonderMediaProductions.WebRtc
     public class Native
     {
         internal const string DllPath = "webrtc-native";
+
+        public static void Check(bool result, [CallerMemberName] string caller = null)
+        {
+            if (!result)
+            {
+                throw new Exception($"{caller} failed");
+            }
+        }
+
+        public static int Check(int id, [CallerMemberName] string caller = null)
+        {
+            if (id == 0)
+            {
+                throw new Exception($"{caller} failed");
+            }
+
+            return id;
+        }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void LocalDataChannelReadyCallback(string label);
@@ -53,70 +72,70 @@ namespace WonderMediaProductions.WebRtc
             bool isDtlsSrtpEnabled);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool ClosePeerConnection(IntPtr nativePtr);
+        internal static extern bool ClosePeerConnection(IntPtr connection);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool AddStream(IntPtr nativePtr, bool audio, bool video);
+        internal static extern int AddVideoTrack(IntPtr connection, string label, int minBitsPerSecond, int maxBitsPerSeconds, int maxFramesPerSecond);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool AddDataChannel(IntPtr nativePtr, string label, bool isOrdered, bool isReliable);
+        internal static extern bool AddDataChannel(IntPtr connection, string label, bool isOrdered, bool isReliable);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool CreateOffer(IntPtr nativePtr);
+        internal static extern bool CreateOffer(IntPtr connection);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool CreateAnswer(IntPtr nativePtr);
+        internal static extern bool CreateAnswer(IntPtr connection);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SendData(IntPtr nativePtr, string label, string data);
+        internal static extern bool SendData(IntPtr connection, string label, string data);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SendVideoFrame(IntPtr nativePtr, in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat);
+        internal static extern bool SendVideoFrame(IntPtr connection, int trackId, in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SetAudioControl(IntPtr nativePtr, bool isMute, bool isRecord);
+        internal static extern bool SetAudioControl(IntPtr connection, bool isMute, bool isRecord);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SetRemoteDescription(IntPtr nativePtr, string type, string sdp);
+        internal static extern bool SetRemoteDescription(IntPtr connection, string type, string sdp);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool AddIceCandidate(IntPtr nativePtr, string sdp, int sdpMlineindex, string sdpMid);
+        internal static extern bool AddIceCandidate(IntPtr connection, string sdp, int sdpMlineindex, string sdpMid);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterOnLocalDataChannelReady(
-            IntPtr nativePtr, LocalDataChannelReadyCallback callback);
+            IntPtr connection, LocalDataChannelReadyCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterOnDataFromDataChannelReady(
-            IntPtr nativePtr, DataAvailableCallback callback);
+            IntPtr connection, DataAvailableCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool RegisterOnFailure(IntPtr nativePtr,
+        internal static extern bool RegisterOnFailure(IntPtr connection,
             FailureMessageCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool RegisterOnAudioBusReady(IntPtr nativePtr,
+        internal static extern bool RegisterOnAudioBusReady(IntPtr connection,
             AudioBusReadyCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool RegisterOnLocalI420FrameReady(IntPtr nativePtr,
+        internal static extern bool RegisterOnLocalI420FrameReady(IntPtr connection,
             I420FrameReadyCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool RegisterOnRemoteI420FrameReady(IntPtr nativePtr,
+        internal static extern bool RegisterOnRemoteI420FrameReady(IntPtr connection,
             I420FrameReadyCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool RegisterOnLocalSdpReadyToSend(IntPtr nativePtr,
+        internal static extern bool RegisterOnLocalSdpReadyToSend(IntPtr connection,
             LocalSdpReadyToSendCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterOnIceCandidateReadyToSend(
-            IntPtr nativePtr, IceCandidateReadyToSendCallback callback);
+            IntPtr connection, IceCandidateReadyToSendCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterSignalingStateChanged(
-            IntPtr nativePtr, SignalingStateChangedCallback callback);
+            IntPtr connection, SignalingStateChangedCallback callback);
 
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]

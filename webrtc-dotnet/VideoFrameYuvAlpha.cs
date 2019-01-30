@@ -6,6 +6,7 @@ namespace WonderMediaProductions.WebRtc
     {
         public const long TicksPerUs = TimeSpan.TicksPerMillisecond / 1000;
 
+        // TODO: Convert IntPtr to Memory as soon as this is part of .NET Standard
         public readonly IntPtr DataY;
         public readonly IntPtr DataU;
         public readonly IntPtr DataV;

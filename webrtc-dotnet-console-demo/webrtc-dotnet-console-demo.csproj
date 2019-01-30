@@ -15,7 +15,7 @@
   <ItemGroup>
     <Content Include="$(SolutionDir)out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(SolutionDir)out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="background-small.jpg" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="background-small.jpg" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta0005" />
     <PackageReference Include="System.Reactive" Version="4.1.2" />
     <PackageReference Include="System.Reactive.Core" Version="4.1.2" />
     <PackageReference Include="System.Reactive.Interfaces" Version="4.1.2" />

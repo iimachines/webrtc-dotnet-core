@@ -2,20 +2,20 @@
 
 namespace WonderMediaProductions.WebRtc
 {
-    public delegate void AudioBusReadyDelegate(SimplePeerConnection pc, IntPtr data, int bitsPerSample,
+    public delegate void AudioBusReadyDelegate(PeerConnection pc, IntPtr data, int bitsPerSample,
         int sampleRate, int numberOfChannels, int numberOfFrames);
 
-    public delegate void DataAvailableDelegate(SimplePeerConnection pc, DataMessage msg);
+    public delegate void DataAvailableDelegate(PeerConnection pc, DataMessage msg);
 
-    public delegate void FailureMessageDelegate(SimplePeerConnection pc, string msg);
+    public delegate void FailureMessageDelegate(PeerConnection pc, string msg);
 
-    public delegate void I420FrameReadyDelegate(SimplePeerConnection pc, VideoFrameYuvAlpha frame);
+    public delegate void I420FrameReadyDelegate(PeerConnection pc, VideoFrameYuvAlpha frame);
 
-    public delegate void IceCandidateReadyToSendDelegate(SimplePeerConnection pc, IceCandidate ice);
+    public delegate void IceCandidateReadyToSendDelegate(PeerConnection pc, IceCandidate ice);
 
-    public delegate void LocalDataChannelReadyDelegate(SimplePeerConnection pc, string label);
+    public delegate void LocalDataChannelReadyDelegate(PeerConnection pc, string label);
 
-    public delegate void LocalSdpReadyToSendDelegate(SimplePeerConnection pc, SessionDescription sd);
+    public delegate void LocalSdpReadyToSendDelegate(PeerConnection pc, SessionDescription sd);
 
-    public delegate void RegisterSignalingStateChangedDelegate(SimplePeerConnection pc, SignalingState state);
+    public delegate void RegisterSignalingStateChangedDelegate(PeerConnection pc, SignalingState state);
 }

@@ -16,9 +16,6 @@
     <ClInclude Include="pch.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="SimplePeerConnection.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="VideoCameraCapturer.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -43,6 +40,9 @@
     <ClInclude Include="macros.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="PeerConnection.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DummySetSessionDescriptionObserver.cpp">
@@ -55,9 +55,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="SimplePeerConnection.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="VideoCameraCapturer.cpp">
@@ -79,6 +76,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="EncoderFactory.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="PeerConnection.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,11 +1,12 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace WonderMediaProductions.WebRtc
 {
-    public class SimplePeerConnection : Disposable
+    public class PeerConnection : Disposable
     {
+        private static int g_LastId;
+
         // ReSharper disable NotAccessedField.Local
         private readonly Native.AudioBusReadyCallback _audioBusReadyDelegate;
         private readonly Native.DataAvailableCallback _dataAvailableDelegate;
@@ -25,7 +26,7 @@ namespace WonderMediaProductions.WebRtc
         /// </summary>
         public static void Configure(GlobalOptions options)
         {
-            Check(Native.Configure(options.UseSignalingThread, options.UseWorkerThread, options.ForceSoftwareVideoEncoder));
+            Native.Check(Native.Configure(options.UseSignalingThread, options.UseWorkerThread, options.ForceSoftwareVideoEncoder));
         }
 
         public static void Configure(Action<GlobalOptions> configure)
@@ -35,8 +36,10 @@ namespace WonderMediaProductions.WebRtc
 
         public static bool SupportsHardwareTextureEncoding => Native.CanEncodeHardwareTextures();
 
-        public SimplePeerConnection(PeerConnectionOptions options)
+        public PeerConnection(PeerConnectionOptions options)
         {
+            Name = options.Name ?? $"PC#${Interlocked.Increment(ref g_LastId)}";
+
             _nativePtr = Native.CreatePeerConnection(
                 options.TurnServers.ToArray(),
                 options.TurnServers.Count,
@@ -48,7 +51,7 @@ namespace WonderMediaProductions.WebRtc
                 options.CanReceiveVideo,
                 options.IsDtlsSrtpEnabled);
 
-            Check(_nativePtr != IntPtr.Zero);
+            Native.Check(_nativePtr != IntPtr.Zero);
 
             RegisterCallback(out _localDataChannelReadyDelegate, Native.RegisterOnLocalDataChannelReady, RaiseLocalDataChannelReady);
             RegisterCallback(out _dataAvailableDelegate, Native.RegisterOnDataFromDataChannelReady, RaiseDataAvailable);
@@ -61,13 +64,15 @@ namespace WonderMediaProductions.WebRtc
             RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseRegisterSignalingStateChange);
         }
 
-        public SimplePeerConnection(Action<PeerConnectionOptions> configure) : this(configure.Options())
+        public PeerConnection(Action<PeerConnectionOptions> configure) : this(configure.Options())
         {
         }
 
+        public string Name { get; }
+
         public override string ToString()
         {
-            return _nativePtr.ToPcId();
+            return Name;
         }
 
         public IntPtr NativePtr => _nativePtr;
@@ -102,71 +107,73 @@ namespace WonderMediaProductions.WebRtc
             Native.ClosePeerConnection(ptr);
         }
 
-        public void AddStream(StreamTrack tracks)
+        public VideoTrack AddVideoTrack(Action<VideoOptions> configure)
         {
-            Check(Native.AddStream(_nativePtr, tracks.HasFlag(StreamTrack.Audio), tracks.HasFlag(StreamTrack.Video)));
+            var options = configure.Options();
+            var id = Native.AddVideoTrack(_nativePtr, options.Label, options.MinBitsPerSecond, options.MaxBitsPerSecond, options.MaxFramesPerSecond);
+            return new VideoTrack(this, Native.Check(id));
         }
 
         public void AddDataChannel(string label, DataChannelFlag flag)
         {
-            Check(Native.AddDataChannel(_nativePtr, label,
+            Native.Check(Native.AddDataChannel(_nativePtr, label,
                 flag.HasFlag(DataChannelFlag.Ordered), flag.HasFlag(DataChannelFlag.Reliable)));
         }
 
         public void CreateOffer()
         {
-            Check(Native.CreateOffer(_nativePtr));
+            Native.Check(Native.CreateOffer(_nativePtr));
         }
 
         public void CreateAnswer()
         {
-            Check(Native.CreateAnswer(_nativePtr));
+            Native.Check(Native.CreateAnswer(_nativePtr));
         }
 
         public void SendData(string label, string data)
         {
-            Check(Native.SendData(_nativePtr, label, data));
+            Native.Check(Native.SendData(_nativePtr, label, data));
         }
 
         public void SendData(DataMessage msg)
         {
-            Check(Native.SendData(_nativePtr, msg.Label, msg.Content));
+            Native.Check(Native.SendData(_nativePtr, msg.Label, msg.Content));
         }
 
-        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
+        internal void SendVideoFrame(int trackId, in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
         {
-            Check(Native.SendVideoFrame(_nativePtr, rgbaPixels, stride, width, height, videoFrameFormat));
+            Native.Check(Native.SendVideoFrame(_nativePtr, trackId, rgbaPixels, stride, width, height, videoFrameFormat));
         }
 
         public void SetAudioControl(bool isMute, bool isRecord)
         {
-            Check(Native.SetAudioControl(_nativePtr, isMute, isRecord));
+            Native.Check(Native.SetAudioControl(_nativePtr, isMute, isRecord));
         }
 
         public void SetRemoteDescription(string type, string sdp)
         {
-            Check(Native.SetRemoteDescription(_nativePtr, type, sdp));
+            Native.Check(Native.SetRemoteDescription(_nativePtr, type, sdp));
         }
 
         public void SetRemoteDescription(SessionDescription sd)
         {
-            Check(Native.SetRemoteDescription(_nativePtr, sd.Type, sd.Sdp));
+            Native.Check(Native.SetRemoteDescription(_nativePtr, sd.Type, sd.Sdp));
         }
 
         public void AddIceCandidate(string candidate, int sdpMlineindex, string sdpMid)
         {
-            Check(Native.AddIceCandidate(_nativePtr, candidate, sdpMlineindex, sdpMid));
+            Native.Check(Native.AddIceCandidate(_nativePtr, candidate, sdpMlineindex, sdpMid));
         }
 
         public void AddIceCandidate(IceCandidate ice)
         {
-            Check(Native.AddIceCandidate(_nativePtr, ice.Candidate, ice.SdpMlineIndex, ice.SdpMid));
+            Native.Check(Native.AddIceCandidate(_nativePtr, ice.Candidate, ice.SdpMlineIndex, ice.SdpMid));
         }
 
         private void RegisterCallback<T>(out T delegateField, Func<IntPtr, T, bool> register, T raiseMethod) where T : Delegate
         {
             delegateField = raiseMethod;
-            Check(register(_nativePtr, delegateField));
+            Native.Check(register(_nativePtr, delegateField));
         }
 
         private void RaiseLocalDataChannelReady(string label)
@@ -234,7 +241,7 @@ namespace WonderMediaProductions.WebRtc
         //    {
         //        foreach (var ic in iceCandidateQueue)
         //        {
-        //            Check(AddIceCandidate(_nativePtr, ic.Candidate, ic.SdpMlineIndex, ic.SdpMid));
+        //            Native.Check(AddIceCandidate(_nativePtr, ic.Candidate, ic.SdpMlineIndex, ic.SdpMid));
         //        }
         //    }
         //}
@@ -248,19 +255,5 @@ namespace WonderMediaProductions.WebRtc
         public event LocalSdpReadyToSendDelegate LocalSdpReadyToSend;
         public event IceCandidateReadyToSendDelegate IceCandidateReadyToSend;
         public event RegisterSignalingStateChangedDelegate SignalingStateChanged;
-
-        private static void Check(bool result, [CallerMemberName] string caller = null)
-        {
-            if (!result)
-            {
-                throw new Exception($"{caller} failed");
-            }
-        }
-
-        #region Interop
-
-        // Video callbacks.
-
-        #endregion
     }
 }

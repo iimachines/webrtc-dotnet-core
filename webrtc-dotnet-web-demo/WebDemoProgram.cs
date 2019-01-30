@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace webrtc_dotnet_demo
 {
-    public class Program
+    public class WebDemoProgram
     {
         public static void Main(string[] args)
         {

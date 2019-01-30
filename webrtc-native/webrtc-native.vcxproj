@@ -127,7 +127,7 @@
     <ClInclude Include="NativeInterface.h" />
     <ClInclude Include="EncoderFactory.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="SimplePeerConnection.h" />
+    <ClInclude Include="PeerConnection.h" />
     <ClInclude Include="TestVideoCapturer.h" />
     <ClInclude Include="VideoCameraCapturer.h" />
     <ClInclude Include="VideoObserver.h" />
@@ -144,7 +144,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="SimplePeerConnection.cpp" />
+    <ClCompile Include="PeerConnection.cpp" />
     <ClCompile Include="TestVideoCapturer.cpp" />
     <ClCompile Include="VideoCameraCapturer.cpp" />
     <ClCompile Include="VideoObserver.cpp" />

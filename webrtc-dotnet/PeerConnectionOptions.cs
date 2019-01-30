@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace WonderMediaProductions.WebRtc
 {
     public class PeerConnectionOptions
     {
+        public string Name;
         public List<string> TurnServers  = new List<string>();
         public List<string> StunServers  = new List<string>();
         public bool CanReceiveAudio;

@@ -5,7 +5,7 @@
 #include "InjectableVideoTrackSource.h"
 
 #undef HAS_LOCAL_VIDEO_OBSERVER
-#undef HAS_REMOTE_VIDEO_OBSERVER
+#define HAS_REMOTE_VIDEO_OBSERVER
 
 class PeerConnection final
     : public webrtc::PeerConnectionObserver

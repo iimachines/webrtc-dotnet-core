@@ -3,19 +3,15 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.WebSockets;
-using System.Numerics;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using SixLabors.Fonts;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.Primitives;
 using SixLabors.Shapes;
 using WonderMediaProductions.WebRtc;
 using PixelColor = SixLabors.ImageSharp.PixelFormats.Bgra32;
@@ -24,15 +20,20 @@ namespace webrtc_dotnet_demo
 {
     public static class RtcServer
     {
+        private const int VideoFrameWidth = 1920;
+        private const int VideoFrameHeight = 1080;
+        private const int VideoFrameRate = 60;
+
         private static void VideoRenderer(object parameter)
         {
             try
             {
-                var pc = (ObservablePeerConnection)parameter;
+                var vt = (VideoTrack)parameter;
+                var pc = (ObservablePeerConnection)vt.PeerConnection;
 
                 using (var background = Image.Load<PixelColor>("background-small.jpg"))
                 {
-                    background.Mutate(ctx => ctx.Resize(320, 240));
+                    background.Mutate(ctx => ctx.Resize(VideoFrameWidth, VideoFrameHeight));
 
                     // Pre-created bouncing ball frames.
                     // ImageSharp is not that fast yet, and our goal is to benchmark webrtc and NvEnc, not ImageSharp.
@@ -55,7 +56,7 @@ namespace webrtc_dotnet_demo
                             var y = image.Height - (float)(Math.Abs(Math.Sin(a) * h));
 
                             image.Mutate(ctx => ctx
-                                .Fill(GraphicsOptions.Default, ballColor, ballPath.Translate(image.Width/2f, y)));
+                                .Fill(GraphicsOptions.Default, ballColor, ballPath.Translate(image.Width / 2f, y)));
 
                             return image;
                         })
@@ -74,7 +75,7 @@ namespace webrtc_dotnet_demo
                         {
                             if (pc.SignalingState == SignalingState.Stable)
                             {
-                                var currentTime = SimplePeerConnection.GetRealtimeClockTimeInMicroseconds();
+                                var currentTime = PeerConnection.GetRealtimeClockTimeInMicroseconds();
 
                                 if (startTime == TimeSpan.Zero)
                                 {
@@ -84,7 +85,7 @@ namespace webrtc_dotnet_demo
 
                                 if (currentTime >= nextFrameTime)
                                 {
-                                    Console.Write($"{sw.ElapsedMilliseconds:D06}\t");
+                                    // Console.Write($"{sw.ElapsedMilliseconds:D06}\t");
                                     sw.Restart();
 
                                     var frameIndex = (currentTime - startTime).Ticks * framesPerSecond / TimeSpan.TicksPerSecond;
@@ -100,7 +101,7 @@ namespace webrtc_dotnet_demo
                                     var imageFrame = videoFrames[frameIndex % frameCount].Frames[0];
                                     var pixels = MemoryMarshal.Cast<PixelColor, uint>(imageFrame.GetPixelSpan());
 
-                                    pc.SendVideoFrame(
+                                    vt.SendVideoFrame(
                                         MemoryMarshal.GetReference(pixels),
                                         imageFrame.Width * 4,
                                         imageFrame.Width,
@@ -137,34 +138,37 @@ namespace webrtc_dotnet_demo
             }
         }
 
-        public static async Task Run(WebSocket ws)
+        public static async Task Run(WebSocket ws, CancellationToken cancellation)
         {
-            var receiveBuffer = new byte[1024 * 4];
             var renderThread = new Thread(VideoRenderer);
 
-            SimplePeerConnection.Configure(options => options.IsSingleThreaded = true);
+            PeerConnection.Configure(options => options.IsSingleThreaded = true);
 
-            using (var pc = new ObservablePeerConnection("server", options => { }))
-            using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice)))
-            using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd)))
+            using (var pc = new ObservablePeerConnection(options =>
             {
-                renderThread.Start(pc);
-
+                options.Name = "WebRTC Server";
+            }))
+            using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice, cancellation)))
+            using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd, cancellation)))
+            {
                 var msgStream = Observable.Never<DataMessage>();
                 var iceStream = new Subject<IceCandidate>();
                 var sdpStream = new Subject<SessionDescription>();
 
                 pc.Connect(msgStream, sdpStream, iceStream);
 
+                var vt = pc.AddVideoTrack(options => options.OptimizeFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate));
+                renderThread.Start(vt);
+
                 pc.AddDataChannel("data", DataChannelFlag.None);
-                pc.AddStream(StreamTrack.Video);
 
                 pc.CreateOffer();
 
+                var reader = new WebSocketReader(ws, cancellation);
 
-                while (!ws.CloseStatus.HasValue)
+                while (reader.CanRead && !cancellation.IsCancellationRequested)
                 {
-                    var message = await ws.ReceiveJsonAsync(default, receiveBuffer);
+                    var message = await reader.ReadJsonAsync();
                     if (message == null)
                         break;
 
@@ -189,7 +193,7 @@ namespace webrtc_dotnet_demo
                     }
                 }
 
-                Console.WriteLine("Websocket was closed by client");
+                Console.WriteLine(ws.CloseStatus.HasValue ? "Websocket was closed by client" : "Application is stopping...");
 
                 renderThread.Interrupt();
                 renderThread.Join();

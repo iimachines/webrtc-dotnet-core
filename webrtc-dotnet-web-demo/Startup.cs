@@ -21,7 +21,7 @@ namespace webrtc_dotnet_demo
         {
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApplicationLifetime lifetime)
         {
             loggerFactory.AddConsole(LogLevel.Debug);
             loggerFactory.AddDebug(LogLevel.Debug);
@@ -30,6 +30,9 @@ namespace webrtc_dotnet_demo
             app.UseDeveloperExceptionPage();
             app.UseWebSockets();
             app.UseFileServer();
+
+            lifetime.ApplicationStopping.Register(() => Console.WriteLine("Application stopping"));
+            lifetime.ApplicationStopped.Register(() => Console.WriteLine("Application stopped"));
 
             app.Use(async (context, next) =>
             {
@@ -40,7 +43,7 @@ namespace webrtc_dotnet_demo
                         try
                         {
                             WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                            await RtcServer.Run(webSocket);
+                            await RtcServer.Run(webSocket, lifetime.ApplicationStopping);
                         }
                         catch (Exception ex)
                         {

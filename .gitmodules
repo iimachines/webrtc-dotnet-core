@@ -1,6 +1,12 @@
 [submodule "dependencies/webrtc-build"]
 	path = dependencies/webrtc-build
 	url = https://github.com/WonderMediaProductions/webrtc-build.git
+	branch = master
 [submodule "dependencies/nvpipe-build"]
 	path = dependencies/nvpipe-build
 	url = https://github.com/WonderMediaProductions/nvpipe-build.git
+	branch = master
+[submodule "dependencies/NvPipe"]
+	path = dependencies/NvPipe
+	url = https://github.com/WonderMediaProductions/NvPipe.git
+	branch = master

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "SimplePeerConnection.h"
+#include "PeerConnection.h"
 #include "NvEncoderH264.h"
 
 #if defined(WEBRTC_WIN)
@@ -70,10 +70,10 @@ extern "C"
     WEBRTC_PLUGIN_API bool Configure(bool useSignalingThread, bool useWorkerThread, bool forceSoftwareVideoEncoder)
     {
         initializeModule();
-        return SimplePeerConnection::Configure(useSignalingThread, useWorkerThread, forceSoftwareVideoEncoder);
+        return PeerConnection::Configure(useSignalingThread, useWorkerThread, forceSoftwareVideoEncoder);
     }
 
-    WEBRTC_PLUGIN_API SimplePeerConnection* CreatePeerConnection(
+    WEBRTC_PLUGIN_API PeerConnection* CreatePeerConnection(
         const char** turn_url_array,
         const int turn_url_count,
         const char** stun_url_array,
@@ -86,7 +86,7 @@ extern "C"
     {
         initializeModule();
 
-        auto connection = new SimplePeerConnection();
+        auto connection = new PeerConnection();
         if (connection->InitializePeerConnection(
             turn_url_array, turn_url_count,
             stun_url_array, stun_url_count,
@@ -101,107 +101,107 @@ extern "C"
         return nullptr;
     }
 
-    WEBRTC_PLUGIN_API void ClosePeerConnection(SimplePeerConnection* connection)
+    WEBRTC_PLUGIN_API void ClosePeerConnection(PeerConnection* connection)
     {
         delete connection;
     }
 
-    WEBRTC_PLUGIN_API bool AddStream(SimplePeerConnection* connection, bool audio, bool video)
+    WEBRTC_PLUGIN_API int AddVideoTrack(PeerConnection* connection, const char* label, int min_bps, int max_bps, int max_fps)
     {
-        return connection->AddStreams(audio, video);
+        return connection->AddVideoTrack(label, min_bps, max_bps, max_fps);
     }
 
-    WEBRTC_PLUGIN_API bool AddDataChannel(SimplePeerConnection* connection, const char* label, bool is_ordered, bool is_reliable)
+    WEBRTC_PLUGIN_API bool AddDataChannel(PeerConnection* connection, const char* label, bool is_ordered, bool is_reliable)
     {
         return connection->CreateDataChannel(label, is_ordered, is_reliable);
     }
 
-    WEBRTC_PLUGIN_API bool CreateOffer(SimplePeerConnection* connection)
+    WEBRTC_PLUGIN_API bool CreateOffer(PeerConnection* connection)
     {
         return connection->CreateOffer();
     }
 
-    WEBRTC_PLUGIN_API bool CreateAnswer(SimplePeerConnection* connection)
+    WEBRTC_PLUGIN_API bool CreateAnswer(PeerConnection* connection)
     {
         return connection->CreateAnswer();
     }
 
-    WEBRTC_PLUGIN_API bool SendData(SimplePeerConnection* connection, const char* label, const char* data)
+    WEBRTC_PLUGIN_API bool SendData(PeerConnection* connection, const char* label, const char* data)
     {
         return connection->SendData(label, data);
     }
     
-    WEBRTC_PLUGIN_API bool SendVideoFrame(SimplePeerConnection* connection, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format)
+    WEBRTC_PLUGIN_API bool SendVideoFrame(PeerConnection* connection, int trackId, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format)
     {
-        return connection->SendVideoFrame(pixels, stride, width, height, format);
+        return connection->SendVideoFrame(trackId, pixels, stride, width, height, format);
     }
 
-    WEBRTC_PLUGIN_API bool SetAudioControl(SimplePeerConnection* connection, bool is_mute, bool is_record)
+    WEBRTC_PLUGIN_API bool SetAudioControl(PeerConnection* connection, bool is_mute, bool is_record)
     {
         return connection->SetAudioControl(is_mute, is_record);
     }
 
-    WEBRTC_PLUGIN_API bool SetRemoteDescription(SimplePeerConnection* connection, const char* type, const char* sdp)
+    WEBRTC_PLUGIN_API bool SetRemoteDescription(PeerConnection* connection, const char* type, const char* sdp)
     {
         return connection->SetRemoteDescription(type, sdp);
     }
 
-    WEBRTC_PLUGIN_API bool AddIceCandidate(SimplePeerConnection* connection, const char* candidate, const int sdp_mlineindex,
+    WEBRTC_PLUGIN_API bool AddIceCandidate(PeerConnection* connection, const char* candidate, const int sdp_mlineindex,
         const char* sdp_mid)
     {
         return connection->AddIceCandidate(candidate, sdp_mlineindex, sdp_mid);
     }
 
     // Register callback functions.
-    WEBRTC_PLUGIN_API bool RegisterOnLocalI420FrameReady(SimplePeerConnection* connection, I420FrameReadyCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterOnLocalI420FrameReady(PeerConnection* connection, I420FrameReadyCallback callback)
     {
         connection->RegisterOnLocalI420FrameReady(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterOnRemoteI420FrameReady(SimplePeerConnection* connection, I420FrameReadyCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterOnRemoteI420FrameReady(PeerConnection* connection, I420FrameReadyCallback callback)
     {
         connection->RegisterOnRemoteI420FrameReady(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterOnLocalDataChannelReady(SimplePeerConnection* connection, LocalDataChannelReadyCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterOnLocalDataChannelReady(PeerConnection* connection, LocalDataChannelReadyCallback callback)
     {
         connection->RegisterOnLocalDataChannelReady(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterOnDataFromDataChannelReady(SimplePeerConnection* connection, DataAvailableCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterOnDataFromDataChannelReady(PeerConnection* connection, DataAvailableCallback callback)
     {
         connection->RegisterOnDataFromDataChannelReady(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterOnFailure(SimplePeerConnection* connection, FailureCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterOnFailure(PeerConnection* connection, FailureCallback callback)
     {
         connection->RegisterOnFailure(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterOnAudioBusReady(SimplePeerConnection* connection, AudioBusReadyCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterOnAudioBusReady(PeerConnection* connection, AudioBusReadyCallback callback)
     {
         connection->RegisterOnAudioBusReady(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterOnLocalSdpReadyToSend(SimplePeerConnection* connection, LocalSdpReadyToSendCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterOnLocalSdpReadyToSend(PeerConnection* connection, LocalSdpReadyToSendCallback callback)
     {
         connection->RegisterOnLocalSdpReadyToSend(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterOnIceCandidateReadyToSend(SimplePeerConnection* connection, IceCandidateReadyToSendCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterOnIceCandidateReadyToSend(PeerConnection* connection, IceCandidateReadyToSendCallback callback)
     {
         connection->RegisterOnIceCandidateReadyToSend(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterSignalingStateChanged(SimplePeerConnection* connection, SignalingStateChangedCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterSignalingStateChanged(PeerConnection* connection, SignalingStateChangedCallback callback)
     {
         connection->RegisterSignalingStateChanged(callback);
         return true;

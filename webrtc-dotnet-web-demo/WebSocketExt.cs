@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
@@ -36,40 +38,12 @@ namespace webrtc_dotnet_demo
 
         public static Task SendJsonAsync(this WebSocket socket, string action, object payload, CancellationToken cancellation = default)
         {
-            var message = new { action, payload };
+            var message = new {action, payload};
             var data = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(message, serializerSettings));
             lock (socket)
             {
                 return socket.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Text, true, cancellation);
             }
-        }
-
-        public static Task<JObject> ReceiveJsonAsync(this WebSocket webSocket, CancellationToken cancellation = default, byte[] receiveBuffer = null)
-        {
-            Task<WebSocketReceiveResult> task;
-            lock (webSocket)
-            {
-                task = webSocket.ReceiveAsync(
-                    new ArraySegment<byte>(receiveBuffer), cancellation);
-            }
-
-            return task.ContinueWith(t =>
-            {
-                var result = t.Result;
-
-                Debug.Assert(result.EndOfMessage);
-
-                if (result.MessageType == WebSocketMessageType.Close)
-                    return null;
-
-                Debug.Assert(result.MessageType == WebSocketMessageType.Text);
-
-                var message = Encoding.UTF8.GetString(receiveBuffer, 0, result.Count);
-
-                return JObject.Parse(message);
-
-
-            }, cancellation);
         }
     }
 }

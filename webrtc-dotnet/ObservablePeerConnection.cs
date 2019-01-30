@@ -6,13 +6,8 @@ using System.Reactive.Subjects;
 
 namespace WonderMediaProductions.WebRtc
 {
-
-    public class ObservablePeerConnection : Disposable
+    public class ObservablePeerConnection : PeerConnection
     {
-        private readonly PeerConnectionOptions _options;
-
-        private SimplePeerConnection _connection;
-
         private readonly CompositeDisposable _disposables = new CompositeDisposable();
         private readonly Subject<SessionDescription> _localSessionDescriptionStream = new Subject<SessionDescription>();
         private readonly Subject<IceCandidate> _localIceCandidateStream = new Subject<IceCandidate>();
@@ -28,18 +23,14 @@ namespace WonderMediaProductions.WebRtc
         public IObservable<DataMessage> ReceivedDataStream => _receivedDataStream;
         public IObservable<VideoFrameYuvAlpha> ReceivedVideoStream => _receivedVideoStream;
 
-        public ObservablePeerConnection(string name, PeerConnectionOptions options)
-        {
-            Name = name;
-            _options = options;
-        }
-
-        public ObservablePeerConnection(string name, Action<PeerConnectionOptions> configure)
-            : this(name, configure.Options())
+        public ObservablePeerConnection(PeerConnectionOptions options) : base(options)
         {
         }
 
-        public string Name { get; }
+        public ObservablePeerConnection(Action<PeerConnectionOptions> configure)
+            : this(configure.Options())
+        {
+        }
 
         public SignalingState SignalingState => _signalingStateStream.Value;
 
@@ -54,58 +45,53 @@ namespace WonderMediaProductions.WebRtc
             _disposables.Add(_receivedDataStream);
             _disposables.Add(_receivedVideoStream);
 
-            DebugLog($"Creating {Name}...");
-            _connection = new SimplePeerConnection(_options);
-
-            DebugLog($"{Name} has id {_connection}");
-
-            _connection.LocalDataChannelReady += (pc, label) =>
+            LocalDataChannelReady += (pc, label) =>
             {
                 DebugLog($"{Name} is ready to send data on channel '{label}'");
-                _disposables.Add(outgoingMessages.Where(data => data.Label == label).Subscribe(_connection.SendData));
+                _disposables.Add(outgoingMessages.Where(data => data.Label == label).Subscribe(SendData));
             };
 
-            _connection.DataAvailable += (pc, msg) =>
+            DataAvailable += (pc, msg) =>
             {
                 DebugLog($"{Name} received data: {msg}");
                 _receivedDataStream.OnNext(msg);
             };
 
-            _connection.LocalSdpReadyToSend += (pc, sd) =>
+            LocalSdpReadyToSend += (pc, sd) =>
             {
                 DebugLog($"{Name} received local session description: {sd}");
                 _localSessionDescriptionStream.OnNext(sd);
             };
 
-            _connection.IceCandidateReadyToSend += (pc, ice) =>
+            IceCandidateReadyToSend += (pc, ice) =>
             {
                 DebugLog($"{Name} received local ice candidate: {ice}");
                 _localIceCandidateStream.OnNext(ice);
             };
 
-            _connection.RemoteVideoFrameReady += (pc, frame) => { _receivedVideoStream.OnNext(frame); };
+            RemoteVideoFrameReady += (pc, frame) => { _receivedVideoStream.OnNext(frame); };
 
-            _connection.SignalingStateChanged += (pc, state) =>
+            SignalingStateChanged += (pc, state) =>
             {
                 DebugLog($"{Name} signaling state changed: {state}");
                 _signalingStateStream.OnNext(state);
 
                 if (SignalingState == SignalingState.HaveRemoteOffer)
                 {
-                    _connection.CreateAnswer();
+                    CreateAnswer();
                 }
             };
 
             _disposables.Add(receivedIceCandidates.Subscribe(ice =>
             {
                 DebugLog($"{Name} received remote ICE candidate: {ice}");
-                _connection.AddIceCandidate(ice);
+                AddIceCandidate(ice);
             }));
 
             _disposables.Add(receivedSessionDescriptions.Subscribe(sd =>
             {
                 DebugLog($"{Name} received remote session description: {sd}");
-                _connection.SetRemoteDescription(sd);
+                SetRemoteDescription(sd);
             }));
         }
 
@@ -115,33 +101,13 @@ namespace WonderMediaProductions.WebRtc
             Console.WriteLine(msg);
         }
 
-        public void AddStream(StreamTrack tracks)
-        {
-            _connection.AddStream(tracks);
-        }
-
-        public void AddDataChannel(string label, DataChannelFlag flag)
-        {
-            _connection.AddDataChannel(label, flag);
-        }
-
-        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
-        {
-            _connection.SendVideoFrame(rgbaPixels, stride, width, height, videoFrameFormat);
-        }
-
-        public void CreateOffer()
-        {
-            _connection.CreateOffer();
-        }
-
         protected override void OnDispose(bool isDisposing)
         {
+            // First dispose the connection to break all event handlers
+            base.OnDispose(isDisposing);
+
             if (isDisposing)
             {
-                // First dispose the connection to break all event handlers
-                _connection?.Dispose();
-
                 // Then dispose the rest.
                 _disposables?.Dispose();
             }
