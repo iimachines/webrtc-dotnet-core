@@ -507,9 +507,9 @@ int PeerConnection::AddVideoTrack(const std::string& label, int min_bps, int max
         return 0;
 
     webrtc::RtpEncodingParameters init_encoding;
+    init_encoding.min_bitrate_bps = min_bps;
     init_encoding.max_bitrate_bps = max_bps;
     init_encoding.max_framerate = max_fps;
-    init_encoding.min_bitrate_bps = max_bps;
     init_encoding.active = true;
 
     webrtc::RtpTransceiverInit init_params;

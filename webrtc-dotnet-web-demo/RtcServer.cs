@@ -142,7 +142,7 @@ namespace webrtc_dotnet_demo
         {
             var renderThread = new Thread(VideoRenderer);
 
-            PeerConnection.Configure(options => options.IsSingleThreaded = true);
+            // PeerConnection.Configure(options => options.IsSingleThreaded = true);
 
             using (var pc = new ObservablePeerConnection(options =>
             {
