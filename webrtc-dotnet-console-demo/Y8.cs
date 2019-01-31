@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace VideoGeneratorServer
+namespace WonderMediaProductions.WebRtc
 {
     /// <summary>
     /// Packed pixel type containing a single 8 bit normalized luminance values.

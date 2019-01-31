@@ -1,22 +1,14 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.WebSockets;
-using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.Shapes;
-using WonderMediaProductions.WebRtc;
-using PixelColor = SixLabors.ImageSharp.PixelFormats.Bgra32;
+using Newtonsoft.Json.Linq;
 
-namespace webrtc_dotnet_demo
+namespace WonderMediaProductions.WebRtc
 {
     public static class RtcServer
     {
@@ -28,108 +20,67 @@ namespace webrtc_dotnet_demo
         {
             try
             {
-                var vt = (ObservableVideoTrack)parameter;
-                var pc = vt.PeerConnection;
+                var videoTrack = (ObservableVideoTrack) parameter;
+                var peerConnection = videoTrack.PeerConnection;
 
-                // using (vt.LocalVideoFrameEncodedStream.Subscribe(msg => Console.Write($"{msg.FrameId}\t")))
-                using (var background = Image.Load<PixelColor>("background-small.jpg"))
+
+                TimeSpan startTime = TimeSpan.Zero;
+                TimeSpan nextFrameTime = TimeSpan.Zero;
+
+                long nextFrameIndex = 0;
+
+                var sw = new Stopwatch();
+
+                using (var renderer = new ImageSharpRenderer(VideoFrameWidth, VideoFrameWidth, videoTrack))
                 {
-                    background.Mutate(ctx => ctx.Resize(VideoFrameWidth, VideoFrameHeight));
-
-                    // Pre-created bouncing ball frames.
-                    // ImageSharp is not that fast yet, and our goal is to benchmark webrtc and NvEnc, not ImageSharp.
-
-                    var ballRadius = background.Width / 20f;
-                    var ballPath = new EllipsePolygon(0, 0, ballRadius);
-                    var ballColor = new PixelColor(255, 255, 128);
-
-                    const int frameCount = 60;
-                    const int framesPerSecond = 60;
-
-                    var videoFrames = Enumerable
-                        .Range(0, frameCount)
-                        .Select(i =>
-                        {
-                            var image = background.Clone();
-
-                            var a = Math.PI * i / frameCount;
-                            var h = image.Height - ballRadius;
-                            var y = image.Height - (float)(Math.Abs(Math.Sin(a) * h));
-
-                            image.Mutate(ctx => ctx
-                                .Fill(GraphicsOptions.Default, ballColor, ballPath.Translate(image.Width / 2f, y)));
-
-                            return image;
-                        })
-                        .ToArray();
-
-                    using (new CompositeDisposable(videoFrames.Cast<IDisposable>()))
+                    while (Thread.CurrentThread.IsAlive && !peerConnection.IsDisposed)
                     {
-                        TimeSpan startTime = TimeSpan.Zero;
-                        TimeSpan nextFrameTime = TimeSpan.Zero;
-
-                        long nextFrameIndex = 0;
-
-                        var sw = new Stopwatch();
-
-                        while (Thread.CurrentThread.IsAlive && !pc.IsDisposed)
+                        if (peerConnection.SignalingState == SignalingState.Stable)
                         {
-                            if (pc.SignalingState == SignalingState.Stable)
+                            var currentTime = PeerConnection.GetRealtimeClockTimeInMicroseconds();
+
+                            if (startTime == TimeSpan.Zero)
                             {
-                                var currentTime = PeerConnection.GetRealtimeClockTimeInMicroseconds();
+                                startTime = currentTime;
+                                sw.Start();
+                            }
 
-                                if (startTime == TimeSpan.Zero)
+                            if (currentTime >= nextFrameTime)
+                            {
+                                // Console.Write($"{sw.ElapsedMilliseconds:D06}\t");
+                                sw.Restart();
+
+                                var elapsedTime = currentTime - startTime;
+                                var frameIndex = (int) (elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
+
+                                var skippedFrameCount = frameIndex - nextFrameIndex;
+                                Debug.Assert(skippedFrameCount >= 0);
+
+                                if (skippedFrameCount >= 1)
                                 {
-                                    startTime = currentTime;
-                                    sw.Start();
+                                    Console.WriteLine($"Skipped {skippedFrameCount} frames!");
                                 }
 
-                                if (currentTime >= nextFrameTime)
-                                {
-                                    // Console.Write($"{sw.ElapsedMilliseconds:D06}\t");
-                                    sw.Restart();
+                                renderer.SendFrame(elapsedTime, frameIndex);
 
-                                    var frameIndex = (currentTime - startTime).Ticks * framesPerSecond / TimeSpan.TicksPerSecond;
+                                nextFrameIndex = frameIndex + 1;
 
-                                    var skippedFrameCount = frameIndex - nextFrameIndex;
-                                    Debug.Assert(skippedFrameCount >= 0);
-
-                                    if (skippedFrameCount >= 1)
-                                    {
-                                        Console.WriteLine($"Skipped {skippedFrameCount} frames!");
-                                    }
-
-                                    var imageFrameIndex = frameIndex % frameCount;
-                                    var imageFrame = videoFrames[imageFrameIndex].Frames[0];
-                                    var pixels = MemoryMarshal.Cast<PixelColor, uint>(imageFrame.GetPixelSpan());
-
-                                    vt.SendVideoFrame(
-                                        imageFrameIndex,
-                                        MemoryMarshal.GetReference(pixels),
-                                        imageFrame.Width * 4,
-                                        imageFrame.Width,
-                                        imageFrame.Height,
-                                        VideoFrameFormat.CpuTexture);
-
-                                    nextFrameIndex = frameIndex + 1;
-
-                                    // TODO: Use Math.DivRem and take remainder into account?
-                                    // TODO: Should get feedback from connected peer about frame-rate and resolution.
-                                    nextFrameTime =
-                                        startTime + TimeSpan.FromTicks(
-                                            nextFrameIndex * TimeSpan.TicksPerSecond / framesPerSecond);
-                                }
-                                else
-                                {
-                                    // TODO: Use Win32 waitable timers, or expose webrtc's high-precision (?) TaskQueue
-                                    Thread.Sleep(0);
-                                }
+                                // TODO: Use Math.DivRem and take remainder into account?
+                                // TODO: Should get feedback from connected peer about frame-rate and resolution.
+                                nextFrameTime =
+                                    startTime + TimeSpan.FromTicks(
+                                        nextFrameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
                             }
                             else
                             {
-                                // Wait until peer connection is stable before sending frames.
-                                Thread.Sleep(500);
+                                // TODO: Use Win32 waitable timers, or expose webrtc's high-precision (?) TaskQueue
+                                Thread.Sleep(0);
                             }
+                        }
+                        else
+                        {
+                            // Wait until peer connection is stable before sending frames.
+                            Thread.Sleep(500);
                         }
                     }
                 }
@@ -153,15 +104,15 @@ namespace webrtc_dotnet_demo
             }))
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice, cancellation)))
             using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd, cancellation)))
-            using (var vt = new ObservableVideoTrack(pc, options => options.OptimizeFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate)))
+            using (var videoTrack = new ObservableVideoTrack(pc, options => options.OptimizeFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate)))
             {
                 var msgStream = Observable.Never<DataMessage>();
                 var iceStream = new Subject<IceCandidate>();
                 var sdpStream = new Subject<SessionDescription>();
 
-                pc.Connect(msgStream, sdpStream, iceStream);
+                renderThread.Start(videoTrack);
 
-                renderThread.Start(vt);
+                pc.Connect(msgStream, sdpStream, iceStream);
 
                 pc.AddDataChannel("data", DataChannelFlag.None);
 

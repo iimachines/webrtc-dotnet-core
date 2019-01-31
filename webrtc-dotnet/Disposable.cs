@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace WonderMediaProductions.WebRtc
 {
@@ -16,6 +19,34 @@ namespace WonderMediaProductions.WebRtc
 
             GC.SuppressFinalize(this);
             OnDispose(true);
+        }
+
+        /// <summary>
+        /// Dispose all disposable fields except some
+        /// </summary>
+        protected void DisposeAllFieldsExcept(params string[] excludeFieldNames)
+        {
+            var disposables = GetType()
+                .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
+                .Where(f => !excludeFieldNames.Contains(f.Name) &&
+                            typeof(IDisposable).IsAssignableFrom(f.FieldType) &&
+                            f.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
+                .Select(f => f.GetValue(this))
+                .Cast<IDisposable>()
+                .ToArray();
+
+            foreach (var disposable in disposables)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        /// <summary>
+        /// Dispose all disposable fields
+        /// </summary>
+        protected void DisposeAllFields()
+        {
+            DisposeAllFieldsExcept();
         }
 
         ~Disposable()

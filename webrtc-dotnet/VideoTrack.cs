@@ -8,12 +8,17 @@ namespace WonderMediaProductions.WebRtc
 
         public PeerConnection PeerConnection { get; }
 
+        // TODO: Must be a rational number
+        public int FrameRate { get; }
+
         public event VideoFrameEncodedDelegate LocalVideoFrameEncoded;
 
         public VideoTrack(PeerConnection peerConnection, Action<VideoEncoderOptions> configure)
         {
+            var options = configure.Options();
             PeerConnection = peerConnection;
-            TrackId = peerConnection.RegisterVideoTrack(configure.Options());
+            FrameRate = options.MaxFramesPerSecond;
+            TrackId = peerConnection.RegisterVideoTrack(options);
             PeerConnection.LocalVideoFrameEncoded += OnLocalVideoFrameEncoded;
         }
 

@@ -1,20 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.Primitives;
-using WonderMediaProductions.WebRtc;
-using static System.Console;
 
-namespace VideoGeneratorServer
+namespace WonderMediaProductions.WebRtc
 {
 
     // TODO: This demo doesn't work anymore, because receiving video on the server side is not supported for now.
@@ -42,7 +37,7 @@ namespace VideoGeneratorServer
                     options.ForceSoftwareVideoEncoder = true;
                 });
 
-                OutputEncoding = Encoding.UTF8;
+                Console.OutputEncoding = Encoding.UTF8;
 
                 const int frameWidth = 320;
                 const int frameHeight = 180;
@@ -80,12 +75,12 @@ namespace VideoGeneratorServer
 
                     sender.CreateOffer();
 
-                    WriteLine("Press any key to exit");
+                    Console.WriteLine("Press any key to exit");
 
                     int localFrameIndex = 0;
 
                     var timeout = TimeSpan.FromMilliseconds(1000.0 / frameRate);
-                    while (!KeyAvailable && PeerConnection.PumpQueuedMessages(timeout))
+                    while (!Console.KeyAvailable && PeerConnection.PumpQueuedMessages(timeout))
                     {
                         var frame = imageFrame.Frames[0];
                         var pixels = MemoryMarshal.Cast<Argb32, uint>(frame.GetPixelSpan());
@@ -105,10 +100,10 @@ namespace VideoGeneratorServer
             }
             catch (Exception ex)
             {
-                WriteLine($"*** FAILURE: {ex}");
+                Console.WriteLine($"*** FAILURE: {ex}");
             }
 
-            ReadLine();
+            Console.ReadLine();
         }
 
         private unsafe void SaveFrame(IList<VideoFrameYuvAlpha> frames)
@@ -128,14 +123,14 @@ namespace VideoGeneratorServer
             }
             else
             {
-                WriteLine("Unsupported frame layout");
+                Console.WriteLine("Unsupported frame layout");
             }
 
             if (frames.Count == 2)
             {
                 var frame1 = frames[1];
                 var dt = frame1.TimeStamp - frame0.TimeStamp;
-                WriteLine($"Received video frame\t{frame1.Width}x{frame1.Height}\tΔt={dt.TotalMilliseconds:000.0}\tutc={frame1.TimeStamp:G}");
+                Console.WriteLine($"Received video frame\t{frame1.Width}x{frame1.Height}\tΔt={dt.TotalMilliseconds:000.0}\tutc={frame1.TimeStamp:G}");
             }
         }
     }

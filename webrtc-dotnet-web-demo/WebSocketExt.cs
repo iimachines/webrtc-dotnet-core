@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
-using System.IO;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
-namespace webrtc_dotnet_demo
+namespace WonderMediaProductions.WebRtc
 {
     public static class WebSocketExt
     {

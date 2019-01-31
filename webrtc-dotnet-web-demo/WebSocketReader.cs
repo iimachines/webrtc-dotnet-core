@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 
-namespace webrtc_dotnet_demo
+namespace WonderMediaProductions.WebRtc
 {
     public sealed class WebSocketReader
     {

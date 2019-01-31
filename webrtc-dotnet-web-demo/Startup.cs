@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace webrtc_dotnet_demo
+namespace WonderMediaProductions.WebRtc
 {
     public class Startup
     {
