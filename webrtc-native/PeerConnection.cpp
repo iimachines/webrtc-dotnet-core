@@ -337,6 +337,11 @@ void PeerConnection::RegisterSignalingStateChanged(SignalingStateChangedCallback
     OnSignalingStateChanged = callback;
 }
 
+void PeerConnection::RegisterVideoFrameEncoded(VideoFrameCallback callback)
+{
+    OnVideoFrameEncoded = callback;
+}
+
 bool PeerConnection::SetRemoteDescription(const char* type, const char* sdp) const
 {
     if (!peer_connection_)
@@ -573,19 +578,19 @@ bool PeerConnection::SendData(const char* label, const std::string& data)
     return it->second->channel->Send(buffer);
 }
 
-bool PeerConnection::SendVideoFrame(int id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format) const
+bool PeerConnection::SendVideoFrame(int video_track_id, VideoFrameId frame_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format)
 {
-    auto it = video_tracks_.find(id);
+    auto it = video_tracks_.find(video_track_id);
     if (it == video_tracks_.end())
     {
-        RTC_LOG(LS_ERROR) << "Video track #" << id << " not found";
+        RTC_LOG(LS_ERROR) << "Video track #" << video_track_id << " not found";
         return false;
     }
 
     auto source = dynamic_cast<rtc::VideoSinkInterface<webrtc::VideoFrame>*>(it->second->GetSource());
     if (!source)
     {
-        RTC_LOG(LS_ERROR) << "Video track #" << id << " does not support sending frames";
+        RTC_LOG(LS_ERROR) << "Video track #" << video_track_id << " does not support sending frames";
         return false;
     }
 
@@ -609,7 +614,7 @@ bool PeerConnection::SendVideoFrame(int id, const uint8_t* pixels, int stride, i
     if (format == VideoFrameFormat::CpuTexture)
     {
         buffer = new rtc::RefCountedObject<webrtc::NativeVideoBuffer>(
-            width, height, static_cast<const void*>(pixels));
+            video_track_id, frame_id, width, height, static_cast<const void*>(pixels), this);
     }
     else
     {
@@ -634,6 +639,14 @@ bool PeerConnection::SendVideoFrame(int id, const uint8_t* pixels, int stride, i
         .build();
 
     source->OnFrame(yuvFrame);
+
+    if (format != VideoFrameFormat::CpuTexture)
+    {
+        // Since we copied the RGBA frame to a YUV buffer, the input frame is already available again.
+        // Native texture become available when the H264 encoder has processed them.
+        OnFrameEncoded(video_track_id, frame_id, pixels);
+    }
+
     return true;
 }
 
@@ -661,6 +674,12 @@ void PeerConnection::OnData(const void* audio_data,
         OnAudioReady(audio_data, bits_per_sample, sample_rate,
             static_cast<int>(number_of_channels),
             static_cast<int>(number_of_frames));
+}
+
+void PeerConnection::OnFrameEncoded(int video_track_id, VideoFrameId frame_id, const void* pixels)
+{
+    if (OnVideoFrameEncoded)
+        OnVideoFrameEncoded(video_track_id, frame_id, pixels);
 }
 
 std::vector<uint32_t> PeerConnection::GetRemoteAudioTrackSynchronizationSources() const

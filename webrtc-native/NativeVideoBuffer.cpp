@@ -3,6 +3,30 @@
 
 namespace webrtc
 {
+    NativeVideoBuffer::NativeVideoBuffer(
+        int track_id,
+        VideoFrameId frame_id,
+        int width, 
+        int height, 
+        const void* texture, 
+        VideoFrameEvents* events)
+        : track_id_(track_id)
+        , frame_id_(frame_id)
+        , width_(width)
+        , height_(height)
+        , texture_(texture)
+        , events_(events)
+    {
+    }
+
+    NativeVideoBuffer::~NativeVideoBuffer()
+    {
+        if (events_ && texture_)
+        {
+            events_->OnFrameEncoded(track_id_, frame_id_, texture_);
+        }
+    }
+
     VideoFrameBuffer::Type NativeVideoBuffer::type() const
     {
         return Type::kNative;
@@ -20,10 +44,6 @@ namespace webrtc
 
     rtc::scoped_refptr<I420BufferInterface> NativeVideoBuffer::ToI420()
     {
-        // TODO: Implement
-        RTC_LOG(LS_ERROR) << "Converting a native buffer to I420 is not supported yet!";
-        rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(width_, height_);
-        I420Buffer::SetBlack(buffer);
-        return buffer;
+        throw std::runtime_error("Converting a native buffer to a CPU 420 buffer is not supported");
     }
 } // namespace webrtc

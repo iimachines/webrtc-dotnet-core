@@ -28,9 +28,10 @@ namespace webrtc_dotnet_demo
         {
             try
             {
-                var vt = (VideoTrack)parameter;
-                var pc = (ObservablePeerConnection)vt.PeerConnection;
+                var vt = (ObservableVideoTrack)parameter;
+                var pc = vt.PeerConnection;
 
+                // using (vt.LocalVideoFrameEncodedStream.Subscribe(msg => Console.Write($"{msg.FrameId}\t")))
                 using (var background = Image.Load<PixelColor>("background-small.jpg"))
                 {
                     background.Mutate(ctx => ctx.Resize(VideoFrameWidth, VideoFrameHeight));
@@ -98,10 +99,12 @@ namespace webrtc_dotnet_demo
                                         Console.WriteLine($"Skipped {skippedFrameCount} frames!");
                                     }
 
-                                    var imageFrame = videoFrames[frameIndex % frameCount].Frames[0];
+                                    var imageFrameIndex = frameIndex % frameCount;
+                                    var imageFrame = videoFrames[imageFrameIndex].Frames[0];
                                     var pixels = MemoryMarshal.Cast<PixelColor, uint>(imageFrame.GetPixelSpan());
 
                                     vt.SendVideoFrame(
+                                        imageFrameIndex,
                                         MemoryMarshal.GetReference(pixels),
                                         imageFrame.Width * 4,
                                         imageFrame.Width,
@@ -150,6 +153,7 @@ namespace webrtc_dotnet_demo
             }))
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice, cancellation)))
             using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd, cancellation)))
+            using (var vt = new ObservableVideoTrack(pc, options => options.OptimizeFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate)))
             {
                 var msgStream = Observable.Never<DataMessage>();
                 var iceStream = new Subject<IceCandidate>();
@@ -157,7 +161,6 @@ namespace webrtc_dotnet_demo
 
                 pc.Connect(msgStream, sdpStream, iceStream);
 
-                var vt = pc.AddVideoTrack(options => options.OptimizeFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate));
                 renderThread.Start(vt);
 
                 pc.AddDataChannel("data", DataChannelFlag.None);

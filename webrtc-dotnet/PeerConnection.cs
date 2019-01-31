@@ -17,6 +17,8 @@ namespace WonderMediaProductions.WebRtc
         private readonly Native.LocalSdpReadyToSendCallback _localSdpReadyToSendDelegate;
         private readonly Native.I420FrameReadyCallback _remoteI420FrameReadyDelegate;
         private readonly Native.SignalingStateChangedCallback _signalingStateChangedCallback;
+        private readonly Native.VideoFrameEncodedCallback _videoFrameEncodedCallback;
+
         // ReSharper restore NotAccessedField.Local
 
         private IntPtr _nativePtr;
@@ -62,6 +64,7 @@ namespace WonderMediaProductions.WebRtc
             RegisterCallback(out _localSdpReadyToSendDelegate, Native.RegisterOnLocalSdpReadyToSend, RaiseLocalSdpReadyToSend);
             RegisterCallback(out _iceCandidateReadyToSendDelegate, Native.RegisterOnIceCandidateReadyToSend, RaiseIceCandidateReadyToSend);
             RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseRegisterSignalingStateChange);
+            RegisterCallback(out _videoFrameEncodedCallback, Native.RegisterVideoFrameEncoded, RaiseVideoFrameEncodedDelegate);
         }
 
         public PeerConnection(Action<PeerConnectionOptions> configure) : this(configure.Options())
@@ -103,17 +106,18 @@ namespace WonderMediaProductions.WebRtc
             LocalSdpReadyToSend = null;
             IceCandidateReadyToSend = null;
             SignalingStateChanged = null;
+            LocalVideoFrameEncoded = null;
 
             Native.ClosePeerConnection(ptr);
         }
 
-        public VideoTrack AddVideoTrack(Action<VideoOptions> configure)
+        internal int RegisterVideoTrack(VideoEncoderOptions options)
         {
-            var options = configure.Options();
             var id = Native.AddVideoTrack(_nativePtr, options.Label, options.MinBitsPerSecond, options.MaxBitsPerSecond, options.MaxFramesPerSecond);
-            return new VideoTrack(this, Native.Check(id));
+            return Native.Check(id);
         }
 
+        [Obsolete("TODO: Will be replaced by a DataChannel class, like the VideoTrack")]
         public void AddDataChannel(string label, DataChannelFlag flag)
         {
             Native.Check(Native.AddDataChannel(_nativePtr, label,
@@ -140,9 +144,9 @@ namespace WonderMediaProductions.WebRtc
             Native.Check(Native.SendData(_nativePtr, msg.Label, msg.Content));
         }
 
-        internal void SendVideoFrame(int trackId, in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
+        internal void SendVideoFrame(int trackId, long frameId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
         {
-            Native.Check(Native.SendVideoFrame(_nativePtr, trackId, rgbaPixels, stride, width, height, videoFrameFormat));
+            Native.Check(Native.SendVideoFrame(_nativePtr, trackId, frameId, rgbaPixels, stride, width, height, videoFrameFormat));
         }
 
         public void SetAudioControl(bool isMute, bool isRecord)
@@ -235,6 +239,11 @@ namespace WonderMediaProductions.WebRtc
             SignalingStateChanged?.Invoke(this, (SignalingState)state);
         }
 
+        private void RaiseVideoFrameEncodedDelegate(int trackId, long frameId, IntPtr rgbaPixels)
+        {
+            LocalVideoFrameEncoded?.Invoke(this, trackId, frameId, rgbaPixels);
+        }
+
         //public void AddQueuedIceCandidate(IEnumerable<IceCandidate> iceCandidateQueue)
         //{
         //    if (iceCandidateQueue != null)
@@ -254,6 +263,7 @@ namespace WonderMediaProductions.WebRtc
         public event I420FrameReadyDelegate RemoteVideoFrameReady;
         public event LocalSdpReadyToSendDelegate LocalSdpReadyToSend;
         public event IceCandidateReadyToSendDelegate IceCandidateReadyToSend;
-        public event RegisterSignalingStateChangedDelegate SignalingStateChanged;
+        public event SignalingStateChangedDelegate SignalingStateChanged;
+        public event VideoFrameEncodedDelegate LocalVideoFrameEncoded;
     }
 }

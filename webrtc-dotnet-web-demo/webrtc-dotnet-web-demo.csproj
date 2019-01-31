@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputPath>$(SolutionDir)out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
     <TypeScriptToolsVersion>3.1</TypeScriptToolsVersion>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>latest</LangVersion>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />

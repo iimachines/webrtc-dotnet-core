@@ -129,6 +129,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="PeerConnection.h" />
     <ClInclude Include="TestVideoCapturer.h" />
+    <ClInclude Include="VideoFrameEvents.h" />
     <ClInclude Include="VideoCameraCapturer.h" />
     <ClInclude Include="VideoObserver.h" />
   </ItemGroup>

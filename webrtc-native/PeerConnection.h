@@ -2,7 +2,7 @@
 
 #include "NativeInterface.h"
 #include "VideoObserver.h"
-#include "InjectableVideoTrackSource.h"
+#include "VideoFrameEvents.h"
 
 #undef HAS_LOCAL_VIDEO_OBSERVER
 #define HAS_REMOTE_VIDEO_OBSERVER
@@ -11,6 +11,7 @@ class PeerConnection final
     : public webrtc::PeerConnectionObserver
     , public webrtc::CreateSessionDescriptionObserver
     , public webrtc::AudioTrackSinkInterface
+    , public VideoFrameEvents
 {
 public:
     PeerConnection();
@@ -33,7 +34,7 @@ public:
     bool CreateDataChannel(const char* label, bool is_ordered, bool is_reliable);
     bool SendData(const char* label, const std::string& data);
 
-    bool SendVideoFrame(int id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format) const;
+    bool SendVideoFrame(int video_track_id, VideoFrameId frame_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format);
 
     // Register callback functions.
     void RegisterOnLocalI420FrameReady(I420FrameReadyCallback callback) const;
@@ -45,11 +46,10 @@ public:
     void RegisterOnLocalSdpReadyToSend(LocalSdpReadyToSendCallback callback);
     void RegisterOnIceCandidateReadyToSend(IceCandidateReadyToSendCallback callback);
     void RegisterSignalingStateChanged(SignalingStateChangedCallback callback);
+    void RegisterVideoFrameEncoded(VideoFrameCallback callback);
 
     bool SetRemoteDescription(const char* type, const char* sdp) const;
-    bool AddIceCandidate(const char* sdp,
-        const int sdp_mlineindex,
-        const char* sdp_mid) const;
+    bool AddIceCandidate(const char* sdp, const int sdp_mlineindex, const char* sdp_mid) const;
 
     void AddRef() const override;
     rtc::RefCountReleaseStatus Release() const override;
@@ -98,6 +98,8 @@ protected:
         int sample_rate,
         size_t number_of_channels,
         size_t number_of_frames) override;
+
+    void OnFrameEncoded(int video_track_id, VideoFrameId frame_id, const void* pixels) override;
 
     // Get remote audio tracks ssrcs.
     std::vector<uint32_t> GetRemoteAudioTrackSynchronizationSources() const;
@@ -148,6 +150,7 @@ private:
     DataAvailableCallback OnDataFromDataChannelReady = nullptr;
     FailureCallback OnFailureMessage = nullptr;
     AudioBusReadyCallback OnAudioReady = nullptr;
+    VideoFrameCallback OnVideoFrameEncoded = nullptr;
 
     LocalSdpReadyToSendCallback OnLocalSdpReadyToSend = nullptr;
     IceCandidateReadyToSendCallback OnIceCandidateReady = nullptr;

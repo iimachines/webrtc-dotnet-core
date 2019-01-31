@@ -46,6 +46,7 @@ namespace VideoGeneratorServer
 
                 const int frameWidth = 320;
                 const int frameHeight = 180;
+                const int frameRate = 10;
 
                 using (var senderOutgoingMessages = new ReplaySubject<DataMessage>())
                 using (var sender = new ObservablePeerConnection(options =>
@@ -60,6 +61,7 @@ namespace VideoGeneratorServer
                 using (var background = Image.Load<Argb32>("background-small.jpg"))
                 using (receiver.ReceivedVideoStream.Buffer(2).Subscribe(SaveFrame))
                 using (var imageFrame = new Image<Argb32>(frameWidth, frameHeight))
+                using (var videoTrack = new VideoTrack(sender, options => options.OptimizeFor(frameWidth, frameHeight, frameRate)))
                 {
                     background.Mutate(ctx => ctx.Resize(frameWidth, frameHeight));
 
@@ -74,10 +76,7 @@ namespace VideoGeneratorServer
 
                     receiver.Connect(receiverOutgoingMessages, sender.LocalSessionDescriptionStream, sender.LocalIceCandidateStream);
 
-                    const int frameRate = 10;
-
                     sender.AddDataChannel("data", DataChannelFlag.None);
-                    var videoTrack = sender.AddVideoTrack(options => options.OptimizeFor(frameWidth, frameHeight, frameRate));
 
                     sender.CreateOffer();
 
@@ -91,13 +90,14 @@ namespace VideoGeneratorServer
                         var frame = imageFrame.Frames[0];
                         var pixels = MemoryMarshal.Cast<Argb32, uint>(frame.GetPixelSpan());
                         videoTrack.SendVideoFrame(
+                            localFrameIndex,
                             MemoryMarshal.GetReference(pixels),
                             frame.Width * 4,
                             frame.Width,
                             frame.Height,
                             VideoFrameFormat.Argb32);
 
-                        imageFrame.Mutate(ctx => ctx.DrawImage(GraphicsOptions.Default, background).Rotate(localFrameIndex * 10).Crop(frameWidth, frameHeight) );
+                        imageFrame.Mutate(ctx => ctx.DrawImage(GraphicsOptions.Default, background).Rotate(localFrameIndex * 10).Crop(frameWidth, frameHeight));
 
                         ++localFrameIndex;
                     }

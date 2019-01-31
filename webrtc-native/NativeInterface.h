@@ -1,8 +1,9 @@
 #pragma once
+#include "VideoFrameEvents.h"
 
 enum class VideoFrameFormat
 {
-    RGBA32, 
+    RGBA32,
     BGRA32,
     ARGB32,
     ABGR32,
@@ -43,3 +44,4 @@ typedef void(*AudioBusReadyCallback)(const void* audio_data,
 
 typedef void(*SignalingStateChangedCallback)(int state);
 
+typedef void(*VideoFrameCallback)(int video_track_id, VideoFrameId frame_id, const void *pixels);

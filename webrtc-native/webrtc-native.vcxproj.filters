@@ -43,6 +43,9 @@
     <ClInclude Include="PeerConnection.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="VideoFrameEvents.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DummySetSessionDescriptionObserver.cpp">

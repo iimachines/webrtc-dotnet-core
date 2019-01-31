@@ -14,6 +14,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "webrtc-dotnet-web-demo", "w
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "webrtc-dotnet-console-demo", "webrtc-dotnet-console-demo\webrtc-dotnet-console-demo.csproj", "{12ECC036-0488-4A87-B5AC-958163D7AB22}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E9481380-4A26-4FF2-A7A5-169E5A8CA980}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64

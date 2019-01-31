@@ -1,21 +1,47 @@
-﻿namespace WonderMediaProductions.WebRtc
+﻿using System;
+
+namespace WonderMediaProductions.WebRtc
 {
-    public sealed class VideoTrack
+    public class VideoTrack : Disposable
     {
-        public readonly int Id;
+        public int TrackId { get; }
 
-        public readonly PeerConnection PeerConnection;
+        public PeerConnection PeerConnection { get; }
 
+        public event VideoFrameEncodedDelegate LocalVideoFrameEncoded;
 
-        public VideoTrack(PeerConnection peerConnection, int id)
+        public VideoTrack(PeerConnection peerConnection, Action<VideoEncoderOptions> configure)
         {
             PeerConnection = peerConnection;
-            Id = id;
+            TrackId = peerConnection.RegisterVideoTrack(configure.Options());
+            PeerConnection.LocalVideoFrameEncoded += OnLocalVideoFrameEncoded;
         }
 
-        public void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
+        public unsafe void SendVideoFrame(long frameId, in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
         {
-            PeerConnection.SendVideoFrame(Id, in rgbaPixels, stride, width, height, videoFrameFormat);
+            fixed (uint* ptr = &rgbaPixels)
+            {
+                PeerConnection.SendVideoFrame(TrackId, frameId, new IntPtr(ptr), stride, width, height, videoFrameFormat);
+            }
+        }
+
+        public void SendVideoFrame(long frameId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
+        {
+            PeerConnection.SendVideoFrame(TrackId, frameId, rgbaPixels, stride, width, height, videoFrameFormat);
+        }
+
+        protected override void OnDispose(bool isDisposing)
+        {
+            if (isDisposing)
+            {
+                PeerConnection.LocalVideoFrameEncoded -= OnLocalVideoFrameEncoded;
+                LocalVideoFrameEncoded = null;
+            }
+        }
+
+        protected virtual void OnLocalVideoFrameEncoded(WebRtc.PeerConnection pc, int trackId, long frameId, IntPtr rgbaPixels)
+        {
+            LocalVideoFrameEncoded?.Invoke(pc, trackId, frameId, rgbaPixels);
         }
     }
 }

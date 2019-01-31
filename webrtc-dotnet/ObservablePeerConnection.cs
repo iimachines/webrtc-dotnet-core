@@ -15,6 +15,7 @@ namespace WonderMediaProductions.WebRtc
 
         private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
         private readonly Subject<VideoFrameYuvAlpha> _receivedVideoStream = new Subject<VideoFrameYuvAlpha>();
+        private readonly Subject<VideoFrameMessage> _localVideoFrameEncodedStream = new Subject<VideoFrameMessage>();
 
         public IObservable<SessionDescription> LocalSessionDescriptionStream => _localSessionDescriptionStream;
         public IObservable<IceCandidate> LocalIceCandidateStream => _localIceCandidateStream;
@@ -22,6 +23,7 @@ namespace WonderMediaProductions.WebRtc
 
         public IObservable<DataMessage> ReceivedDataStream => _receivedDataStream;
         public IObservable<VideoFrameYuvAlpha> ReceivedVideoStream => _receivedVideoStream;
+        public IObservable<VideoFrameMessage> LocalVideoFrameEncodedStream => _localVideoFrameEncodedStream;
 
         public ObservablePeerConnection(PeerConnectionOptions options) : base(options)
         {
@@ -41,9 +43,9 @@ namespace WonderMediaProductions.WebRtc
         {
             _disposables.Add(_localSessionDescriptionStream);
             _disposables.Add(_localIceCandidateStream);
-
             _disposables.Add(_receivedDataStream);
             _disposables.Add(_receivedVideoStream);
+            _disposables.Add(_localVideoFrameEncodedStream);
 
             LocalDataChannelReady += (pc, label) =>
             {
@@ -69,7 +71,9 @@ namespace WonderMediaProductions.WebRtc
                 _localIceCandidateStream.OnNext(ice);
             };
 
-            RemoteVideoFrameReady += (pc, frame) => { _receivedVideoStream.OnNext(frame); };
+            RemoteVideoFrameReady += (pc, frame) => _receivedVideoStream.OnNext(frame);
+
+            LocalVideoFrameEncoded += (pc, trackId, frameId, pixels) => _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, frameId, pixels));
 
             SignalingStateChanged += (pc, state) =>
             {

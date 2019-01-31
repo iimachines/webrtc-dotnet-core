@@ -1,7 +1,6 @@
 #pragma once
 
 // A macro to disallow the copy/move constructor and operator= functions
-// This should be used in the private: declarations for a class
 #define DISALLOW_COPY_MOVE_ASSIGN(TypeName) \
 	TypeName(const TypeName &) = delete; \
 	void operator=(const TypeName &) = delete; \
