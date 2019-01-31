@@ -2,7 +2,7 @@
 
 namespace WonderMediaProductions.WebRtc
 {
-    public interface IRenderer
+    public interface IRenderer : IDisposable
     {
         int FrameWidth { get; }
         int FrameHeight { get; }

@@ -42,6 +42,11 @@
         /// The texture must reside in CPU memory, 
         /// and is just a plain pointer to the first pixel
         /// </remarks>
-        CpuTexture
+        CpuTexture,
+
+        /// <summary>
+        /// Hardware encoder pixel format, 8-bit B G R A, D3D11 Texture 2 on GPU host memory
+        /// </summary>
+        GpuTextureD3D11,
     };
 }

@@ -611,10 +611,10 @@ bool PeerConnection::SendVideoFrame(int video_track_id, VideoFrameId frame_id, c
 
     const auto clock = webrtc::Clock::GetRealTimeClock();
 
-    if (format == VideoFrameFormat::CpuTexture)
+    if (format >= VideoFrameFormat::CpuTexture)
     {
         buffer = new rtc::RefCountedObject<webrtc::NativeVideoBuffer>(
-            video_track_id, frame_id, width, height, static_cast<const void*>(pixels), this);
+            video_track_id, frame_id, format, width, height, static_cast<const void*>(pixels), this);
     }
     else
     {

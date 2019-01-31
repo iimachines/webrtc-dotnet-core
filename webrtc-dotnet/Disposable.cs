@@ -24,6 +24,9 @@ namespace WonderMediaProductions.WebRtc
         /// <summary>
         /// Dispose all disposable fields except some
         /// </summary>
+        /// <remarks>
+        /// The fields are disposed in reverse order of declaration
+        /// </remarks>
         protected void DisposeAllFieldsExcept(params string[] excludeFieldNames)
         {
             var disposables = GetType()
@@ -33,10 +36,13 @@ namespace WonderMediaProductions.WebRtc
                             f.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
                 .Select(f => f.GetValue(this))
                 .Cast<IDisposable>()
+                .Reverse()
                 .ToArray();
 
             foreach (var disposable in disposables)
             {
+                var type = disposable.GetType();
+                Debug.WriteLine($"Disposing {type.Namespace}.{type.Name}...");
                 disposable.Dispose();
             }
         }
@@ -44,6 +50,9 @@ namespace WonderMediaProductions.WebRtc
         /// <summary>
         /// Dispose all disposable fields
         /// </summary>
+        /// <remarks>
+        /// The fields are disposed in reverse order of declaration
+        /// </remarks>
         protected void DisposeAllFields()
         {
             DisposeAllFieldsExcept();

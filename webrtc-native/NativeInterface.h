@@ -7,7 +7,8 @@ enum class VideoFrameFormat
     BGRA32,
     ARGB32,
     ABGR32,
-    CpuTexture
+    CpuTexture,
+    GpuTextureD3D11
 };
 
 // Definitions of callback functions.

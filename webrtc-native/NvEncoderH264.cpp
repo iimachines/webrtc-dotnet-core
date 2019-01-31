@@ -95,7 +95,7 @@ namespace webrtc {
         is_sending_ = false;
         key_frame_request_ = false;
 
-        const auto nvEncoder = NvPipe_CreateEncoder(NVPIPE_BGRA32, NVPIPE_H264, NVPIPE_LOSSY, 
+        const auto nvEncoder = NvPipe_CreateEncoder(NVPIPE_BGRA32, NVPIPE_H264, NVPIPE_LOSSY,
             codec_.startBitrate * 1000, codec_.maxFramerate);
 
         if (!nvEncoder)
@@ -225,10 +225,30 @@ namespace webrtc {
             const auto encoded_buffer_ptr = &encoded_output_buffer_[0];
 
             // Encode!
-            auto encoded_buffer_size = NvPipe_Encode(encoder_,
-                native_buffer->texture(), width * 4,
-                encoded_buffer_ptr, encoded_output_buffer_.size(),
-                width, height, send_key_frame);
+            uint64_t encoded_buffer_size = 0;
+
+            switch (native_buffer->format())
+            {
+            case VideoFrameFormat::CpuTexture:
+                encoded_buffer_size = NvPipe_Encode(
+                    encoder_,
+                    native_buffer->texture(), width * 4,
+                    encoded_buffer_ptr, encoded_output_buffer_.size(),
+                    width, height, send_key_frame);
+                break;
+
+            case VideoFrameFormat::GpuTextureD3D11:
+                encoded_buffer_size = NvPipe_EncodeTextureD3D11(
+                    encoder_,
+                    native_buffer->texture(),
+                    encoded_buffer_ptr, encoded_output_buffer_.size(),
+                    send_key_frame);
+                break;
+
+            default:
+                RTC_LOG(LS_ERROR) << "NVENC H264 encoder does not support format " << static_cast<int>(native_buffer->format());
+                return WEBRTC_VIDEO_CODEC_ERROR;
+            }
 
             if (encoded_buffer_size == 0)
             {

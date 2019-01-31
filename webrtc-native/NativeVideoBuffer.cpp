@@ -6,12 +6,14 @@ namespace webrtc
     NativeVideoBuffer::NativeVideoBuffer(
         int track_id,
         VideoFrameId frame_id,
+        VideoFrameFormat format,
         int width, 
         int height, 
         const void* texture, 
         VideoFrameEvents* events)
         : track_id_(track_id)
         , frame_id_(frame_id)
+        , format_(format)
         , width_(width)
         , height_(height)
         , texture_(texture)

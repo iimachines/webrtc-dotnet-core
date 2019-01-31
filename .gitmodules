@@ -6,7 +6,3 @@
 	path = dependencies/nvpipe-build
 	url = https://github.com/WonderMediaProductions/nvpipe-build.git
 	branch = master
-[submodule "dependencies/NvPipe"]
-	path = dependencies/NvPipe
-	url = https://github.com/WonderMediaProductions/NvPipe.git
-	branch = master

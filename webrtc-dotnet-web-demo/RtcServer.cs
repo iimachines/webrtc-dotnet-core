@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
@@ -12,9 +13,20 @@ namespace WonderMediaProductions.WebRtc
 {
     public static class RtcServer
     {
-        private const int VideoFrameWidth = 1920;
-        private const int VideoFrameHeight = 1080;
-        private const int VideoFrameRate = 60;
+        const int VideoFrameWidth = 1920;
+        const int VideoFrameHeight = 1080;
+        const int VideoFrameRate = 60;
+
+        private static IRenderer CreateRenderer(ObservableVideoTrack videoTrack)
+        {
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+
+            // TODO: Add support for OpenGL, and test it.
+            // Maybe use https://github.com/mellinoe/veldrid
+            return isWindows
+                ? (IRenderer) new D3D11Renderer(VideoFrameWidth, VideoFrameHeight, videoTrack)
+                : new ImageSharpRenderer(VideoFrameWidth, VideoFrameWidth, videoTrack);
+        }
 
         private static void VideoRenderer(object parameter)
         {
@@ -23,7 +35,6 @@ namespace WonderMediaProductions.WebRtc
                 var videoTrack = (ObservableVideoTrack) parameter;
                 var peerConnection = videoTrack.PeerConnection;
 
-
                 TimeSpan startTime = TimeSpan.Zero;
                 TimeSpan nextFrameTime = TimeSpan.Zero;
 
@@ -31,7 +42,7 @@ namespace WonderMediaProductions.WebRtc
 
                 var sw = new Stopwatch();
 
-                using (var renderer = new ImageSharpRenderer(VideoFrameWidth, VideoFrameWidth, videoTrack))
+                using (var renderer = CreateRenderer(videoTrack))
                 {
                     while (Thread.CurrentThread.IsAlive && !peerConnection.IsDisposed)
                     {
