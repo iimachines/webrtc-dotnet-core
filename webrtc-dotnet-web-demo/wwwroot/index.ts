@@ -1,6 +1,10 @@
 ﻿'use strict';
 
+let retryHandle: number = NaN;
+
 function main() {
+
+    retryHandle = NaN;
 
     const video = document.querySelector('video');
     const logElem = document.getElementById('log');
@@ -56,9 +60,9 @@ function main() {
     }
 
     // https://docs.google.com/document/d/1-ZfikoUtoJa9k-GZG1daN0BU3IjIanQ_JSscHxQesvU/edit#
-    const pc = new RTCPeerConnection({ sdpSemantics: 'unified-plan' } as RTCConfiguration);
+    let pc = new RTCPeerConnection({ sdpSemantics: 'unified-plan' } as RTCConfiguration);
 
-    const ws = new WebSocket(getSignalingSocketUrl());
+    let ws = new WebSocket(getSignalingSocketUrl());
     ws.binaryType = "arraybuffer";
 
     function send(action: "ice" | "sdp", payload: any) {
@@ -67,15 +71,23 @@ function main() {
         ws.send(msg);
     }
 
-    ws.onerror = e => {
-        log("✘ Websocket error, retrying in 1 second");
-        setTimeout(main, 1000);
-    };
+    function retry(reason: string) {
+        clearTimeout(retryHandle);
+        retryHandle = NaN;
 
-    ws.onclose = e => {
-        log("✘ Websocket closed, retrying in 1 second");
+        log(`✘ retrying in 1 second: ${reason}`);
+
+        ws.close();
+        pc.close();
+
+        pc = null;
+        ws = null;
+
         setTimeout(main, 1000);
-    };
+    }
+
+    ws.onerror = e => log(`✘ websocket error`);
+    ws.onclose = e => retry("websocket closed");
 
     ws.onopen = e => {
         pc.onicecandidate = e => {

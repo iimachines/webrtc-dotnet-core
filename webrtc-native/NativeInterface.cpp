@@ -2,6 +2,7 @@
 #include "PeerConnection.h"
 #include "NvEncoderH264.h"
 #include "EncoderFactory.h"
+#include "NvPipe.h"
 
 #if defined(WEBRTC_WIN)
 #   define WEBRTC_PLUGIN_API __declspec(dllexport)

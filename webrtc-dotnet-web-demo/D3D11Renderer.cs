@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Numerics;
 using System.Reactive.Disposables;
 using SharpDX.IO;
 using SharpDX.Mathematics.Interop;
@@ -22,26 +23,29 @@ namespace WonderMediaProductions.WebRtc
         private readonly CompositeDisposable _subscriptions = new CompositeDisposable();
         private readonly string _backgroundPath;
 
-        private readonly DXGI.Adapter _adapterDxgi;
-        private readonly DXGI.Factory2 _factoryDgxi;
-        private readonly DXGI.Factory2 _factoryDgxi2;
+        private readonly DXGI.Factory2 _factoryDxgi;
 
-        private readonly D2D1.Factory1 _factoryD2D1;
+        private readonly D3D11.Device _device3D;
+        private readonly D3D11.DeviceContext _context3D;
+        private readonly DXGI.Device _deviceDxgi;
+
         private readonly DWrite.Factory _factoryDWrite;
         private readonly WIC.ImagingFactory2 _factoryWic;
 
-        private readonly D3D11.Device _device3D;
-        private readonly D3D11.Multithread _threadLock;
-        private readonly D3D11.DeviceContext4 _context3D;
-        private readonly DXGI.Device _deviceDxgi;
-
         private readonly D2D1.Device _device2D;
         private readonly D2D1.DeviceContext _context2D;
+        private readonly D2D1.Factory _factory2D;
 
         private readonly D2D1.Bitmap1 _backgroundBitmap;
+        private readonly D2D1.Ellipse _ballEllipse;
+        private readonly D2D1.Brush _ballBrush;
 
-        private readonly DisposableList<D3D11.Texture2D> _renderTextures = new DisposableList<D3D11.Texture2D>();
-        private readonly DisposableList<D2D1.Bitmap1> _renderTargets = new DisposableList<D2D1.Bitmap1>();
+        private readonly D3D11.Texture2D _renderTarget;
+        private readonly D2D1.Bitmap1 _renderCanvas;
+
+        private readonly D3D11.Multithread _threadLock;
+
+        private readonly DisposableList<D3D11.Texture2D> _frameTextures = new DisposableList<D3D11.Texture2D>();
 
         private readonly ConcurrentQueue<long> _renderQueue = new ConcurrentQueue<long>();
 
@@ -55,31 +59,30 @@ namespace WonderMediaProductions.WebRtc
 
             _backgroundPath = "background-small.jpg";
 
-            _factoryDgxi = new DXGI.Factory2(debug: true);
-
-            D3D11.DeviceCreationFlags creationFlags = D3D11.DeviceCreationFlags.BgraSupport | D3D11.DeviceCreationFlags.Debug;
+            _factoryDxgi = new DXGI.Factory2(debug: true);
 
             // We require an NVidia adapter
-            using (var adapters = _factoryDgxi.Adapters.ToDisposableList())
+            using (var adapters = _factoryDxgi.Adapters.ToDisposableList())
             {
                 // Try an NVidia adapter first, but we need a device that supports the required feature levels.
                 var nvAdapter = adapters.Single(a => a.Description.VendorId == NVidiaVendorId);
-                _adapterDxgi = new DXGI.Adapter(nvAdapter.NativePointer);
-                _factoryDgxi2 = _adapterDxgi.GetParent<DXGI.Factory2>();
-
-                _factoryD2D1 = new D2D1.Factory1(D2D1.FactoryType.SingleThreaded, D2D1.DebugLevel.Warning);
-                _factoryDWrite = new DWrite.Factory(DWrite.FactoryType.Shared);
-                _factoryWic = new WIC.ImagingFactory2();
 
                 var requiredFeatureLevels3D = new[] { D3D.FeatureLevel.Level_11_1 };
+                D3D11.DeviceCreationFlags creationFlags = D3D11.DeviceCreationFlags.BgraSupport | D3D11.DeviceCreationFlags.Debug;
+
                 _device3D = new D3D11.Device(nvAdapter, creationFlags, requiredFeatureLevels3D);
+
+                // SharpDX does not increment the reference count when getting the ImmediateContext, unlike all other properties, so we wrap it
+                _context3D = new D3D11.DeviceContext(_device3D.ImmediateContext.NativePointer);
+
                 _deviceDxgi = _device3D.QueryInterface<DXGI.Device>();
 
                 // We need to access D3D11 on multiple threads, so enable multi-threading
                 _threadLock = _device3D.ImmediateContext.QueryInterface<D3D11.Multithread>();
                 _threadLock.SetMultithreadProtected(true);
 
-                _context3D = _device3D.ImmediateContext.QueryInterface<D3D11.DeviceContext4>();
+                _factoryDWrite = new DWrite.Factory(DWrite.FactoryType.Shared);
+                _factoryWic = new WIC.ImagingFactory2();
 
                 _device2D = new D2D1.Device(_deviceDxgi, new D2D1.CreationProperties
                 {
@@ -91,7 +94,19 @@ namespace WonderMediaProductions.WebRtc
                 _context2D = new D2D1.DeviceContext(_device2D, D2D1.DeviceContextOptions.None);
             }
 
-            var d2DPixelFormat = new D2D1.PixelFormat(DXGI.Format.B8G8R8A8_UNorm, D2D1.AlphaMode.Premultiplied);
+            var textureDescription = new D3D11.Texture2DDescription()
+            {
+                Width = FrameWidth,
+                Height = FrameHeight,
+                Format = DXGI.Format.B8G8R8A8_UNorm,
+                ArraySize = 1,
+                MipLevels = 1,
+                BindFlags = D3D11.BindFlags.None,
+                SampleDescription = new DXGI.SampleDescription(1, 0),
+                OptionFlags = D3D11.ResourceOptionFlags.None,
+                CpuAccessFlags = D3D11.CpuAccessFlags.None,
+                Usage = D3D11.ResourceUsage.Default
+            };
 
             // Load the background image
             using (var decoder = new WIC.JpegBitmapDecoder(_factoryWic))
@@ -105,40 +120,26 @@ namespace WonderMediaProductions.WebRtc
                 _backgroundBitmap = D2D1.Bitmap1.FromWicBitmap(_context2D, bitmapScaler);
             }
 
-            // Create render texture queue
+            // Create render target
+            var targetDescription = textureDescription;
+            targetDescription.BindFlags = D3D11.BindFlags.RenderTarget;
+
+            _renderTarget = new D3D11.Texture2D(_device3D, targetDescription);
+
+            using (var surface = _renderTarget.QueryInterface<DXGI.Surface>())
             {
-                var description = new D3D11.Texture2DDescription()
-                {
-                    Width = FrameWidth,
-                    Height = FrameHeight,
-                    Format = DXGI.Format.B8G8R8A8_UNorm,
+                _renderCanvas = new D2D1.Bitmap1(_context2D, surface);
+            }
 
-                    ArraySize = 1,
-                    MipLevels = 1,
-                    BindFlags = D3D11.BindFlags.RenderTarget,
-                    SampleDescription = new DXGI.SampleDescription(1, 0),
-                    OptionFlags = D3D11.ResourceOptionFlags.None,
-                };
+            _ballEllipse = new D2D1.Ellipse {RadiusX = FrameWidth/10f, RadiusY = FrameHeight/10f};
 
-                for (int i = 0; i < VideoFrameQueueSize; ++i)
-                {
-                    _renderQueue.Enqueue(i);
+            _ballBrush = new D2D1.SolidColorBrush(_context2D, new RawColor4(1f, 1f, 0f, 1f));
 
-                    var renderTexture = new D3D11.Texture2D(_device3D, description);
-                    _renderTextures.Add(renderTexture);
-
-                    using (var surface = renderTexture.QueryInterface<DXGI.Surface>())
-                    {
-                        var renderTarget = new D2D1.Bitmap1(_context2D, surface);
-                        _renderTargets.Add(renderTarget);
-
-                        _context2D.Target = renderTarget;
-
-                        _context2D.BeginDraw();
-                        _context2D.DrawBitmap(_backgroundBitmap, new RawRectangleF(0, 0, FrameWidth, FrameHeight), 1, D2D1.BitmapInterpolationMode.NearestNeighbor);
-                        _context2D.EndDraw();
-                    }
-                }
+            // Create texture queue
+            for (int i = 0; i < VideoFrameQueueSize; ++i)
+            {
+                _renderQueue.Enqueue(i);
+                _frameTextures.Add(new D3D11.Texture2D(_device3D, textureDescription));
             }
 
         }
@@ -157,31 +158,43 @@ namespace WonderMediaProductions.WebRtc
 
         public void SendFrame(TimeSpan elapsedTime, int frameIndex)
         {
+            // TODO: Draw bouncing ball.
+            var a = Math.PI * elapsedTime.TotalSeconds;
+            var h = FrameHeight - _ballEllipse.RadiusY;
+            var y = (float)(FrameHeight - Math.Abs(Math.Sin(a) * h));
+
+            _context2D.Target = _renderCanvas;
+            _context2D.BeginDraw();
+            _context2D.Transform = SharpDX.Matrix3x2.Identity;
+            _context2D.DrawBitmap(_backgroundBitmap, new RawRectangleF(0, 0, FrameWidth, FrameHeight), 1, D2D1.BitmapInterpolationMode.NearestNeighbor);
+            _context2D.Transform = SharpDX.Matrix3x2.Translation(0, y);
+            _context2D.FillEllipse(_ballEllipse, _ballBrush);
+            _context2D.Flush();
+            _context2D.EndDraw();
+            _context2D.Target = null;
+
             if (_renderQueue.TryDequeue(out long frameId))
             {
-                int index = (int) frameId;
-                var target = _renderTargets[index];
+                int index = (int)frameId;
+                var texture = _frameTextures[index];
 
-                // TODO: Draw bouncing ball.
-                var y = (float)(elapsedTime.TotalSeconds * 10);
-                _context2D.Target = target;
+                // Console.WriteLine($"Rendering {index}");
+                _context3D.CopyResource(_renderTarget, texture);
+                _context3D.Flush();
 
-                _context2D.BeginDraw();
-                _context2D.DrawBitmap(_backgroundBitmap, new RawRectangleF(0, y, FrameWidth, FrameHeight), 1, D2D1.BitmapInterpolationMode.NearestNeighbor);
-                _context2D.EndDraw();
-
-                VideoTrack.SendVideoFrame(frameId, _renderTextures[index].NativePointer, FrameWidth * 4, FrameWidth, FrameHeight, VideoFrameFormat.GpuTextureD3D11);
+                VideoTrack.SendVideoFrame(frameId, texture.NativePointer, FrameWidth * 4, FrameWidth, FrameHeight, VideoFrameFormat.GpuTextureD3D11);
             }
             else
             {
                 Console.WriteLine("WARNING: All D3D11 textures are used by the H264 encoder!");
             }
-            
+
         }
 
         private void OnLocalVideoFrameEncoded(VideoFrameMessage message)
         {
             // Put the texture back in the queue
+            // Console.WriteLine($"Encoded {message.FrameId}");
             _renderQueue.Enqueue(message.FrameId);
         }
     }

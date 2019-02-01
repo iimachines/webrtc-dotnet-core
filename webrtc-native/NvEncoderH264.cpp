@@ -238,12 +238,16 @@ namespace webrtc {
                 break;
 
             case VideoFrameFormat::GpuTextureD3D11:
+            {
+                ID3D11Texture2D* texture = reinterpret_cast<ID3D11Texture2D*>(const_cast<void*>(native_buffer->texture()));
                 encoded_buffer_size = NvPipe_EncodeTextureD3D11(
                     encoder_,
-                    native_buffer->texture(),
-                    encoded_buffer_ptr, encoded_output_buffer_.size(),
+                    texture,
+                    encoded_buffer_ptr, 
+                    encoded_output_buffer_.size(),
                     send_key_frame);
                 break;
+            }
 
             default:
                 RTC_LOG(LS_ERROR) << "NVENC H264 encoder does not support format " << static_cast<int>(native_buffer->format());
