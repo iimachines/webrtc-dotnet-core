@@ -24,7 +24,7 @@ namespace WonderMediaProductions.WebRtc
             // TODO: Add support for OpenGL, and test it.
             // Maybe use https://github.com/mellinoe/veldrid
             return isWindows
-                ? (IRenderer) new D3D11Renderer(VideoFrameWidth, VideoFrameHeight, videoTrack)
+                ? (IRenderer) new D3D11Renderer(VideoFrameWidth, VideoFrameHeight, videoTrack, Debugger.IsAttached)
                 : new ImageSharpRenderer(VideoFrameWidth, VideoFrameWidth, videoTrack);
         }
 
@@ -56,7 +56,9 @@ namespace WonderMediaProductions.WebRtc
                                 sw.Start();
                             }
 
-                            if (currentTime >= nextFrameTime)
+                            var sleep = nextFrameTime - currentTime;
+
+                            if (sleep.Ticks <= 0)
                             {
                                 // Console.Write($"{sw.ElapsedMilliseconds:D06}\t");
                                 sw.Restart();
@@ -82,7 +84,7 @@ namespace WonderMediaProductions.WebRtc
                                     startTime + TimeSpan.FromTicks(
                                         nextFrameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
                             }
-                            else
+                            else 
                             {
                                 // TODO: Use Win32 waitable timers, or expose webrtc's high-precision (?) TaskQueue
                                 Thread.Sleep(0);
