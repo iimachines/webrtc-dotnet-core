@@ -14,15 +14,21 @@ class PeerConnection final
     , public VideoFrameEvents
 {
 public:
-    PeerConnection();
-    ~PeerConnection() override;
-
-    bool InitializePeerConnection(const char** turn_url_array,
+    PeerConnection(
+        webrtc::PeerConnectionFactoryInterface* factory,
+        const char** turn_url_array,
         const int turn_url_count,
         const char** stun_url_array,
         const int stun_url_count,
-        const char* username,
-        const char* credential, bool can_receive_audio, bool canReceiveVideo, bool enable_dtls_srtp);
+        const char* username, const char* credential, 
+        bool can_receive_audio, bool can_receive_video, 
+        bool enable_dtls_srtp);
+
+    ~PeerConnection() override;
+
+    bool created() const { return peer_connection_; }
+
+    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>& factory() { return factory_; }
 
     // TODO: Allow the user to select the kind of stream (what camera, etc...)
     int AddVideoTrack(const std::string& label, int min_bps, int max_bps, int max_fps);
@@ -31,7 +37,12 @@ public:
     bool CreateAnswer();
     bool SetAudioControl(bool is_mute, bool is_record);
 
+    // TODO: Return data-channel id, just like video-track.
     bool CreateDataChannel(const char* label, bool is_ordered, bool is_reliable);
+
+    // TODO: Use data-channel id, just like video-track.
+    void CloseDataChannel(const char* name);
+
     bool SendData(const char* label, const std::string& data);
 
     bool SendVideoFrame(int video_track_id, VideoFrameId frame_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format);
@@ -54,18 +65,7 @@ public:
     void AddRef() const override;
     rtc::RefCountReleaseStatus Release() const override;
 
-    static bool Configure(bool use_signaling_thread, bool use_worker_thread, bool force_software_video_encoder);
-
 protected:
-    // create a peer connection and add the turn servers info to the configuration.
-    bool CreatePeerConnection(
-        const char** turn_url_array, const int turn_url_count,
-        const char** stun_url_array, const int stun_url_count,
-        const char* username, const char* credential,
-        bool enable_dtls_srtp);
-
-    void CloseDataChannel(const char* name);
-
     bool SetAudioControl();
 
     // PeerConnectionObserver implementation.
@@ -105,6 +105,7 @@ protected:
     std::vector<uint32_t> GetRemoteAudioTrackSynchronizationSources() const;
 
 private:
+    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory_;
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> peer_connection_;
 
     class DataChannelEntry : public webrtc::DataChannelObserver

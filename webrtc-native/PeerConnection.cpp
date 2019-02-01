@@ -3,49 +3,10 @@
 #include "PeerConnection.h"
 #include "InjectableVideoTrackSource.h"
 #include "DummySetSessionDescriptionObserver.h"
-#include "EncoderFactory.h"
 #include "NativeVideoBuffer.h"
 
 namespace
 {
-    // TODO: This should not be part of our peer connection file!
-    int g_peer_count = 0;
-
-    bool g_use_worker_thread = true;
-    bool g_use_signaling_thread = true;
-    bool g_force_software_encoder = false;
-
-    std::unique_ptr<rtc::Thread> g_worker_thread;
-    std::unique_ptr<rtc::Thread> g_signaling_thread;
-
-    // TODO: Give each peer connection its own factory, with different configuration?
-    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> g_peer_connection_factory;
-
-    void startThread(std::unique_ptr<rtc::Thread>& thread, bool isUsed)
-    {
-        if (isUsed)
-        {
-            thread.reset(new rtc::Thread());
-            thread->Start();
-        }
-        else
-        {
-            thread.reset(rtc::Thread::Current());
-        }
-    }
-
-    void stopThread(std::unique_ptr<rtc::Thread>& thread, bool isUsed)
-    {
-        if (isUsed)
-        {
-            thread.reset();
-        }
-        else
-        {
-            thread.release();    // NOLINT(bugprone-unused-return-value)
-        }
-    }
-
     auto getYuvConverter(VideoFrameFormat pf)
     {
         switch (pf)
@@ -73,99 +34,20 @@ namespace
     }
 } // namespace
 
-PeerConnection::PeerConnection()
-{
-    g_peer_count++;
-}
-
-PeerConnection::~PeerConnection()
-{
-    g_peer_count--;
-
-    // Destruct all data channels.
-    data_channels_.clear();
-
-    peer_connection_ = nullptr;
-
-    if (g_peer_count == 0)
-    {
-        g_peer_connection_factory = nullptr;
-        stopThread(g_signaling_thread, g_use_signaling_thread);
-        stopThread(g_worker_thread, g_use_signaling_thread);
-    }
-}
-
-bool PeerConnection::InitializePeerConnection(
+PeerConnection::PeerConnection(
+    webrtc::PeerConnectionFactoryInterface* factory,
     const char** turn_url_array,
     const int turn_url_count,
     const char** stun_url_array,
     const int stun_url_count,
-    const char* username,
-    const char* credential,
-    bool can_receive_audio,
-    bool can_receive_video,
+    const char* username, const char* credential,
+    bool can_receive_audio, bool can_receive_video,
     bool enable_dtls_srtp)
+    : factory_(factory)
+    , can_receive_audio_(can_receive_audio)
+    , can_receive_video_(can_receive_video)
 {
-    RTC_DCHECK(peer_connection_.get() == nullptr);
-
-    if (g_peer_connection_factory == nullptr)
-    {
-        startThread(g_signaling_thread, g_use_signaling_thread);
-        startThread(g_worker_thread, g_use_worker_thread);
-
-        const auto audioEncoderFactory = webrtc::CreateBuiltinAudioEncoderFactory();
-        const auto audioDecoderFactory = webrtc::CreateBuiltinAudioDecoderFactory();
-        auto videoEncoderFactory = CreateEncoderFactory(g_force_software_encoder);
-        auto videoDecoderFactory = std::make_unique<webrtc::InternalDecoderFactory>();
-
-        const std::nullptr_t default_adm = nullptr;
-        const std::nullptr_t audio_mixer = nullptr;
-        const std::nullptr_t audio_processing = nullptr;
-
-        g_peer_connection_factory = webrtc::CreatePeerConnectionFactory(
-            g_worker_thread.get(),
-            g_worker_thread.get(),
-            g_signaling_thread.get(),
-            default_adm,
-            audioEncoderFactory,
-            audioDecoderFactory,
-            move(videoEncoderFactory),
-            move(videoDecoderFactory),
-            audio_mixer,
-            audio_processing);
-    }
-
-    if (!g_peer_connection_factory)
-    {
-        return false;
-    }
-
-    if (!CreatePeerConnection(
-        turn_url_array, turn_url_count,
-        stun_url_array, stun_url_count,
-        username, credential,
-        enable_dtls_srtp))
-    {
-        return false;
-    }
-
-    can_receive_audio_ = can_receive_audio;
-    can_receive_video_ = can_receive_video;
-
-    return peer_connection_;
-}
-
-bool PeerConnection::CreatePeerConnection(
-    const char** turn_url_array,
-    const int turn_url_count,
-    const char** stun_url_array,
-    const int stun_url_count,
-    const char* username,
-    const char* credential,
-    bool enable_dtls_srtp)
-{
-    RTC_DCHECK(g_peer_connection_factory.get() != nullptr);
-    RTC_DCHECK(peer_connection_.get() == nullptr);
+    RTC_DCHECK(factory_.get() != nullptr);
 
 #ifdef HAS_LOCAL_VIDEO_OBSERVER
     local_video_observer_.reset(new VideoObserver());
@@ -217,10 +99,13 @@ bool PeerConnection::CreatePeerConnection(
     config_.rtcp_mux_policy = webrtc::PeerConnectionInterface::kRtcpMuxPolicyRequire;
     config_.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
 
-    peer_connection_ = g_peer_connection_factory->CreatePeerConnection(
-        config_, nullptr, nullptr, this);
+    peer_connection_ = factory_->CreatePeerConnection(config_, nullptr, nullptr, this);
+}
 
-    return peer_connection_;
+PeerConnection::~PeerConnection()
+{
+    // Destruct all data channels.
+    data_channels_.clear();
 }
 
 bool PeerConnection::CreateOffer()
@@ -507,7 +392,7 @@ int PeerConnection::AddVideoTrack(const std::string& label, int min_bps, int max
     if (!video_track_source)
         return 0;
 
-    auto video_track = g_peer_connection_factory->CreateVideoTrack(label, video_track_source);
+    auto video_track = factory_->CreateVideoTrack(label, video_track_source);
     if (!video_track)
         return 0;
 
@@ -767,23 +652,3 @@ rtc::RefCountReleaseStatus PeerConnection::Release() const
     return rtc::RefCountReleaseStatus::kOtherRefsRemained;
 }
 
-bool PeerConnection::Configure(bool use_signaling_thread, bool use_worker_thread, bool force_software_video_encoder)
-{
-    if (g_worker_thread || g_signaling_thread)
-    {
-        if (g_use_signaling_thread != use_signaling_thread ||
-            g_use_worker_thread != use_worker_thread ||
-            g_force_software_encoder != force_software_video_encoder)
-        {
-            RTC_LOG(LS_ERROR) << __FUNCTION__ << " must be called once, before creating the first peer connection";
-            return false;
-        }
-
-        return true;
-    }
-
-    g_use_signaling_thread = use_signaling_thread;
-    g_use_worker_thread = use_worker_thread;
-    g_force_software_encoder = force_software_video_encoder;
-    return true;
-}

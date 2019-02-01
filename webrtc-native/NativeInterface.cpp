@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "PeerConnection.h"
 #include "NvEncoderH264.h"
+#include "EncoderFactory.h"
 
 #if defined(WEBRTC_WIN)
 #   define WEBRTC_PLUGIN_API __declspec(dllexport)
@@ -10,6 +11,117 @@
 
 namespace
 {
+    // TODO: Bundle these globals in a class!
+    bool g_auto_shutdown = true;
+    bool g_use_worker_thread = true;
+    bool g_use_signaling_thread = true;
+    bool g_force_software_encoder = false;
+
+    rtc::CriticalSection g_lock;
+
+    webrtc::PeerConnectionFactoryInterface* g_peer_connection_factory = nullptr;
+
+    std::unique_ptr<rtc::Thread> g_worker_thread;
+    std::unique_ptr<rtc::Thread> g_signaling_thread;
+
+    void startThread(std::unique_ptr<rtc::Thread>& thread, bool isUsed)
+    {
+        rtc::CritScope scope(&g_lock);
+
+        assert(!thread);
+
+        if (isUsed)
+        {
+            thread.reset(new rtc::Thread());
+            thread->Start();
+        }
+        else
+        {
+            thread.reset(rtc::Thread::Current());
+        }
+    }
+
+    void stopThread(std::unique_ptr<rtc::Thread>& thread, bool isUsed)
+    {
+        rtc::CritScope scope(&g_lock);
+
+        if (isUsed)
+        {
+            if (thread)
+            {
+                thread->Stop();
+                thread = nullptr;
+            }
+        }
+        else
+        {
+            thread.release();    // NOLINT(bugprone-unused-return-value)
+        }
+    }
+
+    webrtc::PeerConnectionFactoryInterface* acquireFactory()
+    {
+        // Create global factory if needed
+        rtc::CritScope scope(&g_lock);
+
+        if (g_peer_connection_factory == nullptr)
+        {
+            startThread(g_signaling_thread, g_use_signaling_thread);
+            startThread(g_worker_thread, g_use_worker_thread);
+
+            const auto audioEncoderFactory = webrtc::CreateBuiltinAudioEncoderFactory();
+            const auto audioDecoderFactory = webrtc::CreateBuiltinAudioDecoderFactory();
+            auto videoEncoderFactory = CreateEncoderFactory(g_force_software_encoder);
+            auto videoDecoderFactory = std::make_unique<webrtc::InternalDecoderFactory>();
+
+            const std::nullptr_t default_adm = nullptr;
+            const std::nullptr_t audio_mixer = nullptr;
+            const std::nullptr_t audio_processing = nullptr;
+
+            auto factory = CreatePeerConnectionFactory(
+                g_worker_thread.get(),
+                g_worker_thread.get(),
+                g_signaling_thread.get(),
+                default_adm,
+                audioEncoderFactory,
+                audioDecoderFactory,
+                move(videoEncoderFactory),
+                move(videoDecoderFactory),
+                audio_mixer,
+                audio_processing);
+
+            g_peer_connection_factory = std::move(factory);
+            g_peer_connection_factory->AddRef();
+        }
+        else if (g_auto_shutdown)
+        {
+            g_peer_connection_factory->AddRef();
+        }
+
+        return g_peer_connection_factory;
+    }
+
+    bool releaseFactory(bool should_release = g_auto_shutdown)
+    {
+        // Release the factory on last destruction if auto-shutdown is enabled
+        rtc::CritScope scope(&g_lock);
+
+        if (should_release && g_peer_connection_factory)
+        {
+            const auto status = g_peer_connection_factory->Release();
+
+            if (status == rtc::RefCountReleaseStatus::kDroppedLastRef)
+            {
+                g_peer_connection_factory = nullptr;
+                stopThread(g_signaling_thread, g_use_signaling_thread);
+                stopThread(g_worker_thread, g_use_signaling_thread);
+                return true;
+            }
+        }
+
+        return g_peer_connection_factory == nullptr;
+    }
+
     class ModuleInitializer
     {
     public:
@@ -67,10 +179,47 @@ extern "C"
         return rtc::Thread::Current()->ProcessMessages(timeoutInMS);
     }
 
-    WEBRTC_PLUGIN_API bool Configure(bool useSignalingThread, bool useWorkerThread, bool forceSoftwareVideoEncoder)
+    WEBRTC_PLUGIN_API bool Configure(bool use_signaling_thread, bool use_worker_thread, bool force_software_video_encoder, bool auto_shutdown)
     {
+        rtc::CritScope scope(&g_lock);
+
         initializeModule();
-        return PeerConnection::Configure(useSignalingThread, useWorkerThread, forceSoftwareVideoEncoder);
+
+        if (g_worker_thread || g_signaling_thread)
+        {
+            if (g_use_signaling_thread != use_signaling_thread ||
+                g_use_worker_thread != use_worker_thread ||
+                g_force_software_encoder != force_software_video_encoder ||
+                g_auto_shutdown != auto_shutdown)
+            {
+                RTC_LOG(LS_ERROR) << __FUNCTION__ << " must be called once, before creating the first peer connection";
+                return false;
+            }
+
+            return true;
+        }
+
+        g_use_signaling_thread = use_signaling_thread;
+        g_use_worker_thread = use_worker_thread;
+        g_force_software_encoder = force_software_video_encoder;
+        g_auto_shutdown = auto_shutdown;
+        return true;
+    }
+
+    WEBRTC_PLUGIN_API bool CanEncodeHardwareTextures()
+    {
+        return webrtc::NvEncoderH264::IsAvailable();
+    }
+
+    WEBRTC_PLUGIN_API bool HasFactory()
+    {
+        rtc::CritScope scope(&g_lock);
+        return g_peer_connection_factory;
+    }
+
+    WEBRTC_PLUGIN_API bool Shutdown()
+    {
+        return releaseFactory(true);
     }
 
     WEBRTC_PLUGIN_API PeerConnection* CreatePeerConnection(
@@ -82,28 +231,40 @@ extern "C"
         const char* credential,
         bool can_receive_audio,
         bool can_receive_video,
-        bool isDtlsSrtpEnabled)
+        bool is_dtls_srtp_enabled)
     {
+        rtc::CritScope scope(&g_lock);
+
         initializeModule();
 
-        auto connection = new PeerConnection();
-        if (connection->InitializePeerConnection(
+        auto factory = acquireFactory();
+        if (!factory)
+            return nullptr;
+
+        auto connection = new PeerConnection(factory,
             turn_url_array, turn_url_count,
             stun_url_array, stun_url_count,
             username, credential,
             can_receive_audio, can_receive_video,
-            isDtlsSrtpEnabled))
+            is_dtls_srtp_enabled);
+
+        if (!connection->created())
         {
-            return connection;
+            delete connection;
+            releaseFactory();
+            connection = nullptr;
         }
 
-        delete connection;
-        return nullptr;
+        return connection;
     }
 
     WEBRTC_PLUGIN_API void ClosePeerConnection(PeerConnection* connection)
     {
-        delete connection;
+        if (connection)
+        {
+            delete connection;
+            releaseFactory();
+        }
     }
 
     WEBRTC_PLUGIN_API int AddVideoTrack(PeerConnection* connection, const char* label, int min_bps, int max_bps, int max_fps)
@@ -217,10 +378,5 @@ extern "C"
     {
         const auto clock = webrtc::Clock::GetRealTimeClock();
         return clock->TimeInMicroseconds();
-    }
-
-    WEBRTC_PLUGIN_API bool CanEncodeHardwareTextures()
-    {
-        return webrtc::NvEncoderH264::IsAvailable();
     }
 }

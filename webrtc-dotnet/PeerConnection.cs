@@ -28,8 +28,28 @@ namespace WonderMediaProductions.WebRtc
         /// </summary>
         public static void Configure(GlobalOptions options)
         {
-            Native.Check(Native.Configure(options.UseSignalingThread, options.UseWorkerThread, options.ForceSoftwareVideoEncoder));
+            Native.Check(Native.Configure(options.UseSignalingThread, options.UseWorkerThread, options.ForceSoftwareVideoEncoder, options.AutoShutdown));
         }
+
+        /// <summary>
+        /// This shuts down the global webrtc module.
+        /// </summary>
+        /// <remarks>
+        /// Only needed when you disabled auto-shutdown in the <seealso cref="Configure(GlobalOptions)"/> call />,
+        /// and can then only be called after all <see cref="PeerConnection"/> instances are disposed.
+        /// </remarks>
+        public static void Shutdown()
+        {
+            Native.Check(Native.Shutdown());
+        }
+
+        /// <summary>
+        /// Is the peer connection factory created?
+        /// This happens after the first peer connection is created,
+        /// and stops when the last peer connection is destroyed,
+        /// unless auto-shutdown is disabled with <seealso cref="Configure(GlobalOptions)"/>
+        /// </summary>
+        public static bool HasFactory => Native.HasFactory();
 
         public static void Configure(Action<GlobalOptions> configure)
         {

@@ -2,9 +2,11 @@
 
 function main() {
 
-
     const video = document.querySelector('video');
     const logElem = document.getElementById('log');
+
+    // Clear log
+    logElem.innerText = "";
 
     // https://github.com/webrtc/samples/blob/gh-pages/src/content/peerconnection/bandwidth/js/main.js
     function removeBandwidthRestriction(sdp: string) {
@@ -23,7 +25,7 @@ function main() {
 
     video.addEventListener("readystatechange",
         () => {
-            log(`Video ready state = ${video.readyState}`);
+            log(`🛈 Video ready state = ${video.readyState}`);
         });
 
     window.onmousedown = async e =>
@@ -33,12 +35,12 @@ function main() {
                 await video.play();
             }
         } catch (err) {
-            log(err);
+            log(`✘ ${err}`);
         }
     }
 
     video.oncanplay = e => {
-        log(`Video can play`);
+        log(`🛈 Video can play`);
         //try {
         //    await video.play();
         //} catch (err) {
@@ -61,9 +63,19 @@ function main() {
 
     function send(action: "ice" | "sdp", payload: any) {
         const msg = JSON.stringify({ action, payload });
-        log(`send ${msg}`);
+        log(`🛈 send ${msg}`);
         ws.send(msg);
     }
+
+    ws.onerror = e => {
+        log("✘ Websocket error, retrying in 1 second");
+        setTimeout(main, 1000);
+    };
+
+    ws.onclose = e => {
+        log("✘ Websocket closed, retrying in 1 second");
+        setTimeout(main, 1000);
+    };
 
     ws.onopen = e => {
         pc.onicecandidate = e => {
@@ -71,59 +83,59 @@ function main() {
         };
 
         pc.oniceconnectionstatechange = e => {
-            log(`ice connection state = ${pc.iceConnectionState}`);
+            log(`🛈 ice connection state = ${pc.iceConnectionState}`);
         };
 
         pc.ontrack = ({ transceiver }) => {
-            log(`✔: received track`);
+            log(`✔ received track`);
             let track = transceiver.receiver.track;
 
             video.srcObject = new MediaStream([track]);
 
             track.onunmute = () => {
-                log(`✔: track unmuted`);
+                log(`✔ track unmuted`);
             }
 
             track.onended = () => {
-                log(`✔: track ended`);
+                log(`✘ track ended`);
             }
 
             track.onmute = () =>
             {
-                log(`✔: track muted`);
+                log(`✘ track muted`);
             };
         }
     }
 
     ws.onmessage = async e => {
         const { action, payload } = JSON.parse(e.data);
-        log(`receive: ${e.data}`);
+        log(`🛈 received ${e.data}`);
 
         try {
             switch (action) {
             case "ice":
             {
                 await pc.addIceCandidate(payload);
-                log(`✔: addIceCandidate`);
+                log(`✔ addIceCandidate`);
                 break;
             }
 
             case "sdp":
             {
                 await pc.setRemoteDescription(payload);
-                log(`✔: setRemoteDescription`);
+                log(`✔ setRemoteDescription`);
                 let { sdp, type } = await pc.createAnswer({ offerToReceiveVideo: true });
-                log(`✔: createAnswer`);
+                log(`✔ createAnswer`);
                 sdp = removeBandwidthRestriction(sdp);
                 await pc.setLocalDescription({ sdp, type });
-                log(`✔: setLocalDescription`);
+                log(`✔ setLocalDescription`);
                 send("sdp", { sdp, type });
             }
             }
         } catch (err) {
-            log(err);
+            log(`✘ ${err}`);
         }
     }
-};
+}
 
 main();

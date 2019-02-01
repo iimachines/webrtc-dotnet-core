@@ -5,6 +5,7 @@
         public bool UseSignalingThread = true;
         public bool UseWorkerThread = true;
         public bool ForceSoftwareVideoEncoder = false;
+        public bool AutoShutdown = true;
 
         public bool IsSingleThreaded
         {

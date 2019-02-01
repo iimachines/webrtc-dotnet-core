@@ -58,7 +58,13 @@ namespace WonderMediaProductions.WebRtc
         internal delegate void VideoFrameEncodedCallback(int videoTrackId, long frameId, IntPtr rgbaPixels);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool Configure(bool hasSignallingThread, bool hasWorkerThread, bool forceSoftwareVideoEncoder);
+        internal static extern bool Configure(bool hasSignallingThread, bool hasWorkerThread, bool forceSoftwareVideoEncoder, bool autoShutdown);
+
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern bool Shutdown();
+
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern bool HasFactory();
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool PumpQueuedMessages(int timeoutInMS);
