@@ -3,7 +3,7 @@ using System.Reactive.Subjects;
 
 namespace WonderMediaProductions.WebRtc
 {
-    public sealed class ObservableVideoTrack : VideoTrack
+    public class ObservableVideoTrack : VideoTrack
     {
         private readonly Subject<VideoFrameMessage> _localVideoFrameEncodedStream = new Subject<VideoFrameMessage>();
 

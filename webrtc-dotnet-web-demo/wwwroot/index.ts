@@ -2,6 +2,16 @@
 
 let retryHandle: number = NaN;
 
+function isPlaying(media: HTMLMediaElement): boolean {
+    return media.currentTime > 0 && !media.paused && !media.ended && media.readyState > 2;
+}
+
+// https://github.com/webrtc/samples/blob/gh-pages/src/content/peerconnection/bandwidth/js/main.js
+function removeBandwidthRestriction(sdp: string) {
+    // TODO: This this is actually work? Test!
+    return sdp.replace(/b=AS:.*\r\n/, '').replace(/b=TIAS:.*\r\n/, '');
+}
+
 function main() {
 
     retryHandle = NaN;
@@ -12,12 +22,6 @@ function main() {
     // Clear log
     logElem.innerText = "";
 
-    // https://github.com/webrtc/samples/blob/gh-pages/src/content/peerconnection/bandwidth/js/main.js
-    function removeBandwidthRestriction(sdp: string) {
-        // TODO: Doesn't seem to work...
-        return sdp.replace(/b=AS:.*\r\n/, '').replace(/b=TIAS:.*\r\n/, '');
-    }
-
     function log(text: string) {
 
         console.log(text);
@@ -25,31 +29,6 @@ function main() {
         const line = document.createElement("pre");
         line.innerText = text;
         logElem.appendChild(line);
-    }
-
-    video.addEventListener("readystatechange",
-        () => {
-            log(`🛈 Video ready state = ${video.readyState}`);
-        });
-
-    window.onmousedown = async e =>
-    {
-        try {
-            if (video.readyState === 4) {
-                await video.play();
-            }
-        } catch (err) {
-            log(`✘ ${err}`);
-        }
-    }
-
-    video.oncanplay = e => {
-        log(`🛈 Video can play`);
-        //try {
-        //    await video.play();
-        //} catch (err) {
-        //    log(`Video failed to play: ${err}`);
-        //}
     }
 
     function getSignalingSocketUrl() {
@@ -65,7 +44,7 @@ function main() {
     let ws = new WebSocket(getSignalingSocketUrl());
     ws.binaryType = "arraybuffer";
 
-    function send(action: "ice" | "sdp", payload: any) {
+    function send(action: "ice" | "sdp" | "pos", payload: any) {
         const msg = JSON.stringify({ action, payload });
         log(`🛈 send ${msg}`);
         ws.send(msg);
@@ -86,10 +65,42 @@ function main() {
         setTimeout(main, 1000);
     }
 
-    ws.onerror = e => log(`✘ websocket error`);
-    ws.onclose = e => retry("websocket closed");
+    video.addEventListener("readystatechange", () => log(`🛈 Video ready state = ${video.readyState}`));
 
-    ws.onopen = e => {
+    function sendMousePos(e: MouseEvent, kind: number) {
+        const bounds = video.getBoundingClientRect();
+        const x = (e.clientX - bounds.left) / bounds.width;
+        const y = (e.clientY - bounds.top) / bounds.height;
+        send("pos", { kind, x, y });
+
+        if (kind === 2) {
+            video.onmousemove = video.onmouseup = null;
+        }
+    }
+
+    video.onmousedown = async (e: MouseEvent) => {
+        try {
+            if (e.button === 0) {
+                if (isPlaying(video)) {
+                    sendMousePos(e, 0);
+                    video.onmousemove = (e2: MouseEvent) => sendMousePos(e2, 1);
+                    video.onmouseup = (e2: MouseEvent) => sendMousePos(e2, 2);
+                } else {
+                    log(`🛈 Playing video`);
+                    await video.play();
+                }
+            }
+        } catch (err) {
+            log(`✘ ${err}`);
+        }
+    }
+
+    video.oncanplay = () => log(`🛈 Video can play`);
+
+    ws.onerror = () => log(`✘ websocket error`);
+    ws.onclose = () => retry("websocket closed");
+
+    ws.onopen = () => {
         pc.onicecandidate = e => {
             send("ice", e.candidate);
         };
@@ -112,8 +123,7 @@ function main() {
                 log(`✘ track ended`);
             }
 
-            track.onmute = () =>
-            {
+            track.onmute = () => {
                 log(`✘ track muted`);
             };
         }
@@ -125,24 +135,24 @@ function main() {
 
         try {
             switch (action) {
-            case "ice":
-            {
-                await pc.addIceCandidate(payload);
-                log(`✔ addIceCandidate`);
-                break;
-            }
+                case "ice":
+                    {
+                        await pc.addIceCandidate(payload);
+                        log(`✔ addIceCandidate`);
+                        break;
+                    }
 
-            case "sdp":
-            {
-                await pc.setRemoteDescription(payload);
-                log(`✔ setRemoteDescription`);
-                let { sdp, type } = await pc.createAnswer({ offerToReceiveVideo: true });
-                log(`✔ createAnswer`);
-                sdp = removeBandwidthRestriction(sdp);
-                await pc.setLocalDescription({ sdp, type });
-                log(`✔ setLocalDescription`);
-                send("sdp", { sdp, type });
-            }
+                case "sdp":
+                    {
+                        await pc.setRemoteDescription(payload);
+                        log(`✔ setRemoteDescription`);
+                        let { sdp, type } = await pc.createAnswer({ offerToReceiveVideo: true });
+                        log(`✔ createAnswer`);
+                        sdp = removeBandwidthRestriction(sdp);
+                        await pc.setLocalDescription({ sdp, type });
+                        log(`✔ setLocalDescription`);
+                        send("sdp", { sdp, type });
+                    }
             }
         } catch (err) {
             log(`✘ ${err}`);

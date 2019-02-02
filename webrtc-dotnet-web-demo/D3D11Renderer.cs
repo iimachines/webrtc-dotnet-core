@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
-using System.Numerics;
 using System.Reactive.Disposables;
 using SharpDX.IO;
 using SharpDX.Mathematics.Interop;
@@ -148,6 +147,7 @@ namespace WonderMediaProductions.WebRtc
         public int FrameWidth { get; }
         public int FrameHeight { get; }
         public ObservableVideoTrack VideoTrack { get; }
+        public RawVector2? BallPosition { get; set; }
 
         protected override void OnDispose(bool isDisposing)
         {
@@ -173,7 +173,11 @@ namespace WonderMediaProductions.WebRtc
                 _context2D.BeginDraw();
                 _context2D.Transform = SharpDX.Matrix3x2.Identity;
                 _context2D.DrawBitmap(_backgroundBitmap, new RawRectangleF(0, 0, FrameWidth, FrameHeight), 1, D2D1.BitmapInterpolationMode.NearestNeighbor);
-                _context2D.Transform = SharpDX.Matrix3x2.Translation(FrameWidth / 2f, y);
+
+                _context2D.Transform = BallPosition.HasValue
+                    ? SharpDX.Matrix3x2.Translation(BallPosition.Value * new SharpDX.Vector2(FrameWidth, FrameHeight))
+                    : SharpDX.Matrix3x2.Translation(FrameWidth / 2f, y);
+
                 _context2D.FillEllipse(_ballEllipse, _ballBrush);
                 _context2D.EndDraw();
                 _context2D.Target = null;
@@ -186,7 +190,6 @@ namespace WonderMediaProductions.WebRtc
             {
                 Console.WriteLine("WARNING: All D3D11 textures are used by the H264 encoder!");
             }
-
         }
 
         private void OnLocalVideoFrameEncoded(VideoFrameMessage message)

@@ -44,9 +44,12 @@ namespace WonderMediaProductions.WebRtc
             }
         }
 
-        protected virtual void OnLocalVideoFrameEncoded(WebRtc.PeerConnection pc, int trackId, long frameId, IntPtr rgbaPixels)
+        protected virtual void OnLocalVideoFrameEncoded(PeerConnection pc, int trackId, long frameId, IntPtr rgbaPixels)
         {
-            LocalVideoFrameEncoded?.Invoke(pc, trackId, frameId, rgbaPixels);
+            if (TrackId == trackId)
+            {
+                LocalVideoFrameEncoded?.Invoke(pc, trackId, frameId, rgbaPixels);
+            }
         }
     }
 }

@@ -69,6 +69,7 @@ namespace WonderMediaProductions.WebRtc
         public int FrameHeight { get; }
 
         public ObservableVideoTrack VideoTrack { get; }
+        public RawVector2? BallPosition { get; set; }
 
         protected override void OnDispose(bool isDisposing)
         {

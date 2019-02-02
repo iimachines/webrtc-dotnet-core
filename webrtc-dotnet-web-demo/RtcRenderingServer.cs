@@ -1,17 +1,21 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.WebSockets;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using SharpDX;
+using SharpDX.Mathematics.Interop;
 
 namespace WonderMediaProductions.WebRtc
 {
-    public static class RtcServer
+    public static class RtcRenderingServer
     {
         const int VideoFrameWidth = 1920;
         const int VideoFrameHeight = 1080;
@@ -24,15 +28,33 @@ namespace WonderMediaProductions.WebRtc
             // TODO: Add support for OpenGL, and test it.
             // Maybe use https://github.com/mellinoe/veldrid
             return isWindows
-                ? (IRenderer) new D3D11Renderer(VideoFrameWidth, VideoFrameHeight, videoTrack, Debugger.IsAttached)
+                ? (IRenderer)new D3D11Renderer(VideoFrameWidth, VideoFrameHeight, videoTrack, Debugger.IsAttached)
                 : new ImageSharpRenderer(VideoFrameWidth, VideoFrameWidth, videoTrack);
+        }
+
+        class SharedState : IDisposable
+        {
+            public readonly ObservableVideoTrack VideoTrack;
+
+            public ConcurrentQueue<MouseMessage> MouseMessageQueue = new ConcurrentQueue<MouseMessage>();
+
+            public SharedState(ObservableVideoTrack videoTrack)
+            {
+                VideoTrack = videoTrack;
+            }
+
+            public void Dispose()
+            {
+                VideoTrack?.Dispose();
+            }
         }
 
         private static void VideoRenderer(object parameter)
         {
             try
             {
-                var videoTrack = (ObservableVideoTrack) parameter;
+                var state = (SharedState) parameter;
+                var videoTrack = state.VideoTrack;
                 var peerConnection = videoTrack.PeerConnection;
 
                 TimeSpan startTime = TimeSpan.Zero;
@@ -42,6 +64,7 @@ namespace WonderMediaProductions.WebRtc
 
                 var sw = new Stopwatch();
 
+                // TODO: Stop using polling, use a Win32 WaitableTimer and GetSystemTimePreciseAsFileTime as I did in the 3D Streaming Toolkit fork.
                 using (var renderer = CreateRenderer(videoTrack))
                 {
                     while (Thread.CurrentThread.IsAlive && !peerConnection.IsDisposed)
@@ -58,13 +81,28 @@ namespace WonderMediaProductions.WebRtc
 
                             var sleep = nextFrameTime - currentTime;
 
-                            if (sleep.Ticks <= 0)
+                            MouseMessage lastMouseMessage = null;
+
+                            while(state.MouseMessageQueue.TryDequeue(out var mouseMessage))
+                            {
+                                lastMouseMessage = mouseMessage;
+                            }
+
+                            if (lastMouseMessage != null)
+                            {
+                                renderer.BallPosition = lastMouseMessage.Kind != MouseEventKind.Up ? lastMouseMessage.Pos : (RawVector2?) null;
+
+                                var elapsedTime = currentTime - startTime;
+                                var frameIndex = (int)(elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
+                                renderer.SendFrame(elapsedTime, frameIndex);
+                            }
+                            else if (sleep.Ticks <= 0)
                             {
                                 // Console.Write($"{sw.ElapsedMilliseconds:D06}\t");
                                 sw.Restart();
 
                                 var elapsedTime = currentTime - startTime;
-                                var frameIndex = (int) (elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
+                                var frameIndex = (int)(elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
 
                                 var skippedFrameCount = frameIndex - nextFrameIndex;
                                 Debug.Assert(skippedFrameCount >= 0);
@@ -84,7 +122,7 @@ namespace WonderMediaProductions.WebRtc
                                     startTime + TimeSpan.FromTicks(
                                         nextFrameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
                             }
-                            else 
+                            else
                             {
                                 // TODO: Use Win32 waitable timers, or expose webrtc's high-precision (?) TaskQueue
                                 Thread.Sleep(0);
@@ -123,7 +161,8 @@ namespace WonderMediaProductions.WebRtc
                 var iceStream = new Subject<IceCandidate>();
                 var sdpStream = new Subject<SessionDescription>();
 
-                renderThread.Start(videoTrack);
+                var sharedState = new SharedState(videoTrack);
+                renderThread.Start(sharedState);
 
                 pc.Connect(msgStream, sdpStream, iceStream);
 
@@ -154,6 +193,12 @@ namespace WonderMediaProductions.WebRtc
                             case "sdp":
                             {
                                 sdpStream.OnNext(new SessionDescription(payload));
+                                break;
+                            }
+
+                            case "pos":
+                            {
+                                sharedState.MouseMessageQueue.Enqueue(new MouseMessage(payload));
                                 break;
                             }
                         }

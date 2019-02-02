@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using SharpDX.Mathematics.Interop;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
@@ -52,6 +53,7 @@ namespace WonderMediaProductions.WebRtc
         public int FrameHeight { get; }
 
         public ObservableVideoTrack VideoTrack { get; }
+        public RawVector2? BallPosition { get; set; }
 
         public void SendFrame(TimeSpan elapsedTime, int frameIndex)
         {

@@ -43,7 +43,7 @@ namespace WonderMediaProductions.WebRtc
                         try
                         {
                             WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                            await RtcServer.Run(webSocket, lifetime.ApplicationStopping);
+                            await RtcRenderingServer.Run(webSocket, lifetime.ApplicationStopping);
                         }
                         catch (Exception ex)
                         {
