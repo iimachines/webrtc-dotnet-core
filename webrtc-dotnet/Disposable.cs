@@ -29,21 +29,24 @@ namespace WonderMediaProductions.WebRtc
         /// </remarks>
         protected void DisposeAllFieldsExcept(params string[] excludeFieldNames)
         {
-            var disposables = GetType()
+            var disposableFields = GetType()
                 .GetFields(BindingFlags.Instance | BindingFlags.NonPublic)
                 .Where(f => !excludeFieldNames.Contains(f.Name) &&
                             typeof(IDisposable).IsAssignableFrom(f.FieldType) &&
                             f.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
-                .Select(f => f.GetValue(this))
-                .Cast<IDisposable>()
-                .Reverse()
                 .ToArray();
 
-            foreach (var disposable in disposables)
+            for (var index = disposableFields.Length; --index  >= 0; )
             {
-                var type = disposable.GetType();
-                Debug.WriteLine($"Disposing {type.Namespace}.{type.Name}...");
-                disposable.Dispose();
+                var field = disposableFields[index];
+
+                // Disposing one field can clear another field, so check this
+                if (field.GetValue(this) is IDisposable disposable)
+                {
+                    var type = disposable.GetType();
+                    Debug.WriteLine($"Disposing {type.Namespace}.{type.Name}...");
+                    disposable.Dispose();
+                }
             }
         }
 
