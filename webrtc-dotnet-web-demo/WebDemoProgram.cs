@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace WonderMediaProductions.WebRtc
 {
@@ -14,6 +15,7 @@ namespace WonderMediaProductions.WebRtc
             WebHost.CreateDefaultBuilder(args)
                 .UseSetting("https_port", "5000")
                 .UseUrls("https://0.0.0.0:5000")
-                .UseStartup<Startup>();
+                .UseStartup<Startup>()
+                .ConfigureLogging((hostingContext, logging) => logging.AddConsole());
     }
 }

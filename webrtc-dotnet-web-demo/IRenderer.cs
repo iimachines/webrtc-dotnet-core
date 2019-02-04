@@ -13,6 +13,6 @@ namespace WonderMediaProductions.WebRtc
 
         RawVector2? BallPosition { get; set; }
 
-        void SendFrame(TimeSpan elapsedTime, int frameIndex);
+        bool SendFrame(TimeSpan elapsedTime, int frameIndex);
     }
 }

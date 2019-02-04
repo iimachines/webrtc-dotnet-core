@@ -34,14 +34,17 @@ namespace WonderMediaProductions.WebRtc
                 .Where(f => !excludeFieldNames.Contains(f.Name) &&
                             typeof(IDisposable).IsAssignableFrom(f.FieldType) &&
                             f.GetCustomAttribute<CompilerGeneratedAttribute>() == null)
+                .Select(f => f.GetValue(this))
+                .Distinct()
+                .OfType<IDisposable>()
                 .ToArray();
 
             for (var index = disposableFields.Length; --index  >= 0; )
             {
-                var field = disposableFields[index];
+                var disposable = disposableFields[index];
 
                 // Disposing one field can clear another field, so check this
-                if (field.GetValue(this) is IDisposable disposable)
+                if (disposable != null)
                 {
                     var type = disposable.GetType();
                     Debug.WriteLine($"Disposing {type.Namespace}.{type.Name}...");

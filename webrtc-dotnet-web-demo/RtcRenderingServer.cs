@@ -9,6 +9,7 @@ using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using SharpDX;
 using SharpDX.Mathematics.Interop;
@@ -21,26 +22,29 @@ namespace WonderMediaProductions.WebRtc
         const int VideoFrameHeight = 1080;
         const int VideoFrameRate = 60;
 
-        private static IRenderer CreateRenderer(ObservableVideoTrack videoTrack)
+        private static IRenderer CreateRenderer(ObservableVideoTrack videoTrack, ILogger logger)
         {
             bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
             // TODO: Add support for OpenGL, and test it.
             // Maybe use https://github.com/mellinoe/veldrid
             return isWindows
-                ? (IRenderer)new D3D11Renderer(VideoFrameWidth, VideoFrameHeight, videoTrack, Debugger.IsAttached)
+                ? (IRenderer)new D3D11Renderer(VideoFrameWidth, VideoFrameHeight, videoTrack, Debugger.IsAttached, logger)
                 : new ImageSharpRenderer(VideoFrameWidth, VideoFrameWidth, videoTrack);
         }
 
         class SharedState : IDisposable
         {
+            public readonly ILogger Logger;
+
             public readonly ObservableVideoTrack VideoTrack;
 
-            public ConcurrentQueue<MouseMessage> MouseMessageQueue = new ConcurrentQueue<MouseMessage>();
+            public readonly ConcurrentQueue<MouseMessage> MouseMessageQueue = new ConcurrentQueue<MouseMessage>();
 
-            public SharedState(ObservableVideoTrack videoTrack)
+            public SharedState(ObservableVideoTrack videoTrack, ILogger logger)
             {
                 VideoTrack = videoTrack;
+                Logger = logger;
             }
 
             public void Dispose()
@@ -51,27 +55,38 @@ namespace WonderMediaProductions.WebRtc
 
         private static void VideoRenderer(object parameter)
         {
+            var state = (SharedState)parameter;
+            var videoTrack = state.VideoTrack;
+            var peerConnection = videoTrack.PeerConnection;
+            var logger = state.Logger;
+
             try
             {
-                var state = (SharedState) parameter;
-                var videoTrack = state.VideoTrack;
-                var peerConnection = videoTrack.PeerConnection;
 
                 TimeSpan startTime = TimeSpan.Zero;
                 TimeSpan nextFrameTime = TimeSpan.Zero;
+                TimeSpan previousTime = TimeSpan.Zero;
 
                 long nextFrameIndex = 0;
 
                 var sw = new Stopwatch();
 
                 // TODO: Stop using polling, use a Win32 WaitableTimer and GetSystemTimePreciseAsFileTime as I did in the 3D Streaming Toolkit fork.
-                using (var renderer = CreateRenderer(videoTrack))
+                using (var renderer = CreateRenderer(videoTrack, logger))
                 {
                     while (Thread.CurrentThread.IsAlive && !peerConnection.IsDisposed)
                     {
                         if (peerConnection.SignalingState == SignalingState.Stable)
                         {
                             var currentTime = PeerConnection.GetRealtimeClockTimeInMicroseconds();
+
+                            if (currentTime == previousTime)
+                            {
+                                Thread.Sleep(0);
+                                continue;
+                            }
+
+                            previousTime = currentTime;
 
                             if (startTime == TimeSpan.Zero)
                             {
@@ -83,17 +98,19 @@ namespace WonderMediaProductions.WebRtc
 
                             MouseMessage lastMouseMessage = null;
 
-                            while(state.MouseMessageQueue.TryDequeue(out var mouseMessage))
+                            while (state.MouseMessageQueue.TryDequeue(out var mouseMessage))
                             {
                                 lastMouseMessage = mouseMessage;
                             }
 
                             if (lastMouseMessage != null)
                             {
-                                renderer.BallPosition = lastMouseMessage.Kind != MouseEventKind.Up ? lastMouseMessage.Pos : (RawVector2?) null;
+                                renderer.BallPosition = lastMouseMessage.Kind != MouseEventKind.Up
+                                    ? lastMouseMessage.Pos
+                                    : (RawVector2?) null;
 
                                 var elapsedTime = currentTime - startTime;
-                                var frameIndex = (int)(elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
+                                var frameIndex = (int) (elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
                                 renderer.SendFrame(elapsedTime, frameIndex);
                             }
                             else if (sleep.Ticks <= 0)
@@ -102,14 +119,15 @@ namespace WonderMediaProductions.WebRtc
                                 sw.Restart();
 
                                 var elapsedTime = currentTime - startTime;
-                                var frameIndex = (int)(elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
+                                var frameIndex =
+                                    (int) (elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
 
                                 var skippedFrameCount = frameIndex - nextFrameIndex;
                                 Debug.Assert(skippedFrameCount >= 0);
 
                                 if (skippedFrameCount >= 1)
                                 {
-                                    Console.WriteLine($"Skipped {skippedFrameCount} frames!");
+                                    logger.LogWarning($"Skipped {skippedFrameCount} frames!");
                                 }
 
                                 renderer.SendFrame(elapsedTime, frameIndex);
@@ -137,13 +155,17 @@ namespace WonderMediaProductions.WebRtc
                 }
             }
 
-            catch (ThreadInterruptedException ex)
+            catch (ThreadInterruptedException)
             {
-                Console.WriteLine(ex.Message);
+            }
+
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error in RtcRendererServer thread");
             }
         }
 
-        public static async Task Run(WebSocket ws, CancellationToken cancellation)
+        public static async Task Run(WebSocket ws, CancellationToken cancellation, ILogger logger)
         {
             var renderThread = new Thread(VideoRenderer);
 
@@ -161,7 +183,7 @@ namespace WonderMediaProductions.WebRtc
                 var iceStream = new Subject<IceCandidate>();
                 var sdpStream = new Subject<SessionDescription>();
 
-                var sharedState = new SharedState(videoTrack);
+                var sharedState = new SharedState(videoTrack, logger);
                 renderThread.Start(sharedState);
 
                 pc.Connect(msgStream, sdpStream, iceStream);
@@ -205,7 +227,7 @@ namespace WonderMediaProductions.WebRtc
                     }
                 }
 
-                Console.WriteLine(ws.CloseStatus.HasValue ? "Websocket was closed by client" : "Application is stopping...");
+                logger.LogInformation(ws.CloseStatus.HasValue ? "Websocket was closed by client" : "Application is stopping...");
 
                 renderThread.Interrupt();
                 renderThread.Join();

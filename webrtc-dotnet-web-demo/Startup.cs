@@ -24,7 +24,8 @@ namespace WonderMediaProductions.WebRtc
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IApplicationLifetime lifetime)
         {
             loggerFactory.AddConsole(LogLevel.Debug);
-            loggerFactory.AddDebug(LogLevel.Debug);
+
+            var logger = loggerFactory.CreateLogger("WD");
 
             app.UseHttpsRedirection();
             app.UseDeveloperExceptionPage();
@@ -43,7 +44,7 @@ namespace WonderMediaProductions.WebRtc
                         try
                         {
                             WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                            await RtcRenderingServer.Run(webSocket, lifetime.ApplicationStopping);
+                            await RtcRenderingServer.Run(webSocket, lifetime.ApplicationStopping, logger);
                         }
                         catch (Exception ex)
                         {

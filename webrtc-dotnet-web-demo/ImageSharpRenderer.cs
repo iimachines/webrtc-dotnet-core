@@ -55,7 +55,7 @@ namespace WonderMediaProductions.WebRtc
         public ObservableVideoTrack VideoTrack { get; }
         public RawVector2? BallPosition { get; set; }
 
-        public void SendFrame(TimeSpan elapsedTime, int frameIndex)
+        public bool SendFrame(TimeSpan elapsedTime, int frameIndex)
         {
             var imageFrameIndex = frameIndex % FrameCount;
             var imageFrame = _videoFrames[imageFrameIndex].Frames[0];
@@ -68,6 +68,8 @@ namespace WonderMediaProductions.WebRtc
                 imageFrame.Width,
                 imageFrame.Height,
                 VideoFrameFormat.CpuTexture);
+
+            return true;
         }
 
         protected override void OnDispose(bool isDisposing)
