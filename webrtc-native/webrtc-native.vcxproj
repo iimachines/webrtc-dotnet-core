@@ -58,7 +58,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\nvpipe-build\include;c:\wc\src;c:\wc\src\third_party\libyuv\include;c:\wc\src\third_party\abseil-cpp;$(SolutionDir)dependencies\webrtc-build\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)dependencies\nvpipe-build\include;c:\wc\src;c:\wc\src\third_party\libyuv\include;c:\wc\src\third_party\abseil-cpp;$(SolutionDir)dependencies\webrtc-build\include\webrtc;$(SolutionDir)dependencies\webrtc-build\include\third_party\libyuv\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>c:\wc\windows_msvc_$(Configuration)_$(Platform)\obj;$(SolutionDir)dependencies\webrtc-build\lib\windows_$(Configuration)_$(Platform);$(SolutionDir)dependencies\nvpipe-build\lib\windows_$(Configuration)_$(Platform);$(SolutionDir)dependencies\nvpipe-build\lib\windows_cuda_$(Platform)</AdditionalLibraryDirectories>

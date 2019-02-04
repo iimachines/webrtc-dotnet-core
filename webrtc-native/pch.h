@@ -69,8 +69,8 @@
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 
-#include "third_party/libyuv/include/libyuv/scale.h"
-#include "third_party/libyuv/include/libyuv/convert.h"
+#include "libyuv/scale.h"
+#include "libyuv/convert.h"
 
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/h264/h264_common.h"
