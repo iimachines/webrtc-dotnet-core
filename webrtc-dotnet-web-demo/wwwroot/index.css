@@ -6,16 +6,25 @@ body {
     background: skyblue;
 }
 
-#log {
-    width: 50%;
+.left-panel {
     float: left;
+    width: 50%;
     height: 100%;
     overflow: scroll;
 }
 
-#video {
-    width: 50%;
+.right-panel {
     float: right;
+    width: 50%;
     background: #aaa;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+video {
+    max-width: 100%;
+    max-height: 100%;
 }
