@@ -525,10 +525,10 @@ bool PeerConnection::SendVideoFrame(int video_track_id, VideoFrameId frame_id, c
 
     source->OnFrame(yuvFrame);
 
-    if (format != VideoFrameFormat::CpuTexture)
+    if (format < VideoFrameFormat::CpuTexture)
     {
         // Since we copied the RGBA frame to a YUV buffer, the input frame is already available again.
-        // Native texture become available when the H264 encoder has processed them.
+        // Native textures become available when the H264 encoder has processed them.
         OnFrameEncoded(video_track_id, frame_id, pixels);
     }
 
