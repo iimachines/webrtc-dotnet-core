@@ -10,12 +10,14 @@
 
         public int MaxBitsPerSecond = OptimalBitsPerSecond(640, 480, 30, VideoMotion.High);
 
-        public VideoEncoderOptions OptimizeFor(int width, int height, int maxFramesPerSecond)
+        public static VideoEncoderOptions OptimizedFor(int width, int height, int maxFramesPerSecond)
         {
-            MaxFramesPerSecond = maxFramesPerSecond;
-            MinBitsPerSecond = OptimalBitsPerSecond(width, height, maxFramesPerSecond, VideoMotion.Low);
-            MaxBitsPerSecond = OptimalBitsPerSecond(width, height, maxFramesPerSecond, VideoMotion.High);
-            return this;
+            return new VideoEncoderOptions
+            {
+                MaxFramesPerSecond = maxFramesPerSecond,
+                MinBitsPerSecond = OptimalBitsPerSecond(width, height, maxFramesPerSecond, VideoMotion.Low),
+                MaxBitsPerSecond = OptimalBitsPerSecond(width, height, maxFramesPerSecond, VideoMotion.High)
+            };
         }
 
         /// <summary>

@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 
 namespace WonderMediaProductions.WebRtc
@@ -28,8 +31,22 @@ namespace WonderMediaProductions.WebRtc
         /// </summary>
         public static void Configure(GlobalOptions options)
         {
-            Native.Check(Native.Configure(options.UseSignalingThread, options.UseWorkerThread, options.ForceSoftwareVideoEncoder, options.AutoShutdown));
+            Native.Check(Native.Configure(
+                options.UseSignalingThread, 
+                options.UseWorkerThread, 
+                options.ForceSoftwareVideoEncoder, 
+                options.AutoShutdown,
+                options.LogToStandardError,
+                options.LogToDebugOutput,
+                options.MinimumLogLevel != TraceLevel.Off ? OnMessageLogged : null,
+                4-(int)(options.MinimumLogLevel)
+                ));
         }
+
+        public static event LoggingDelegate MessageLogged;
+
+        private static readonly Native.LoggingCallback OnMessageLogged = (message, severity) => 
+            MessageLogged?.Invoke(message, (TraceLevel) (4 - severity));
 
         /// <summary>
         /// This shuts down the global webrtc module.
@@ -50,11 +67,6 @@ namespace WonderMediaProductions.WebRtc
         /// unless auto-shutdown is disabled with <seealso cref="Configure(GlobalOptions)"/>
         /// </summary>
         public static bool HasFactory => Native.HasFactory();
-
-        public static void Configure(Action<GlobalOptions> configure)
-        {
-            Configure(configure.Options());
-        }
 
         public static bool SupportsHardwareTextureEncoding => Native.CanEncodeHardwareTextures();
 
@@ -85,10 +97,6 @@ namespace WonderMediaProductions.WebRtc
             RegisterCallback(out _iceCandidateReadyToSendDelegate, Native.RegisterOnIceCandidateReadyToSend, RaiseIceCandidateReadyToSend);
             RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseRegisterSignalingStateChange);
             RegisterCallback(out _videoFrameEncodedCallback, Native.RegisterVideoFrameEncoded, RaiseVideoFrameEncodedDelegate);
-        }
-
-        public PeerConnection(Action<PeerConnectionOptions> configure) : this(configure.Options())
-        {
         }
 
         public string Name { get; }
@@ -131,17 +139,20 @@ namespace WonderMediaProductions.WebRtc
             Native.ClosePeerConnection(ptr);
         }
 
-        internal int RegisterVideoTrack(VideoEncoderOptions options)
+        internal int AddVideoTrack(VideoEncoderOptions options)
         {
             var id = Native.AddVideoTrack(_nativePtr, options.Label, options.MinBitsPerSecond, options.MaxBitsPerSecond, options.MaxFramesPerSecond);
             return Native.Check(id);
         }
 
-        [Obsolete("TODO: Will be replaced by a DataChannel class, like the VideoTrack")]
-        public void AddDataChannel(string label, DataChannelFlag flag)
+        public void AddDataChannel(DataChannelOptions options)
         {
-            Native.Check(Native.AddDataChannel(_nativePtr, label,
-                flag.HasFlag(DataChannelFlag.Ordered), flag.HasFlag(DataChannelFlag.Reliable)));
+            Native.Check(Native.AddDataChannel(_nativePtr, options.Label, options.IsOrdered, options.IsReliable));
+        }
+
+        public void RemoveDataChannel(string label)
+        {
+            Native.Check(Native.RemoveDataChannel(_nativePtr, label));
         }
 
         public void CreateOffer()
@@ -154,14 +165,29 @@ namespace WonderMediaProductions.WebRtc
             Native.Check(Native.CreateAnswer(_nativePtr));
         }
 
+        public unsafe void SendData(string label, in ArraySegment<byte> data, MessageEncoding encoding = MessageEncoding.Binary)
+        {
+            fixed (byte* startPtr = data.Array)
+            {
+                var ptr = new IntPtr(startPtr + data.Offset);
+                Native.Check(Native.SendData(_nativePtr, label, ptr, data.Count, encoding == MessageEncoding.Binary));
+            }
+        }
+
+        public void SendData(string label, byte[] bytes, MessageEncoding encoding = MessageEncoding.Binary)
+        {
+            SendData(label, new ArraySegment<byte>(bytes), encoding);
+        }
+
         public void SendData(string label, string data)
         {
-            Native.Check(Native.SendData(_nativePtr, label, data));
+            var bytes = Encoding.UTF8.GetBytes(data);
+            SendData(label, bytes, MessageEncoding.Utf8);
         }
 
         public void SendData(DataMessage msg)
         {
-            Native.Check(Native.SendData(_nativePtr, msg.Label, msg.Content));
+            SendData(msg.Label, msg.Content, msg.Encoding);
         }
 
         internal void SendVideoFrame(int trackId, long frameId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
@@ -205,9 +231,15 @@ namespace WonderMediaProductions.WebRtc
             LocalDataChannelReady?.Invoke(this, label);
         }
 
-        private void RaiseDataAvailable(string label, string data)
+        private void RaiseDataAvailable(string label, IntPtr data, int size, bool isBinary)
         {
-            DataAvailable?.Invoke(this, new DataMessage(label, data));
+            byte[] buffer = new byte[size];
+            Marshal.Copy(data, buffer, 0, size);
+            DataAvailable?.Invoke(this, new DataMessage(
+                label,
+                new ArraySegment<byte>(buffer, 0, size),
+                isBinary ? MessageEncoding.Binary : MessageEncoding.Utf8)
+            );
         }
 
         private void RaiseFailureMessage(string msg)

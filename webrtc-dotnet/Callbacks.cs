@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace WonderMediaProductions.WebRtc
 {
+    public delegate void LoggingDelegate(string message, TraceLevel severity);
+
     public delegate void AudioBusReadyDelegate(PeerConnection pc, IntPtr data, int bitsPerSample,
         int sampleRate, int numberOfChannels, int numberOfFrames);
 

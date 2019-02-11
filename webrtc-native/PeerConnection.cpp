@@ -414,7 +414,7 @@ int PeerConnection::AddVideoTrack(const std::string& label, int min_bps, int max
     return id;
 }
 
-bool PeerConnection::CreateDataChannel(const char* label, bool is_ordered, bool is_reliable)
+bool PeerConnection::AddDataChannel(const char* label, bool is_ordered, bool is_reliable)
 {
     struct webrtc::DataChannelInit init;
     init.ordered = is_ordered;
@@ -438,19 +438,7 @@ bool PeerConnection::CreateDataChannel(const char* label, bool is_ordered, bool 
     return false;
 }
 
-void PeerConnection::CloseDataChannel(const char* name)
-{
-    const auto it = data_channels_.find(name);
-    if (it == data_channels_.end())
-    {
-        RTC_LOG(LS_ERROR) << "Data channel '" << name << "' not found";
-        return;
-    }
-
-    data_channels_.erase(it);
-}
-
-bool PeerConnection::SendData(const char* label, const std::string& data)
+bool PeerConnection::RemoveDataChannel(const char* label)
 {
     const auto it = data_channels_.find(label);
     if (it == data_channels_.end())
@@ -459,7 +447,20 @@ bool PeerConnection::SendData(const char* label, const std::string& data)
         return false;
     }
 
-    const webrtc::DataBuffer buffer(data);
+    data_channels_.erase(it);
+    return true;
+}
+
+bool PeerConnection::SendData(const char* label, const uint8_t* data, int length, bool is_binary)
+{
+    const auto it = data_channels_.find(label);
+    if (it == data_channels_.end())
+    {
+        RTC_LOG(LS_ERROR) << "Data channel '" << label << "' not found";
+        return false;
+    }
+
+    const webrtc::DataBuffer buffer(rtc::CopyOnWriteBuffer(data, length), is_binary);
     return it->second->channel->Send(buffer);
 }
 
@@ -630,11 +631,12 @@ void PeerConnection::DataChannelEntry::OnMessage(const webrtc::DataBuffer& buffe
 {
     const size_t size = buffer.data.size();
     const bool is_large = size >= 1024;
-    char* msg = is_large ? new char[size + 1] : static_cast<char*>(_alloca(size + 1));
-    memcpy(msg, buffer.data.data(), size);
-    msg[size] = 0;
+    uint8_t* msg = is_large ? new uint8_t[size] : static_cast<uint8_t*>(_alloca(size));
+    memcpy(msg, buffer.data.cdata(), size);
+    
     if (connection->OnDataFromDataChannelReady)
-        connection->OnDataFromDataChannelReady(channel->label().c_str(), msg);
+        connection->OnDataFromDataChannelReady(channel->label().c_str(), msg, static_cast<int>(size), buffer.binary);
+
     if (is_large)
     {
         delete[] msg;

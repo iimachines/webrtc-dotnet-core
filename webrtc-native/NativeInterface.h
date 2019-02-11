@@ -27,7 +27,7 @@ typedef void(*I420FrameReadyCallback)(
 
 typedef void(*LocalDataChannelReadyCallback)(const char* label);
 
-typedef void(*DataAvailableCallback)(const char* label, const char* msg);
+typedef void(*DataAvailableCallback)(const char* label, const uint8_t* data, int length, bool is_binary);
 
 typedef void(*FailureCallback)(const char* msg);
 
@@ -46,3 +46,5 @@ typedef void(*AudioBusReadyCallback)(const void* audio_data,
 typedef void(*SignalingStateChangedCallback)(int state);
 
 typedef void(*VideoFrameCallback)(int video_track_id, VideoFrameId frame_id, const void *pixels);
+
+typedef void(*LogSink)(const char* message, int severity);

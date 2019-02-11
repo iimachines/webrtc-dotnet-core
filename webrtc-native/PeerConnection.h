@@ -32,20 +32,16 @@ public:
 
     // TODO: Allow the user to select the kind of stream (what camera, etc...)
     int AddVideoTrack(const std::string& label, int min_bps, int max_bps, int max_fps);
+    bool SendVideoFrame(int video_track_id, VideoFrameId frame_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format);
 
     bool CreateOffer();
     bool CreateAnswer();
     bool SetAudioControl(bool is_mute, bool is_record);
 
-    // TODO: Return data-channel id, just like video-track.
-    bool CreateDataChannel(const char* label, bool is_ordered, bool is_reliable);
+    bool AddDataChannel(const char* label, bool is_ordered, bool is_reliable);
+    bool SendData(const char* label, const uint8_t* data, int length, bool is_binary);
+    bool RemoveDataChannel(const char* label);
 
-    // TODO: Use data-channel id, just like video-track.
-    void CloseDataChannel(const char* name);
-
-    bool SendData(const char* label, const std::string& data);
-
-    bool SendVideoFrame(int video_track_id, VideoFrameId frame_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format);
 
     // Register callback functions.
     void RegisterOnLocalI420FrameReady(I420FrameReadyCallback callback) const;

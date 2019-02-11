@@ -1,4 +1,6 @@
-﻿namespace WonderMediaProductions.WebRtc
+﻿using System.Diagnostics;
+
+namespace WonderMediaProductions.WebRtc
 {
     public class GlobalOptions
     {
@@ -6,6 +8,9 @@
         public bool UseWorkerThread = true;
         public bool ForceSoftwareVideoEncoder = false;
         public bool AutoShutdown = true;
+        public TraceLevel MinimumLogLevel = TraceLevel.Warning;
+        public bool LogToStandardError = true;
+        public bool LogToDebugOutput = false;
 
         public bool IsSingleThreaded
         {

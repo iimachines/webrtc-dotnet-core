@@ -13,12 +13,11 @@ namespace WonderMediaProductions.WebRtc
 
         public event VideoFrameEncodedDelegate LocalVideoFrameEncoded;
 
-        public VideoTrack(PeerConnection peerConnection, Action<VideoEncoderOptions> configure)
+        public VideoTrack(PeerConnection peerConnection, VideoEncoderOptions options)
         {
-            var options = configure.Options();
             PeerConnection = peerConnection;
             FrameRate = options.MaxFramesPerSecond;
-            TrackId = peerConnection.RegisterVideoTrack(options);
+            TrackId = peerConnection.AddVideoTrack(options);
             PeerConnection.LocalVideoFrameEncoded += OnLocalVideoFrameEncoded;
         }
 

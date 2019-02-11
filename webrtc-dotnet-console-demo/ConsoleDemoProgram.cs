@@ -30,12 +30,19 @@ namespace WonderMediaProductions.WebRtc
                 // For debugging, run everything on this thread. 
                 // Should never be done in production.
                 // Note that webrtc callbacks are done on the signaling thread, and must return asap.
-                PeerConnection.Configure(options =>
+                PeerConnection.Configure(new GlobalOptions
                 {
-                    options.UseWorkerThread = false;
-                    options.UseSignalingThread = false;
-                    options.ForceSoftwareVideoEncoder = true;
+                    UseWorkerThread = false,
+                    UseSignalingThread = false,
+                    ForceSoftwareVideoEncoder = true,
+                    MinimumLogLevel = System.Diagnostics.TraceLevel.Error,
+                    LogToStandardError = false
                 });
+
+                PeerConnection.MessageLogged += (message, severity) =>
+                {
+                    Console.WriteLine($"webrtc [{severity:G}]:\t{message}");
+                };
 
                 Console.OutputEncoding = Encoding.UTF8;
 
@@ -44,19 +51,20 @@ namespace WonderMediaProductions.WebRtc
                 const int frameRate = 10;
 
                 using (var senderOutgoingMessages = new ReplaySubject<DataMessage>())
-                using (var sender = new ObservablePeerConnection(options =>
+                using (var sender = new ObservablePeerConnection(new PeerConnectionOptions
                 {
-                    options.Name = "Sender";
+                    Name = "Sender"
                 }))
-                using (var receiver = new ObservablePeerConnection(options =>
+                using (var receiver = new ObservablePeerConnection(new PeerConnectionOptions
                 {
-                    options.Name = "Receiver";
-                    options.CanReceiveVideo = true;
+                    Name = "Receiver",
+                    CanReceiveVideo = true
                 }))
                 using (var background = Image.Load<Argb32>("background-small.jpg"))
                 using (receiver.ReceivedVideoStream.Buffer(2).Subscribe(SaveFrame))
                 using (var imageFrame = new Image<Argb32>(frameWidth, frameHeight))
-                using (var videoTrack = new VideoTrack(sender, options => options.OptimizeFor(frameWidth, frameHeight, frameRate)))
+                using (var videoTrack = new VideoTrack(sender, 
+                    VideoEncoderOptions.OptimizedFor(frameWidth, frameHeight, frameRate)))
                 {
                     background.Mutate(ctx => ctx.Resize(frameWidth, frameHeight));
 
@@ -66,12 +74,13 @@ namespace WonderMediaProductions.WebRtc
 
                     var receiverOutgoingMessages = receiver
                         .ReceivedDataStream
-                        .Where(msg => msg.Content == "Hello")
+                        .Where(msg => msg.AsText == "Hello")
+                        .Do(msg => Console.WriteLine($"Received message {msg.AsText}"))
                         .Select(msg => new DataMessage(msg.Label, "World"));
 
                     receiver.Connect(receiverOutgoingMessages, sender.LocalSessionDescriptionStream, sender.LocalIceCandidateStream);
 
-                    sender.AddDataChannel("data", DataChannelFlag.None);
+                    sender.AddDataChannel(new DataChannelOptions());
 
                     sender.CreateOffer();
 
@@ -96,6 +105,8 @@ namespace WonderMediaProductions.WebRtc
 
                         ++localFrameIndex;
                     }
+
+                    sender.RemoveDataChannel("data");
                 }
             }
             catch (Exception ex)
@@ -103,6 +114,7 @@ namespace WonderMediaProductions.WebRtc
                 Console.WriteLine($"*** FAILURE: {ex}");
             }
 
+            Console.WriteLine("Press ENTER to exit");
             Console.ReadLine();
         }
 

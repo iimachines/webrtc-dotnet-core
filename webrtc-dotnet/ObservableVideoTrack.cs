@@ -9,8 +9,8 @@ namespace WonderMediaProductions.WebRtc
 
         public new ObservablePeerConnection PeerConnection => (ObservablePeerConnection) base.PeerConnection;
 
-        public ObservableVideoTrack(ObservablePeerConnection peerConnection, Action<VideoEncoderOptions> configure) 
-            : base(peerConnection, configure)
+        public ObservableVideoTrack(ObservablePeerConnection peerConnection, VideoEncoderOptions options) 
+            : base(peerConnection, options)
         {
         }
 

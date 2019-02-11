@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -36,7 +37,7 @@ namespace WonderMediaProductions.WebRtc
         internal delegate void LocalDataChannelReadyCallback(string label);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void DataAvailableCallback(string label, string data);
+        internal delegate void DataAvailableCallback(string label, IntPtr data, int size, bool isBinary);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void FailureMessageCallback(string msg);
@@ -63,8 +64,19 @@ namespace WonderMediaProductions.WebRtc
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void VideoFrameEncodedCallback(int videoTrackId, long frameId, IntPtr rgbaPixels);
 
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void LoggingCallback(string message, int severity);
+
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool Configure(bool hasSignallingThread, bool hasWorkerThread, bool forceSoftwareVideoEncoder, bool autoShutdown);
+        internal static extern bool Configure(
+            bool hasSignallingThread,
+            bool hasWorkerThread,
+            bool forceSoftwareVideoEncoder,
+            bool autoShutdown,
+            bool logToStdErr,
+            bool logToDebug,
+            LoggingCallback loggingCallback,
+            int minimumLoggingSeverity);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool Shutdown();
@@ -96,13 +108,16 @@ namespace WonderMediaProductions.WebRtc
         internal static extern bool AddDataChannel(IntPtr connection, string label, bool isOrdered, bool isReliable);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern bool RemoveDataChannel(IntPtr connection, string label);
+
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool CreateOffer(IntPtr connection);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool CreateAnswer(IntPtr connection);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SendData(IntPtr connection, string label, string data);
+        internal static extern bool SendData(IntPtr connection, string label, IntPtr data, int length, bool isBinary);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool SendVideoFrame(IntPtr connection, int trackId, long frameId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat);

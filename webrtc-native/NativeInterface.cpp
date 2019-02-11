@@ -18,6 +18,10 @@ namespace
     bool g_use_signaling_thread = true;
     bool g_force_software_encoder = false;
 
+    LogSink g_log_sink = nullptr;
+
+    rtc::LoggingSeverity g_minimum_logging_severity = rtc::LS_INFO;
+
     rtc::CriticalSection g_lock;
 
     webrtc::PeerConnectionFactoryInterface* g_peer_connection_factory = nullptr;
@@ -123,19 +127,14 @@ namespace
         return g_peer_connection_factory == nullptr;
     }
 
-    class ModuleInitializer
+    class ModuleInitializer : public rtc::LogSink
     {
     public:
         ModuleInitializer()
         {
-            // TODO: Allow configuration of error level!
-#ifdef NDEBUG
-            rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::LS_WARNING);
-#else
-            rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::LS_INFO);
-#endif
-
-            rtc::LogMessage::SetLogToStderr(true);
+            rtc::LogMessage::SetLogToStderr(false);
+            rtc::LogMessage::LogToDebug(rtc::LoggingSeverity::LS_NONE);
+            rtc::LogMessage::AddLogToStream(this, rtc::LS_INFO);
 
 #ifdef WEBRTC_WIN
             WSADATA data;
@@ -153,6 +152,8 @@ namespace
 
         ~ModuleInitializer()
         {
+            rtc::LogMessage::RemoveLogToStream(this);
+
             if (!rtc::CleanupSSL())
             {
                 RTC_LOG(LS_ERROR) << "Failed to cleanup SSL!";
@@ -164,6 +165,21 @@ namespace
                 RTC_LOG(LS_ERROR) << "Failed to cleanup Windows sockets! " << WSAGetLastError();
             }
 #endif
+        }
+
+        void OnLogMessage(const std::string& message, rtc::LoggingSeverity severity) override
+        {
+            const auto sink = g_log_sink;
+
+            if (sink && severity >= g_minimum_logging_severity)
+            {
+                sink(message.c_str(), rtc::LS_NONE - severity);
+            }
+        }
+
+        void OnLogMessage(const std::string& message) override
+        {
+            OnLogMessage(message, rtc::LS_INFO);
         }
     };
 
@@ -180,7 +196,15 @@ extern "C"
         return rtc::Thread::Current()->ProcessMessages(timeoutInMS);
     }
 
-    WEBRTC_PLUGIN_API bool Configure(bool use_signaling_thread, bool use_worker_thread, bool force_software_video_encoder, bool auto_shutdown)
+    WEBRTC_PLUGIN_API bool Configure(
+        bool use_signaling_thread, 
+        bool use_worker_thread, 
+        bool force_software_video_encoder, 
+        bool auto_shutdown,
+        bool log_to_stderr,
+        bool log_to_debug,
+        LogSink log_sink,
+        rtc::LoggingSeverity minimum_logging_severity)
     {
         rtc::CritScope scope(&g_lock);
 
@@ -204,6 +228,12 @@ extern "C"
         g_use_worker_thread = use_worker_thread;
         g_force_software_encoder = force_software_video_encoder;
         g_auto_shutdown = auto_shutdown;
+        g_log_sink = log_sink;
+        g_minimum_logging_severity = minimum_logging_severity;
+
+        rtc::LogMessage::SetLogToStderr(log_to_stderr);
+        rtc::LogMessage::LogToDebug(log_to_debug ? minimum_logging_severity : rtc::LS_NONE);
+
         return true;
     }
 
@@ -275,7 +305,12 @@ extern "C"
 
     WEBRTC_PLUGIN_API bool AddDataChannel(PeerConnection* connection, const char* label, bool is_ordered, bool is_reliable)
     {
-        return connection->CreateDataChannel(label, is_ordered, is_reliable);
+        return connection->AddDataChannel(label, is_ordered, is_reliable);
+    }
+
+    WEBRTC_PLUGIN_API bool RemoveDataChannel(PeerConnection* connection, const char* label)
+    {
+        return connection->RemoveDataChannel(label);
     }
 
     WEBRTC_PLUGIN_API bool CreateOffer(PeerConnection* connection)
@@ -288,9 +323,9 @@ extern "C"
         return connection->CreateAnswer();
     }
 
-    WEBRTC_PLUGIN_API bool SendData(PeerConnection* connection, const char* label, const char* data)
+    WEBRTC_PLUGIN_API bool SendData(PeerConnection* connection, const char* label, const uint8_t* data, int length, bool is_binary)
     {
-        return connection->SendData(label, data);
+        return connection->SendData(label, data, length, is_binary);
     }
     
     WEBRTC_PLUGIN_API bool SendVideoFrame(PeerConnection* connection, int trackId, VideoFrameId frame_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format)

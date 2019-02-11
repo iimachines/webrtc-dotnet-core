@@ -29,11 +29,6 @@ namespace WonderMediaProductions.WebRtc
         {
         }
 
-        public ObservablePeerConnection(Action<PeerConnectionOptions> configure)
-            : this(configure.Options())
-        {
-        }
-
         public SignalingState SignalingState => _signalingStateStream.Value;
 
         public void Connect(

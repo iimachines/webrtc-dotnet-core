@@ -171,13 +171,14 @@ namespace WonderMediaProductions.WebRtc
 
             // PeerConnection.Configure(options => options.IsSingleThreaded = true);
 
-            using (var pc = new ObservablePeerConnection(options =>
+            using (var pc = new ObservablePeerConnection(new PeerConnectionOptions
             {
-                options.Name = "WebRTC Server";
+                Name = "WebRTC Server"
             }))
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice, cancellation)))
             using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd, cancellation)))
-            using (var videoTrack = new ObservableVideoTrack(pc, options => options.OptimizeFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate)))
+            using (var videoTrack = new ObservableVideoTrack(pc, 
+                VideoEncoderOptions.OptimizedFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate)))
             {
                 var msgStream = Observable.Never<DataMessage>();
                 var iceStream = new Subject<IceCandidate>();
@@ -188,7 +189,7 @@ namespace WonderMediaProductions.WebRtc
 
                 pc.Connect(msgStream, sdpStream, iceStream);
 
-                pc.AddDataChannel("data", DataChannelFlag.None);
+                pc.AddDataChannel(new DataChannelOptions());
 
                 pc.CreateOffer();
 
