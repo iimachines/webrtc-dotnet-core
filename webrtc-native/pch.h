@@ -77,4 +77,8 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "media/base/h264_profile_level_id.h"
 
+#ifdef _WIN32
+#   include <Windows.h>
+#endif
+
 #pragma warning( pop )

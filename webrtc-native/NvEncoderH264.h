@@ -1,6 +1,11 @@
 #pragma once
 #include "macros.h"
 
+namespace NvPipe
+{
+    class Instance;
+}
+
 namespace webrtc {
 
     class NvEncoderH264 final : public VideoEncoder {
@@ -45,7 +50,7 @@ namespace webrtc {
         void ReportError();
         void SetStreamState(bool send_stream);
 
-        void* encoder_;
+        NvPipe::Instance* encoder_;
         std::vector<uint8_t> encoded_output_buffer_;
         EncodedImage encoded_image_;
 

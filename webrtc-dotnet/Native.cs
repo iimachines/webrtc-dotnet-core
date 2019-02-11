@@ -8,6 +8,12 @@ namespace WonderMediaProductions.WebRtc
     {
         internal const string DllPath = "webrtc-native";
 
+        static Native()
+        {
+            if (!Environment.Is64BitProcess)
+                throw new NotSupportedException("webrtc-dotnet-core only supports 64-bit processes");
+        }
+
         public static void Check(bool result, [CallerMemberName] string caller = null)
         {
             if (!result)

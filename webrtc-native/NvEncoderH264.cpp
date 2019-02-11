@@ -1,9 +1,7 @@
 #include "pch.h"
-#include "NvPipe.h"
 #include "NativeVideoBuffer.h"
 #include "NvEncoderH264.h"
-
-// TODO: https://stackoverflow.com/questions/33185966/how-to-stream-h-264-video-over-udp-using-the-nvidia-nvenc-hardware-encoder
+#include "NvPipe.h"
 
 namespace webrtc {
 
@@ -16,12 +14,31 @@ namespace webrtc {
             kH264EncoderEventMax = 16,
         };
 
+        NvPipe::Library& getNvPipe()
+        {
+            static NvPipe::Library nvPipeLib;
+            return nvPipeLib;
+        }
+
         bool isNvEncoderPresent()
         {
+            bool is_available = false;
+
             // TODO: Find a better way to see if we can create the NvEnc encoder.
-            const auto encoder = NvPipe_CreateEncoder(NVPIPE_BGRA32, NVPIPE_H264, NVPIPE_LOSSY, 1000000, 60);
-            const bool is_available = encoder != nullptr;
-            NvPipe_Destroy(encoder);
+            auto& nvPipe = getNvPipe();
+            if (nvPipe.IsAvailable())
+            {
+                const auto encoder = nvPipe.CreateEncoder(
+                    NvPipe::Format::BGRA32, 
+                    NvPipe::Codec::H264, 
+                    NvPipe::Compression::LOSSY, 
+                    1000000, 
+                    60);
+
+                is_available = encoder != nullptr;
+
+                nvPipe.Destroy(encoder);
+            }
             return is_available;
         }
     }  // namespace
@@ -95,8 +112,14 @@ namespace webrtc {
         is_sending_ = false;
         key_frame_request_ = false;
 
-        const auto nvEncoder = NvPipe_CreateEncoder(NVPIPE_BGRA32, NVPIPE_H264, NVPIPE_LOSSY,
-            codec_.startBitrate * 1000, codec_.maxFramerate);
+        auto& nvPipe = getNvPipe();
+
+        const auto nvEncoder = nvPipe.CreateEncoder(
+            NvPipe::Format::BGRA32,
+            NvPipe::Codec::H264,
+            NvPipe::Compression::LOSSY,
+            codec_.startBitrate * 1000, 
+            codec_.maxFramerate);
 
         if (!nvEncoder)
         {
@@ -128,7 +151,8 @@ namespace webrtc {
     int32_t NvEncoderH264::Release() {
         if (encoder_)
         {
-            NvPipe_Destroy(encoder_);
+            auto& nvPipe = getNvPipe();
+            nvPipe.Destroy(encoder_);
             encoder_ = nullptr;
         }
 
@@ -174,7 +198,9 @@ namespace webrtc {
         if (target_bps) {
             // Reconfigure encoder
             SetStreamState(true);
-            NvPipe_SetBitrate(encoder_, target_bps, new_framerate);
+
+            auto& nvPipe = getNvPipe();
+            nvPipe.SetBitrate(encoder_, target_bps, new_framerate);
         }
         else {
             SetStreamState(false);
@@ -227,10 +253,12 @@ namespace webrtc {
             // Encode!
             uint64_t encoded_buffer_size = 0;
 
+            auto& nvPipe = getNvPipe();
+
             switch (native_buffer->format())
             {
             case VideoFrameFormat::CpuTexture:
-                encoded_buffer_size = NvPipe_Encode(
+                encoded_buffer_size = nvPipe.Encode(
                     encoder_,
                     native_buffer->texture(), width * 4,
                     encoded_buffer_ptr, encoded_output_buffer_.size(),
@@ -239,8 +267,8 @@ namespace webrtc {
 
             case VideoFrameFormat::GpuTextureD3D11:
             {
-                ID3D11Texture2D* texture = reinterpret_cast<ID3D11Texture2D*>(const_cast<void*>(native_buffer->texture()));
-                encoded_buffer_size = NvPipe_EncodeTextureD3D11(
+                auto* texture = reinterpret_cast<ID3D11Texture2D*>(const_cast<void*>(native_buffer->texture()));
+                encoded_buffer_size = nvPipe.EncodeTextureD3D11(
                     encoder_,
                     texture,
                     encoded_buffer_ptr, 
@@ -256,7 +284,7 @@ namespace webrtc {
 
             if (encoded_buffer_size == 0)
             {
-                RTC_LOG(LS_ERROR) << "NVENC H264 frame encoding failed, EncodeFrame returned " << NvPipe_GetError(encoder_);
+                RTC_LOG(LS_ERROR) << "NVENC H264 frame encoding failed, EncodeFrame returned " << nvPipe.GetError(encoder_);
                 ReportError();
                 return WEBRTC_VIDEO_CODEC_ERROR;
             }
