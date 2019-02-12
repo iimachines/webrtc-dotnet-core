@@ -51,6 +51,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\webrtc-dotnet-graphics\webrtc-dotnet-graphics-d3d11.csproj" />
     <ProjectReference Include="..\webrtc-dotnet\webrtc-dotnet.csproj" />
   </ItemGroup>
 

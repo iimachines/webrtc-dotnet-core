@@ -79,6 +79,7 @@
 
 #ifdef _WIN32
 #   include <Windows.h>
+#   include <d3d11.h>
 #endif
 
 #pragma warning( pop )

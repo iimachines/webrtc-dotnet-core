@@ -6,8 +6,8 @@ namespace WonderMediaProductions.WebRtc
 
     public interface IRenderer : IDisposable
     {
-        int FrameWidth { get; }
-        int FrameHeight { get; }
+        int VideoFrameWidth { get; }
+        int VideoFrameHeight { get; }
 
         ObservableVideoTrack VideoTrack { get; }
 

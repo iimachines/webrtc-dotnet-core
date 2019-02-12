@@ -29,8 +29,13 @@ namespace WonderMediaProductions.WebRtc
             // TODO: Add support for OpenGL, and test it.
             // Maybe use https://github.com/mellinoe/veldrid
             return isWindows
-                ? (IRenderer)new D3D11Renderer(VideoFrameWidth, VideoFrameHeight, videoTrack, Debugger.IsAttached, logger)
-                : new ImageSharpRenderer(VideoFrameWidth, VideoFrameWidth, videoTrack);
+                ? (IRenderer)new D3D11Renderer(videoTrack,
+                    new GraphicsD3D11.RendererOptions
+                    {
+                        VideoFrameWidth = VideoFrameWidth,
+                        VideoFrameHeight = VideoFrameHeight,
+                    })
+                : new ImageSharpRenderer(VideoFrameWidth, VideoFrameHeight, videoTrack);
         }
 
         class SharedState : IDisposable
@@ -107,10 +112,10 @@ namespace WonderMediaProductions.WebRtc
                             {
                                 renderer.BallPosition = lastMouseMessage.Kind != MouseEventKind.Up
                                     ? lastMouseMessage.Pos
-                                    : (RawVector2?) null;
+                                    : (RawVector2?)null;
 
                                 var elapsedTime = currentTime - startTime;
-                                var frameIndex = (int) (elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
+                                var frameIndex = (int)(elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
                                 renderer.SendFrame(elapsedTime, frameIndex);
                             }
                             else if (sleep.Ticks <= 0)
@@ -120,7 +125,7 @@ namespace WonderMediaProductions.WebRtc
 
                                 var elapsedTime = currentTime - startTime;
                                 var frameIndex =
-                                    (int) (elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
+                                    (int)(elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
 
                                 var skippedFrameCount = frameIndex - nextFrameIndex;
                                 Debug.Assert(skippedFrameCount >= 0);
@@ -177,7 +182,7 @@ namespace WonderMediaProductions.WebRtc
             }))
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice, cancellation)))
             using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd, cancellation)))
-            using (var videoTrack = new ObservableVideoTrack(pc, 
+            using (var videoTrack = new ObservableVideoTrack(pc,
                 VideoEncoderOptions.OptimizedFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate)))
             {
                 var msgStream = Observable.Never<DataMessage>();

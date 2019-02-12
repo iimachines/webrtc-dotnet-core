@@ -18,13 +18,13 @@ namespace WonderMediaProductions.WebRtc
 
         public ImageSharpRenderer(int frameWidth, int frameHeight, ObservableVideoTrack videoTrack)
         {
-            FrameWidth = frameWidth;
-            FrameHeight = frameHeight;
+            VideoFrameWidth = frameWidth;
+            VideoFrameHeight = frameHeight;
             VideoTrack = videoTrack;
 
             using (var background = Image.Load<PixelColor>("background-small.jpg"))
             {
-                background.Mutate(ctx => ctx.Resize(FrameWidth, FrameHeight));
+                background.Mutate(ctx => ctx.Resize(VideoFrameWidth, VideoFrameHeight));
 
                 // Pre-created bouncing ball frames.
                 // ImageSharp is not that fast yet, and our goal is to benchmark webrtc and NvEnc, not ImageSharp.
@@ -49,8 +49,8 @@ namespace WonderMediaProductions.WebRtc
             }
         }
 
-        public int FrameWidth { get; }
-        public int FrameHeight { get; }
+        public int VideoFrameWidth { get; }
+        public int VideoFrameHeight { get; }
 
         public ObservableVideoTrack VideoTrack { get; }
         public RawVector2? BallPosition { get; set; }

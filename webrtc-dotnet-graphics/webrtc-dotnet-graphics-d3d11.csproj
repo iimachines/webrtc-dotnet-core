@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>WonderMediaProductions.WebRtc.GraphicsD3D11</RootNamespace>
+    <OutputPath>$(SolutionDir)out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="JetBrains.Annotations" Version="10.2.1" />
+      <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
+      <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
+      <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\webrtc-dotnet\webrtc-dotnet.csproj" />
+    </ItemGroup>
+
+  </Project>

@@ -2,7 +2,7 @@
 #include "macros.h"
 
 extern "C" {
-    class ID3D11Texture2D;
+    struct ID3D11Texture2D;
 }
 
 namespace NvPipe

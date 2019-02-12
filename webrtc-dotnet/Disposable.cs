@@ -77,6 +77,11 @@ namespace WonderMediaProductions.WebRtc
             OnDispose(false);
         }
 
+        /// <summary>
+        /// When <see cref="isDisposing"/> is true, dispose both managed and native resources.
+        /// Otherwise this object is not disposing but finalizing (on the finalizer thread),
+        /// and only native resources should be disposed.
+        /// </summary>
         protected abstract void OnDispose(bool isDisposing);
     }
 }

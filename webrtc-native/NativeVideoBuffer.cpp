@@ -19,6 +19,12 @@ namespace webrtc
         , texture_(texture)
         , events_(events)
     {
+        if (texture_ && format_ == VideoFrameFormat::GpuTextureD3D11)
+        {
+            // Make sure to keep the texture alive until we're done with it.
+            auto texture3D11 = reinterpret_cast<ID3D11Texture1D*>(const_cast<void*>(texture_));
+            texture3D11->AddRef();
+        }
     }
 
     NativeVideoBuffer::~NativeVideoBuffer()
@@ -26,6 +32,13 @@ namespace webrtc
         if (events_ && texture_)
         {
             events_->OnFrameEncoded(track_id_, frame_id_, texture_);
+        }
+
+        if (texture_ && format_ == VideoFrameFormat::GpuTextureD3D11)
+        {
+            // Release the D3D11 texture when we're done with it.
+            auto texture3D11 = reinterpret_cast<ID3D11Texture1D*>(const_cast<void*>(texture_));
+            texture3D11->Release();
         }
     }
 
