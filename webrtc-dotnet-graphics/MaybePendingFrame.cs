@@ -3,7 +3,10 @@ using JetBrains.Annotations;
 
 namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 {
-    public struct MaybeFrame : IDisposable
+    /// <summary>
+    /// An frame waiting to be send, or null
+    /// </summary>
+    public struct MaybePendingFrame : IDisposable
     {
         [CanBeNull]
         internal readonly VideoRenderer Renderer;
@@ -13,7 +16,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 
         internal readonly long FrameId;
 
-        internal MaybeFrame(VideoRenderer renderer, VideoFrame frame, long frameId)
+        internal MaybePendingFrame(VideoRenderer renderer, VideoFrame frame, long frameId)
         {
             FrameId = frameId;
             Renderer = renderer;
@@ -26,9 +29,15 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             return frame != null;
         }
 
+        public bool TryGetFrame<T>(out T frame) where T: VideoFrame
+        {
+            frame = Frame as T;
+            return frame != null;
+        }
+
         public void Dispose()
         {
-            Renderer?.Release(this);
+            Renderer?.FinishDequeuedFrame(this);
         }
     }
 }

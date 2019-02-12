@@ -62,12 +62,10 @@ namespace WonderMediaProductions.WebRtc
             var y = (float)(VideoFrameHeight - Math.Abs(Math.Sin(a) * h));
             var pos = new RawVector2(VideoFrameWidth * 0.5f, y);
 
-            using (var maybeFrame = AcquireNextFrame())
+            using (var df = TakeNextFrame())
             {
-                if (!maybeFrame.TryGetFrame(out var videoFrame))
+                if (!df.TryGetFrame(out FrameD3D11 frame))
                     return false;
-
-                var frame = (FrameD3D11)videoFrame;
 
                 // TODO: Draw bouncing ball.
                 _context2D.Target = frame.Bitmap;

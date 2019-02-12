@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
+using SharpDX;
 using D3D11 = SharpDX.Direct3D11;
 using DXGI = SharpDX.DXGI;
 
@@ -106,14 +107,15 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         }
 
         /// <summary>
-        /// Acquires the next frame for rendering and sending under a D3D11 thread-lock.
-        /// If no frame is ready, returns an empty acquired-frame.
+        /// Tries to dequeue the next frame for rendering under a D3D11 thread-lock.
+        /// If no frame is ready, returns an empty <see cref="MaybePendingFrame"/>
+        /// After you have rendered to the frame's texture, call dispose on the <see cref="MaybePendingFrame"/> to send it.
         /// </summary>
         /// <remarks>
         /// The result must be disposed when done.
         /// This will send the frame to the webrtc video-track.
         /// </remarks>
-        protected MaybeFrame AcquireNextFrame()
+        protected MaybePendingFrame TakeNextFrame()
         {
             // TODO: Using a delegate to draw the frame allows capturing parameters,
             // but creates a new object every time, so is not GC friendly...
@@ -126,15 +128,17 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             {
                 int index = (int)frameId;
                 var frame = _frames[index];
+
                 ThreadLock3D.Enter();
-                return new MaybeFrame(this, frame, frameId);
+                
+                return new MaybePendingFrame(this, frame, frameId);
             }
 
             OnMissedFrame();
             return default;
         }
 
-        internal void Release(in MaybeFrame af)
+        internal void FinishDequeuedFrame(in MaybePendingFrame af)
         {
             if (af.Frame != null)
             {
