@@ -52,7 +52,8 @@ public:
     void RegisterOnAudioBusReady(AudioBusReadyCallback callback);
     void RegisterOnLocalSdpReadyToSend(LocalSdpReadyToSendCallback callback);
     void RegisterOnIceCandidateReadyToSend(IceCandidateReadyToSendCallback callback);
-    void RegisterSignalingStateChanged(SignalingStateChangedCallback callback);
+    void RegisterSignalingStateChanged(StateChangedCallback callback);
+    void RegisterConnectionStateChanged(StateChangedCallback callback);
     void RegisterVideoFrameEncoded(VideoFrameCallback callback);
 
     bool SetRemoteDescription(const char* type, const char* sdp) const;
@@ -67,7 +68,9 @@ protected:
     // PeerConnectionObserver implementation.
     void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
 
-    void OnAddTrack(
+    void OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState new_state) override;
+
+     void OnAddTrack(
         rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
         const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams) override;
 
@@ -151,7 +154,8 @@ private:
 
     LocalSdpReadyToSendCallback OnLocalSdpReadyToSend = nullptr;
     IceCandidateReadyToSendCallback OnIceCandidateReady = nullptr;
-    SignalingStateChangedCallback OnSignalingStateChanged = nullptr;
+    StateChangedCallback OnSignalingStateChanged = nullptr;
+    StateChangedCallback OnConnectionStateChanged = nullptr;
 
     bool is_mute_audio_ = false;
     bool is_record_audio_ = false;

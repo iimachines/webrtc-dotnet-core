@@ -12,7 +12,7 @@
 
 namespace
 {
-    // TODO: Bundle these globals in a class!
+    // TODO: Bundle these globals in a PeerConnectionBuilder class!
     bool g_auto_shutdown = true;
     bool g_use_worker_thread = true;
     bool g_use_signaling_thread = true;
@@ -173,7 +173,7 @@ namespace
 
             if (sink && severity >= g_minimum_logging_severity)
             {
-                sink(message.c_str(), rtc::LS_NONE - severity);
+                sink(message.c_str(), severity);
             }
         }
 
@@ -197,9 +197,9 @@ extern "C"
     }
 
     WEBRTC_PLUGIN_API bool Configure(
-        bool use_signaling_thread, 
-        bool use_worker_thread, 
-        bool force_software_video_encoder, 
+        bool use_signaling_thread,
+        bool use_worker_thread,
+        bool force_software_video_encoder,
         bool auto_shutdown,
         bool log_to_stderr,
         bool log_to_debug,
@@ -327,7 +327,7 @@ extern "C"
     {
         return connection->SendData(label, data, length, is_binary);
     }
-    
+
     WEBRTC_PLUGIN_API bool SendVideoFrame(PeerConnection* connection, int trackId, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format)
     {
         return connection->SendVideoFrame(trackId, pixels, stride, width, height, format);
@@ -398,9 +398,15 @@ extern "C"
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterSignalingStateChanged(PeerConnection* connection, SignalingStateChangedCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterSignalingStateChanged(PeerConnection* connection, StateChangedCallback callback)
     {
         connection->RegisterSignalingStateChanged(callback);
+        return true;
+    }
+
+    WEBRTC_PLUGIN_API bool RegisterConnectionStateChanged(PeerConnection* connection, StateChangedCallback callback)
+    {
+        connection->RegisterConnectionStateChanged(callback);
         return true;
     }
 

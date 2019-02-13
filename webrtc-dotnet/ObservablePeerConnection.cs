@@ -11,6 +11,7 @@ namespace WonderMediaProductions.WebRtc
         private readonly CompositeDisposable _disposables = new CompositeDisposable();
         private readonly Subject<SessionDescription> _localSessionDescriptionStream = new Subject<SessionDescription>();
         private readonly Subject<IceCandidate> _localIceCandidateStream = new Subject<IceCandidate>();
+        private readonly BehaviorSubject<ConnectionState> _connectionStateStream = new BehaviorSubject<ConnectionState>(ConnectionState.Closed);
         private readonly BehaviorSubject<SignalingState> _signalingStateStream = new BehaviorSubject<SignalingState>(SignalingState.Closed);
 
         private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
@@ -20,9 +21,11 @@ namespace WonderMediaProductions.WebRtc
         public IObservable<SessionDescription> LocalSessionDescriptionStream => _localSessionDescriptionStream;
         public IObservable<IceCandidate> LocalIceCandidateStream => _localIceCandidateStream;
         public IObservable<SignalingState> SignalingStateStream => _signalingStateStream;
+        public IObservable<ConnectionState> ConnectionStateStream => _connectionStateStream;
 
         public IObservable<DataMessage> ReceivedDataStream => _receivedDataStream;
         public IObservable<VideoFrameYuvAlpha> ReceivedVideoStream => _receivedVideoStream;
+
         public IObservable<VideoFrameMessage> LocalVideoFrameEncodedStream => _localVideoFrameEncodedStream;
 
         public ObservablePeerConnection(PeerConnectionOptions options) : base(options)
@@ -75,10 +78,16 @@ namespace WonderMediaProductions.WebRtc
                 DebugLog($"{Name} signaling state changed: {state}");
                 _signalingStateStream.OnNext(state);
 
-                if (SignalingState == SignalingState.HaveRemoteOffer)
+                if (state == SignalingState.HaveRemoteOffer)
                 {
                     CreateAnswer();
                 }
+            };
+
+            ConnectionStateChanged += (pc, state) =>
+            {
+                DebugLog($"{Name} connection state changed: {state}");
+                _connectionStateStream.OnNext(state);
             };
 
             _disposables.Add(receivedIceCandidates.Subscribe(ice =>
@@ -97,6 +106,7 @@ namespace WonderMediaProductions.WebRtc
         [Conditional("DEBUG")]
         private void DebugLog(string msg)
         {
+            Debug.WriteLine(msg);
             Console.WriteLine(msg);
         }
 

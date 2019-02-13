@@ -35,13 +35,14 @@ namespace WonderMediaProductions.WebRtc
                     UseWorkerThread = false,
                     UseSignalingThread = false,
                     ForceSoftwareVideoEncoder = true,
-                    MinimumLogLevel = System.Diagnostics.TraceLevel.Error,
-                    LogToStandardError = false
+                    MinimumLogLevel = System.Diagnostics.TraceLevel.Info,
+                    LogToStandardError = false,
+                    LogToDebugOutput = false
                 });
 
                 PeerConnection.MessageLogged += (message, severity) =>
                 {
-                    Console.WriteLine($"webrtc [{severity:G}]:\t{message}");
+                    severity.WriteToConsole(message);
                 };
 
                 Console.OutputEncoding = Encoding.UTF8;

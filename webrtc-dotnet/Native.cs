@@ -59,7 +59,7 @@ namespace WonderMediaProductions.WebRtc
         internal delegate void IceCandidateReadyToSendCallback(string candidate, int sdpMlineIndex, string sdpMid);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void SignalingStateChangedCallback(int state);
+        internal delegate void StateChangedCallback(int state);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void VideoFrameEncodedCallback(int videoTrackId, IntPtr rgbaPixels);
@@ -165,12 +165,15 @@ namespace WonderMediaProductions.WebRtc
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterSignalingStateChanged(
-            IntPtr connection, SignalingStateChangedCallback callback);
+            IntPtr connection, StateChangedCallback callback);
+
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern bool RegisterConnectionStateChanged(
+            IntPtr connection, StateChangedCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterVideoFrameEncoded(
             IntPtr connection, VideoFrameEncodedCallback callback);
-
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool CanEncodeHardwareTextures();

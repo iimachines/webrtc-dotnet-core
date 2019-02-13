@@ -1,6 +1,7 @@
 #pragma once
-#include "VideoFrameEvents.h"
 
+// TODO: Split this into a pixel-format and codec; 
+// need to figure out how to pick a different codec in the factory.
 enum class VideoFrameFormat
 {
     RGBA32,
@@ -43,7 +44,7 @@ typedef void(*AudioBusReadyCallback)(const void* audio_data,
     int number_of_channels,
     int number_of_frames);
 
-typedef void(*SignalingStateChangedCallback)(int state);
+typedef void(*StateChangedCallback)(int state);
 
 typedef void(*VideoFrameCallback)(int video_track_id, const void *pixels);
 

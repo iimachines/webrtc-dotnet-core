@@ -33,6 +33,8 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         public DXGI.Device DeviceDXGI { get; }
         public D3D11.Multithread ThreadLock3D { get; }
 
+        public int VideoFrameQueueCount => _queue.Count;
+
         public VideoRenderer(VideoTrack videoTrack, RendererOptions options)
         {
             VideoTrack = videoTrack;
@@ -119,7 +121,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         /// The result must be disposed when done.
         /// This will send the frame to the webrtc video-track.
         /// </remarks>
-        protected MaybePendingFrame TakeNextFrame()
+        public MaybePendingFrame TakeNextFrame()
         {
             // TODO: Using a delegate to draw the frame allows capturing parameters,
             // but creates a new object every time, so is not GC friendly...

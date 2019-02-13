@@ -19,7 +19,8 @@ namespace WonderMediaProductions.WebRtc
         private readonly Native.I420FrameReadyCallback _localI420FrameReadyDelegate;
         private readonly Native.LocalSdpReadyToSendCallback _localSdpReadyToSendDelegate;
         private readonly Native.I420FrameReadyCallback _remoteI420FrameReadyDelegate;
-        private readonly Native.SignalingStateChangedCallback _signalingStateChangedCallback;
+        private readonly Native.StateChangedCallback _signalingStateChangedCallback;
+        private readonly Native.StateChangedCallback _connectionStateChangedCallback;
         private readonly Native.VideoFrameEncodedCallback _videoFrameEncodedCallback;
 
         // ReSharper restore NotAccessedField.Local
@@ -46,7 +47,7 @@ namespace WonderMediaProductions.WebRtc
         public static event LoggingDelegate MessageLogged;
 
         private static readonly Native.LoggingCallback OnMessageLogged = (message, severity) => 
-            MessageLogged?.Invoke(message, (TraceLevel) (4 - severity));
+            MessageLogged?.Invoke(message.TrimEnd('\n'), (TraceLevel) (4 - severity));
 
         /// <summary>
         /// This shuts down the global webrtc module.
@@ -95,7 +96,8 @@ namespace WonderMediaProductions.WebRtc
             RegisterCallback(out _remoteI420FrameReadyDelegate, Native.RegisterOnRemoteI420FrameReady, RaiseRemoteVideoFrameReady);
             RegisterCallback(out _localSdpReadyToSendDelegate, Native.RegisterOnLocalSdpReadyToSend, RaiseLocalSdpReadyToSend);
             RegisterCallback(out _iceCandidateReadyToSendDelegate, Native.RegisterOnIceCandidateReadyToSend, RaiseIceCandidateReadyToSend);
-            RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseRegisterSignalingStateChange);
+            RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseSignalingStateChange);
+            RegisterCallback(out _connectionStateChangedCallback, Native.RegisterConnectionStateChanged, RaiseConnectionStateChange);
             RegisterCallback(out _videoFrameEncodedCallback, Native.RegisterVideoFrameEncoded, RaiseVideoFrameEncodedDelegate);
         }
 
@@ -134,6 +136,7 @@ namespace WonderMediaProductions.WebRtc
             LocalSdpReadyToSend = null;
             IceCandidateReadyToSend = null;
             SignalingStateChanged = null;
+            ConnectionStateChanged = null;
             LocalVideoFrameEncoded = null;
 
             Native.ClosePeerConnection(ptr);
@@ -286,9 +289,14 @@ namespace WonderMediaProductions.WebRtc
             IceCandidateReadyToSend?.Invoke(this, new IceCandidate(candidate, sdpMlineIndex, sdpMid));
         }
 
-        private void RaiseRegisterSignalingStateChange(int state)
+        private void RaiseSignalingStateChange(int state)
         {
             SignalingStateChanged?.Invoke(this, (SignalingState)state);
+        }
+
+        private void RaiseConnectionStateChange(int state)
+        {
+            ConnectionStateChanged?.Invoke(this, (ConnectionState)state);
         }
 
         private void RaiseVideoFrameEncodedDelegate(int trackId, IntPtr rgbaPixels)
@@ -316,6 +324,7 @@ namespace WonderMediaProductions.WebRtc
         public event LocalSdpReadyToSendDelegate LocalSdpReadyToSend;
         public event IceCandidateReadyToSendDelegate IceCandidateReadyToSend;
         public event SignalingStateChangedDelegate SignalingStateChanged;
+        public event ConnectionStateChangedDelegate ConnectionStateChanged;
         public event VideoFrameEncodedDelegate LocalVideoFrameEncoded;
     }
 }

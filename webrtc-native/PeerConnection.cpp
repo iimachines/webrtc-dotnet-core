@@ -217,9 +217,14 @@ void PeerConnection::RegisterOnIceCandidateReadyToSend(IceCandidateReadyToSendCa
     OnIceCandidateReady = callback;
 }
 
-void PeerConnection::RegisterSignalingStateChanged(SignalingStateChangedCallback callback)
+void PeerConnection::RegisterSignalingStateChanged(StateChangedCallback callback)
 {
     OnSignalingStateChanged = callback;
+}
+
+void PeerConnection::RegisterConnectionStateChanged(StateChangedCallback callback)
+{
+    OnConnectionStateChanged = callback;
 }
 
 void PeerConnection::RegisterVideoFrameEncoded(VideoFrameCallback callback)
@@ -315,10 +320,18 @@ bool PeerConnection::SetAudioControl()
 
 void PeerConnection::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state)
 {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << new_state;
+    RTC_LOG(INFO) << __FUNCTION__ << " state: " << new_state;
 
     if (OnSignalingStateChanged)
         OnSignalingStateChanged(new_state);
+}
+
+void PeerConnection::OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState new_state)
+{
+    RTC_LOG(INFO) << __FUNCTION__ << " state: " << static_cast<int>(new_state);
+
+    if (OnConnectionStateChanged)
+        OnConnectionStateChanged(static_cast<int>(new_state));
 }
 
 void PeerConnection::OnAddTrack(
