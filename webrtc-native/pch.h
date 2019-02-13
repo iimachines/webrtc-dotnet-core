@@ -42,6 +42,7 @@
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "media/engine/multiplex_codec_factory.h"
+#include "media/engine/fake_video_codec_factory.h"
 
 #include "modules/video_capture/video_capture_factory.h"
 #include "modules/video_capture/video_capture.h"

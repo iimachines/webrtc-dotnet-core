@@ -48,4 +48,7 @@ typedef void(*StateChangedCallback)(int state);
 
 typedef void(*VideoFrameCallback)(int video_track_id, const void *pixels);
 
+typedef void(*RemoteTrackChangedCallback)(const char* track_id, int media_kind, int change_kind);
+
 typedef void(*LogSink)(const char* message, int severity);
+

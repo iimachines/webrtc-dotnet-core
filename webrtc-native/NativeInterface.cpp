@@ -18,6 +18,10 @@ namespace
     bool g_use_signaling_thread = true;
     bool g_force_software_encoder = false;
 
+    // For unit testing.
+    bool g_use_fake_encoders = false;
+    bool g_use_fake_decoders = false;
+
     LogSink g_log_sink = nullptr;
 
     rtc::LoggingSeverity g_minimum_logging_severity = rtc::LS_INFO;
@@ -74,10 +78,30 @@ namespace
             startThread(g_signaling_thread, g_use_signaling_thread);
             startThread(g_worker_thread, g_use_worker_thread);
 
-            const auto audioEncoderFactory = webrtc::CreateBuiltinAudioEncoderFactory();
-            const auto audioDecoderFactory = webrtc::CreateBuiltinAudioDecoderFactory();
-            auto videoEncoderFactory = CreateEncoderFactory(g_force_software_encoder);
-            auto videoDecoderFactory = std::make_unique<webrtc::InternalDecoderFactory>();
+            // TODO: Support fake audio codec factories. Currently we do not support audio at all.
+            const auto audio_encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
+            const auto audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
+
+            std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory;
+            if (g_use_fake_encoders)
+            {
+                video_encoder_factory = std::make_unique<webrtc::FakeVideoEncoderFactory>();
+            }
+            else
+            {
+                video_encoder_factory = CreateEncoderFactory(g_force_software_encoder);
+            }
+
+            // TODO: Add NVDEC hardware decoder
+            std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory;
+            if (g_use_fake_decoders)
+            {
+                video_decoder_factory = std::make_unique<webrtc::FakeVideoDecoderFactory>();
+            }
+            else
+            {
+                video_decoder_factory = std::make_unique<webrtc::InternalDecoderFactory>();
+            }
 
             const std::nullptr_t default_adm = nullptr;
             const std::nullptr_t audio_mixer = nullptr;
@@ -88,10 +112,10 @@ namespace
                 g_worker_thread.get(),
                 g_signaling_thread.get(),
                 default_adm,
-                audioEncoderFactory,
-                audioDecoderFactory,
-                move(videoEncoderFactory),
-                move(videoDecoderFactory),
+                audio_encoder_factory,
+                audio_decoder_factory,
+                move(video_encoder_factory),
+                move(video_decoder_factory),
                 audio_mixer,
                 audio_processing);
 
@@ -201,6 +225,8 @@ extern "C"
         bool use_worker_thread,
         bool force_software_video_encoder,
         bool auto_shutdown,
+        bool use_fake_encoders,
+        bool use_fake_decoders,
         bool log_to_stderr,
         bool log_to_debug,
         LogSink log_sink,
@@ -215,7 +241,9 @@ extern "C"
             if (g_use_signaling_thread != use_signaling_thread ||
                 g_use_worker_thread != use_worker_thread ||
                 g_force_software_encoder != force_software_video_encoder ||
-                g_auto_shutdown != auto_shutdown)
+                g_auto_shutdown != auto_shutdown ||
+                g_use_fake_decoders != use_fake_decoders ||
+                g_use_fake_encoders != use_fake_encoders)
             {
                 RTC_LOG(LS_ERROR) << __FUNCTION__ << " must be called once, before creating the first peer connection";
                 return false;
@@ -228,6 +256,9 @@ extern "C"
         g_use_worker_thread = use_worker_thread;
         g_force_software_encoder = force_software_video_encoder;
         g_auto_shutdown = auto_shutdown;
+        g_use_fake_decoders = use_fake_decoders;
+        g_use_fake_encoders = use_fake_encoders;
+
         g_log_sink = log_sink;
         g_minimum_logging_severity = minimum_logging_severity;
 
@@ -413,6 +444,12 @@ extern "C"
     WEBRTC_PLUGIN_API bool RegisterVideoFrameEncoded(PeerConnection* connection, VideoFrameCallback callback)
     {
         connection->RegisterVideoFrameEncoded(callback);
+        return true;
+    }
+
+    WEBRTC_PLUGIN_API bool RegisterRemoteTrackChanged(PeerConnection* connection, RemoteTrackChangedCallback  callback)
+    {
+        connection->RegisterRemoteTrackChanged(callback);
         return true;
     }
 

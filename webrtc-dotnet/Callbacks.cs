@@ -3,6 +3,20 @@ using System.Diagnostics;
 
 namespace WonderMediaProductions.WebRtc
 {
+    public enum TrackMediaKind
+    {
+        Audio,
+        Video,
+        Data,
+    }
+
+    public enum TrackChangeKind
+    {
+        Changed,
+        Removed,
+        Stopped
+    }
+
     public delegate void LoggingDelegate(string message, TraceLevel severity);
 
     public delegate void AudioBusReadyDelegate(PeerConnection pc, IntPtr data, int bitsPerSample,
@@ -25,4 +39,6 @@ namespace WonderMediaProductions.WebRtc
     public delegate void ConnectionStateChangedDelegate(PeerConnection pc, ConnectionState state);
 
     public delegate void VideoFrameEncodedDelegate(PeerConnection pc, int trackId, IntPtr rgbaPixels);
+
+    public delegate void RemoteTrackChangedDelegate(PeerConnection pc, string transceiverMid, TrackMediaKind mediaKind, TrackChangeKind changeKind);
 }

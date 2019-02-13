@@ -232,6 +232,11 @@ void PeerConnection::RegisterVideoFrameEncoded(VideoFrameCallback callback)
     OnVideoFrameEncoded = callback;
 }
 
+void PeerConnection::RegisterRemoteTrackChanged(RemoteTrackChangedCallback callback)
+{
+    OnRemoteTrackChanged = callback;
+}
+
 bool PeerConnection::SetRemoteDescription(const char* type, const char* sdp) const
 {
     if (!peer_connection_)
@@ -334,32 +339,39 @@ void PeerConnection::OnConnectionChange(webrtc::PeerConnectionInterface::PeerCon
         OnConnectionStateChanged(static_cast<int>(new_state));
 }
 
-void PeerConnection::OnAddTrack(
-    rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver, 
-    const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams)
+void PeerConnection::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
 {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id();
+    RTC_LOG(INFO) << __FUNCTION__ << " mid: " << transceiver->mid().value_or("(unknown)");
+
+    if (OnRemoteTrackChanged)
+{
+        OnRemoteTrackChanged(
+            transceiver->mid()->c_str(),
+            transceiver->media_type(),
+            transceiver->stopped() ? 1 : 0);
+    }
 
 #ifdef HAS_REMOTE_VIDEO_OBSERVER
     if (remote_video_observer_)
     {
+        const auto receiver = transceiver->receiver();
         auto track = receiver->track();
         auto video_track = dynamic_cast<webrtc::VideoTrackInterface*>(track.get());
-
         if (video_track)
         {
+            if (transceiver->stopped())
+            {
+                video_track->RemoveSink(remote_video_observer_.get());
+            }
+            else
+            {
             video_track->AddOrUpdateSink(remote_video_observer_.get(), rtc::VideoSinkWants());
         }
+    }
     }
 
     SetAudioControl();
 #endif
-
-}
-
-void PeerConnection::OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver)
-{
-    RTC_LOG(INFO) << __FUNCTION__ << " " << receiver->id();
 }
 
 void PeerConnection::OnRenegotiationNeeded()

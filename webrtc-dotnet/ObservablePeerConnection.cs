@@ -17,6 +17,7 @@ namespace WonderMediaProductions.WebRtc
         private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
         private readonly Subject<VideoFrameYuvAlpha> _receivedVideoStream = new Subject<VideoFrameYuvAlpha>();
         private readonly Subject<VideoFrameMessage> _localVideoFrameEncodedStream = new Subject<VideoFrameMessage>();
+        private readonly Subject<RemoteTrackChange> _remoteTrackChangeStream = new Subject<RemoteTrackChange>();
 
         public IObservable<SessionDescription> LocalSessionDescriptionStream => _localSessionDescriptionStream;
         public IObservable<IceCandidate> LocalIceCandidateStream => _localIceCandidateStream;
@@ -25,6 +26,8 @@ namespace WonderMediaProductions.WebRtc
 
         public IObservable<DataMessage> ReceivedDataStream => _receivedDataStream;
         public IObservable<VideoFrameYuvAlpha> ReceivedVideoStream => _receivedVideoStream;
+
+        public IObservable<RemoteTrackChange> RemoteTrackChangeStream => _remoteTrackChangeStream;
 
         public IObservable<VideoFrameMessage> LocalVideoFrameEncodedStream => _localVideoFrameEncodedStream;
 
@@ -44,6 +47,7 @@ namespace WonderMediaProductions.WebRtc
             _disposables.Add(_receivedDataStream);
             _disposables.Add(_receivedVideoStream);
             _disposables.Add(_localVideoFrameEncodedStream);
+            _disposables.Add(_remoteTrackChangeStream);
 
             LocalDataChannelReady += (pc, label) =>
             {
@@ -69,9 +73,17 @@ namespace WonderMediaProductions.WebRtc
                 _localIceCandidateStream.OnNext(ice);
             };
 
-            RemoteVideoFrameReady += (pc, frame) => _receivedVideoStream.OnNext(frame);
+            RemoteTrackChanged += (pc, transceiverMid, mediaKind, changeKind) =>
+            {
+                DebugLog($"{Name} transceiver ${transceiverMid} ${mediaKind} track ${changeKind}");
+                _remoteTrackChangeStream.OnNext(new RemoteTrackChange(transceiverMid, mediaKind, changeKind));
+            };
 
-            LocalVideoFrameEncoded += (pc, trackId, pixels) => _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, pixels));
+            RemoteVideoFrameReady += (pc, frame) => 
+                _receivedVideoStream.OnNext(frame);
+
+            LocalVideoFrameEncoded += (pc, trackId, pixels) => 
+                _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, pixels));
 
             SignalingStateChanged += (pc, state) =>
             {
@@ -106,7 +118,6 @@ namespace WonderMediaProductions.WebRtc
         [Conditional("DEBUG")]
         private void DebugLog(string msg)
         {
-            Debug.WriteLine(msg);
             Console.WriteLine(msg);
         }
 

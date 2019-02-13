@@ -65,6 +65,9 @@ namespace WonderMediaProductions.WebRtc
         internal delegate void VideoFrameEncodedCallback(int videoTrackId, IntPtr rgbaPixels);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void RemoteTrackChangedCallback(string transceiverMid, int mediaKind, int changeKind);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void LoggingCallback(string message, int severity);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
@@ -73,6 +76,8 @@ namespace WonderMediaProductions.WebRtc
             bool hasWorkerThread,
             bool forceSoftwareVideoEncoder,
             bool autoShutdown,
+            bool useFakeEncoders,
+            bool useFakeDecoders,
             bool logToStdErr,
             bool logToDebug,
             LoggingCallback loggingCallback,
@@ -174,6 +179,10 @@ namespace WonderMediaProductions.WebRtc
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterVideoFrameEncoded(
             IntPtr connection, VideoFrameEncodedCallback callback);
+
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern bool RegisterRemoteTrackChanged(
+            IntPtr connection, RemoteTrackChangedCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool CanEncodeHardwareTextures();

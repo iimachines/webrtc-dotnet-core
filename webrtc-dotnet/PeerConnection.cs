@@ -22,6 +22,7 @@ namespace WonderMediaProductions.WebRtc
         private readonly Native.StateChangedCallback _signalingStateChangedCallback;
         private readonly Native.StateChangedCallback _connectionStateChangedCallback;
         private readonly Native.VideoFrameEncodedCallback _videoFrameEncodedCallback;
+        private readonly Native.RemoteTrackChangedCallback _remoteTrackChangedCallback;
 
         // ReSharper restore NotAccessedField.Local
 
@@ -37,6 +38,8 @@ namespace WonderMediaProductions.WebRtc
                 options.UseWorkerThread, 
                 options.ForceSoftwareVideoEncoder, 
                 options.AutoShutdown,
+                options.UseFakeEncoders,
+                options.UseFakeDecoders,
                 options.LogToStandardError,
                 options.LogToDebugOutput,
                 options.MinimumLogLevel != TraceLevel.Off ? OnMessageLogged : null,
@@ -99,6 +102,7 @@ namespace WonderMediaProductions.WebRtc
             RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseSignalingStateChange);
             RegisterCallback(out _connectionStateChangedCallback, Native.RegisterConnectionStateChanged, RaiseConnectionStateChange);
             RegisterCallback(out _videoFrameEncodedCallback, Native.RegisterVideoFrameEncoded, RaiseVideoFrameEncodedDelegate);
+            RegisterCallback(out _remoteTrackChangedCallback, Native.RegisterRemoteTrackChanged, RaiseRemoteTrackChanged);
         }
 
         public string Name { get; }
@@ -138,6 +142,7 @@ namespace WonderMediaProductions.WebRtc
             SignalingStateChanged = null;
             ConnectionStateChanged = null;
             LocalVideoFrameEncoded = null;
+            RemoteTrackChanged = null;
 
             Native.ClosePeerConnection(ptr);
         }
@@ -299,6 +304,11 @@ namespace WonderMediaProductions.WebRtc
             ConnectionStateChanged?.Invoke(this, (ConnectionState)state);
         }
 
+        private void RaiseRemoteTrackChanged(string transceiverMid, int mediaKind, int changeKind)
+        {
+            RemoteTrackChanged?.Invoke(this, transceiverMid, (TrackMediaKind) mediaKind, (TrackChangeKind) changeKind);
+        }
+
         private void RaiseVideoFrameEncodedDelegate(int trackId, IntPtr rgbaPixels)
         {
             LocalVideoFrameEncoded?.Invoke(this, trackId, rgbaPixels);
@@ -326,5 +336,6 @@ namespace WonderMediaProductions.WebRtc
         public event SignalingStateChangedDelegate SignalingStateChanged;
         public event ConnectionStateChangedDelegate ConnectionStateChanged;
         public event VideoFrameEncodedDelegate LocalVideoFrameEncoded;
+        public event RemoteTrackChangedDelegate RemoteTrackChanged;
     }
 }

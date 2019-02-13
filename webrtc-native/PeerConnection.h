@@ -55,6 +55,7 @@ public:
     void RegisterSignalingStateChanged(StateChangedCallback callback);
     void RegisterConnectionStateChanged(StateChangedCallback callback);
     void RegisterVideoFrameEncoded(VideoFrameCallback callback);
+    void RegisterRemoteTrackChanged(RemoteTrackChangedCallback callback);
 
     bool SetRemoteDescription(const char* type, const char* sdp) const;
     bool AddIceCandidate(const char* sdp, const int sdp_mlineindex, const char* sdp_mid) const;
@@ -70,11 +71,8 @@ protected:
 
     void OnConnectionChange(webrtc::PeerConnectionInterface::PeerConnectionState new_state) override;
 
-     void OnAddTrack(
-        rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
-        const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>& streams) override;
 
-    void OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
+    void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
 
     void OnRenegotiationNeeded() override;
 
@@ -156,6 +154,7 @@ private:
     IceCandidateReadyToSendCallback OnIceCandidateReady = nullptr;
     StateChangedCallback OnSignalingStateChanged = nullptr;
     StateChangedCallback OnConnectionStateChanged = nullptr;
+    RemoteTrackChangedCallback OnRemoteTrackChanged = nullptr;
 
     bool is_mute_audio_ = false;
     bool is_record_audio_ = false;

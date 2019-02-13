@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
@@ -71,6 +72,8 @@ namespace WonderMediaProductions.WebRtc
 
                     senderOutgoingMessages.OnNext(new DataMessage("data", "Hello"));
 
+                    sender.CreateOffer();
+
                     sender.Connect(senderOutgoingMessages, receiver.LocalSessionDescriptionStream, receiver.LocalIceCandidateStream);
 
                     var receiverOutgoingMessages = receiver
@@ -82,8 +85,6 @@ namespace WonderMediaProductions.WebRtc
                     receiver.Connect(receiverOutgoingMessages, sender.LocalSessionDescriptionStream, sender.LocalIceCandidateStream);
 
                     sender.AddDataChannel(new DataChannelOptions());
-
-                    sender.CreateOffer();
 
                     Console.WriteLine("Press any key to exit");
 
