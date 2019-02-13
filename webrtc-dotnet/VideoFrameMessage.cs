@@ -2,7 +2,7 @@
 
 namespace WonderMediaProductions.WebRtc
 {
-    public sealed class VideoFrameMessage
+    public struct VideoFrameMessage
     {
         public readonly int TrackId;
         public readonly IntPtr RgbaPixels;
