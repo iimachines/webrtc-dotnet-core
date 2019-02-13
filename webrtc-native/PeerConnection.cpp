@@ -113,10 +113,12 @@ bool PeerConnection::CreateOffer()
     if (!peer_connection_.get())
         return false;
 
-    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
-    options.offer_to_receive_audio = can_receive_audio_;
-    options.offer_to_receive_video = can_receive_video_;
-    peer_connection_->CreateOffer(this, options);
+    if (!CreateTransceivers())
+        return false;
+
+    peer_connection_->CreateOffer(this, 
+        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+
     return true;
 }
 
@@ -125,10 +127,29 @@ bool PeerConnection::CreateAnswer()
     if (!peer_connection_.get())
         return false;
 
-    webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
-    options.offer_to_receive_audio = can_receive_audio_;
-    options.offer_to_receive_video = can_receive_video_;
-    peer_connection_->CreateAnswer(this, options);
+    peer_connection_->CreateAnswer(this,
+        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+
+    return true;
+}
+
+bool PeerConnection::CreateTransceivers() const
+{
+    /*
+    if (can_receive_audio_)
+    {
+        webrtc::RtpTransceiverInit init;
+        init.direction = webrtc::RtpTransceiverDirection::kRecvOnly;
+        peer_connection_->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init);
+    }
+
+    if (can_receive_video_)
+    {
+        webrtc::RtpTransceiverInit init;
+        init.direction = webrtc::RtpTransceiverDirection::kRecvOnly;
+        peer_connection_->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init);
+    }
+    */
     return true;
 }
 
@@ -171,7 +192,7 @@ void PeerConnection::OnIceCandidate(
             candidate->sdp_mid().c_str());
 }
 
-void PeerConnection::RegisterOnLocalI420FrameReady(I420FrameReadyCallback callback) const
+void PeerConnection::RegisterOnLocalI420FrameReady(IncomingVideoFrameCallback callback) const
 {
 #ifdef HAS_LOCAL_VIDEO_OBSERVER
     if (local_video_observer_)
@@ -179,7 +200,7 @@ void PeerConnection::RegisterOnLocalI420FrameReady(I420FrameReadyCallback callba
 #endif
 }
 
-void PeerConnection::RegisterOnRemoteI420FrameReady(I420FrameReadyCallback callback) const
+void PeerConnection::RegisterOnRemoteI420FrameReady(IncomingVideoFrameCallback callback) const
 {
 #ifdef HAS_REMOTE_VIDEO_OBSERVER
     if (remote_video_observer_)
@@ -227,7 +248,7 @@ void PeerConnection::RegisterConnectionStateChanged(StateChangedCallback callbac
     OnConnectionStateChanged = callback;
 }
 
-void PeerConnection::RegisterVideoFrameEncoded(VideoFrameCallback callback)
+void PeerConnection::RegisterVideoFrameEncoded(VideoFrameEncodedCallback callback)
 {
     OnVideoFrameEncoded = callback;
 }
@@ -678,4 +699,5 @@ rtc::RefCountReleaseStatus PeerConnection::Release() const
     // Managed by the .NET code, so other refs always remain until disposed or garbage-collected.
     return rtc::RefCountReleaseStatus::kOtherRefsRemained;
 }
+
 

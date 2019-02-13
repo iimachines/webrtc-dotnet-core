@@ -26,7 +26,7 @@ namespace WonderMediaProductions.WebRtc
         {
             var color = Console.ForegroundColor;
             Console.ForegroundColor = ToConsoleColor(level);
-            Console.WriteLine($"[WebRTC {level:G}]:\t${line}");
+            Console.WriteLine($"[WebRTC {level:G}]:\t{line}");
             Console.ForegroundColor = color;
         }
     }

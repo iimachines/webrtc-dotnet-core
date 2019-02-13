@@ -56,7 +56,7 @@ namespace WonderMediaProductions.WebRtc
 
         public RawVector2? BallPosition { get; set; }
 
-        protected override VideoFrame OnCreateFrame() => new FrameD3D11(this, _context2D);
+        protected override VideoFrameBuffer OnCreateFrame() => new FrameD3D11(this, _context2D);
 
         public bool SendFrame(TimeSpan elapsedTime, int frameIndex)
         {
@@ -65,7 +65,7 @@ namespace WonderMediaProductions.WebRtc
             var y = (float)(VideoFrameHeight - Math.Abs(Math.Sin(a) * h));
             var pos = new RawVector2(VideoFrameWidth * 0.5f, y);
 
-            using (var df = TakeNextFrame())
+            using (var df = TakeNextFrameForSending())
             {
                 if (!df.TryGetFrame(out FrameD3D11 frame))
                     return false;

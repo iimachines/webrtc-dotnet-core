@@ -2,7 +2,7 @@
 
 namespace WonderMediaProductions.WebRtc
 {
-    public sealed class FrameD3D11 : GraphicsD3D11.VideoFrame
+    public sealed class FrameD3D11 : GraphicsD3D11.VideoFrameBuffer
     {
         public readonly D2D1.Bitmap1 Bitmap;
 

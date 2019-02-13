@@ -4,16 +4,16 @@ using DXGI = SharpDX.DXGI;
 
 namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 {
-    public class VideoFrame : Disposable
+    public class VideoFrameBuffer : Disposable
     {
         public D3D11.Texture2D Texture { get; }
 
-        public VideoFrame(D3D11.Device device3D, D3D11.Texture2DDescription textureDescription)
+        public VideoFrameBuffer(D3D11.Device device3D, D3D11.Texture2DDescription textureDescription)
         {
             Texture = new D3D11.Texture2D(device3D, textureDescription);
         }
 
-        public VideoFrame(D3D11.Device device3D, int width, int height) 
+        public VideoFrameBuffer(D3D11.Device device3D, int width, int height) 
             : this(device3D, new D3D11.Texture2DDescription()
             {
                 Width = width,
@@ -30,7 +30,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         {
         }
 
-        public VideoFrame(VideoRenderer renderer)
+        public VideoFrameBuffer(VideoRenderer renderer)
             : this(renderer.Device3D, renderer.VideoFrameWidth, renderer.VideoFrameHeight)
         {
 

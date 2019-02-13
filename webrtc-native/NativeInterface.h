@@ -13,7 +13,8 @@ enum class VideoFrameFormat
 };
 
 // Definitions of callback functions.
-typedef void(*I420FrameReadyCallback)(
+typedef void(*IncomingVideoFrameCallback)(
+    const void* texture,
     const uint8_t* data_y,
     const uint8_t* data_u,
     const uint8_t* data_v,
@@ -46,7 +47,7 @@ typedef void(*AudioBusReadyCallback)(const void* audio_data,
 
 typedef void(*StateChangedCallback)(int state);
 
-typedef void(*VideoFrameCallback)(int video_track_id, const void *pixels);
+typedef void(*VideoFrameEncodedCallback)(int video_track_id, const void *pixels);
 
 typedef void(*RemoteTrackChangedCallback)(const char* track_id, int media_kind, int change_kind);
 

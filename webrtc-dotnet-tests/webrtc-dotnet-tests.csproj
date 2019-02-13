@@ -8,18 +8,30 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Properties\launchSettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="$(SolutionDir)out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(SolutionDir)out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(SolutionDir)dependencies\nvpipe-build\bin\windows_$(Configuration)_x64\NvPipe.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Properties\launchSettings.json">
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.3.2" />
     <PackageReference Include="MSTest.TestFramework" Version="1.3.2" />
-   </ItemGroup>
+    <PackageReference Include="System.Reactive" Version="4.1.2" />
+    <PackageReference Include="System.Reactive.Core" Version="4.1.2" />
+    <PackageReference Include="System.Reactive.Interfaces" Version="4.1.2" />
+    <PackageReference Include="System.Reactive.Linq" Version="4.1.2" />
+  </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\webrtc-dotnet-graphics\webrtc-dotnet-graphics-d3d11.csproj" />
     <ProjectReference Include="..\webrtc-dotnet\webrtc-dotnet.csproj" />
   </ItemGroup>
 

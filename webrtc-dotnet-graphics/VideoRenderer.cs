@@ -14,7 +14,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
     /// </summary>
     public class VideoRenderer : Disposable
     {
-        private readonly Dictionary<IntPtr, VideoFrame> _frameTable = new Dictionary<IntPtr,VideoFrame>();
+        private readonly Dictionary<IntPtr, VideoFrameBuffer> _frameTable = new Dictionary<IntPtr,VideoFrameBuffer>();
 
         private readonly ConcurrentQueue<IntPtr> _queue = new ConcurrentQueue<IntPtr>();
 
@@ -85,9 +85,9 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             }
         }
 
-        protected virtual VideoFrame OnCreateFrame()
+        protected virtual VideoFrameBuffer OnCreateFrame()
         {
-            return new VideoFrame(this);
+            return new VideoFrameBuffer(this);
         }
 
         protected override void OnDispose(bool isDisposing)
@@ -114,14 +114,14 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 
         /// <summary>
         /// Tries to dequeue the next frame for rendering under a D3D11 thread-lock.
-        /// If no frame is ready, returns an empty <see cref="MaybePendingFrame"/>
-        /// After you have rendered to the frame's texture, call dispose on the <see cref="MaybePendingFrame"/> to send it.
+        /// If no frame is ready, returns an empty <see cref="MaybeSendableFrame"/>
+        /// After you have rendered to the frame's texture, call dispose on the <see cref="MaybeSendableFrame"/> to send it.
         /// </summary>
         /// <remarks>
         /// The result must be disposed when done.
         /// This will send the frame to the webrtc video-track.
         /// </remarks>
-        public MaybePendingFrame TakeNextFrame()
+        public MaybeSendableFrame TakeNextFrameForSending()
         {
             // TODO: Using a delegate to draw the frame allows capturing parameters,
             // but creates a new object every time, so is not GC friendly...
@@ -134,14 +134,14 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             {
                 ThreadLock3D.Enter();
                 var frame = _frameTable[texturePtr];
-                return new MaybePendingFrame(this, frame);
+                return new MaybeSendableFrame(this, frame);
             }
 
             OnMissedFrame();
             return default;
         }
 
-        internal void FinishPendingFrame(in MaybePendingFrame af)
+        internal void TransmitSendableFrame(in MaybeSendableFrame af)
         {
             var frame = af.Frame;
             if (frame != null)
@@ -152,7 +152,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             }
         }
 
-        protected virtual void OnFrameSend(VideoFrame frame)
+        protected virtual void OnFrameSend(VideoFrameBuffer frame)
         {
             SendFrameCount += 1;
         }

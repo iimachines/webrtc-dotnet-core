@@ -118,15 +118,15 @@ namespace WonderMediaProductions.WebRtc
             Console.ReadLine();
         }
 
-        private unsafe void SaveFrame(IList<VideoFrameYuvAlpha> frames)
+        private unsafe void SaveFrame(IList<VideoFrame> frames)
         {
             var frame0 = frames[0];
 
             // Save as JPEG for debugging. SLOW!
-            if (frame0.Width == frame0.StrideY)
+            if (frame0 is VideoFrameYuvAlpha yuvFrame && yuvFrame.Width == yuvFrame.StrideY)
             {
-                var span = new ReadOnlySpan<byte>(frame0.DataY.ToPointer(), frame0.Width * frame0.Height);
-                using (var image = Image.LoadPixelData<Y8>(span, frame0.Width, frame0.Height))
+                var span = new ReadOnlySpan<byte>(yuvFrame.DataY.ToPointer(), yuvFrame.Width * yuvFrame.Height);
+                using (var image = Image.LoadPixelData<Y8>(span, yuvFrame.Width, yuvFrame.Height))
                 {
                     image.Save($@"frame_{remoteFrameIndex:D000000}.bmp");
                 }

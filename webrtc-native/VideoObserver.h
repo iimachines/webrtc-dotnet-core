@@ -8,13 +8,13 @@ public:
     VideoObserver() = default;
     ~VideoObserver() = default;
 
-    void SetVideoCallback(I420FrameReadyCallback callback);
+    void SetVideoCallback(IncomingVideoFrameCallback callback);
 
 protected:
     // VideoSinkInterface implementation
     void OnFrame(const webrtc::VideoFrame& frame) override;
 
 private:
-    I420FrameReadyCallback OnI420FrameReady = nullptr;
+    IncomingVideoFrameCallback OnIncomingVideoFrame = nullptr;
     std::mutex mutex;
 };

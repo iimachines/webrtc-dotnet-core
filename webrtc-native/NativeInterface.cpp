@@ -381,13 +381,13 @@ extern "C"
     }
 
     // Register callback functions.
-    WEBRTC_PLUGIN_API bool RegisterOnLocalI420FrameReady(PeerConnection* connection, I420FrameReadyCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterLocalVideoFrameReady(PeerConnection* connection, IncomingVideoFrameCallback callback)
     {
         connection->RegisterOnLocalI420FrameReady(callback);
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterOnRemoteI420FrameReady(PeerConnection* connection, I420FrameReadyCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterRemoteVideoFrameReceived(PeerConnection* connection, IncomingVideoFrameCallback callback)
     {
         connection->RegisterOnRemoteI420FrameReady(callback);
         return true;
@@ -441,7 +441,7 @@ extern "C"
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterVideoFrameEncoded(PeerConnection* connection, VideoFrameCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterVideoFrameEncoded(PeerConnection* connection, VideoFrameEncodedCallback callback)
     {
         connection->RegisterVideoFrameEncoded(callback);
         return true;

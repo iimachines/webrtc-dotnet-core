@@ -47,7 +47,8 @@ namespace WonderMediaProductions.WebRtc
             int sampleRate, int numberOfChannels, int numberOfFrames);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void I420FrameReadyCallback(
+        internal delegate void VideoFrameCallback(
+            IntPtr texture,
             IntPtr dataY, IntPtr dataU, IntPtr dataV, IntPtr dataA,
             int strideY, int strideU, int strideV, int strideA,
             int width, int height, long timeStampUs);
@@ -153,12 +154,12 @@ namespace WonderMediaProductions.WebRtc
             AudioBusReadyCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool RegisterOnLocalI420FrameReady(IntPtr connection,
-            I420FrameReadyCallback callback);
+        internal static extern bool RegisterLocalVideoFrameReady(IntPtr connection,
+            VideoFrameCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool RegisterOnRemoteI420FrameReady(IntPtr connection,
-            I420FrameReadyCallback callback);
+        internal static extern bool RegisterRemoteVideoFrameReceived(IntPtr connection,
+            VideoFrameCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterOnLocalSdpReadyToSend(IntPtr connection,

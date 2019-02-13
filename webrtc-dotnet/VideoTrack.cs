@@ -2,6 +2,9 @@
 
 namespace WonderMediaProductions.WebRtc
 {
+    /// <summary>
+    /// TODO: Current a video track must be created before a connection is established!
+    /// </summary>
     public class VideoTrack : Disposable
     {
         public int TrackId { get; }

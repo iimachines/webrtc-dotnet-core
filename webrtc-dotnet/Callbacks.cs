@@ -26,7 +26,7 @@ namespace WonderMediaProductions.WebRtc
 
     public delegate void FailureMessageDelegate(PeerConnection pc, string msg);
 
-    public delegate void I420FrameReadyDelegate(PeerConnection pc, VideoFrameYuvAlpha frame);
+    public delegate void VideoFrameReadyDelegate(PeerConnection pc, VideoFrame frame);
 
     public delegate void IceCandidateReadyToSendDelegate(PeerConnection pc, IceCandidate ice);
 

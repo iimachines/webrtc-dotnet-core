@@ -15,7 +15,7 @@ namespace WonderMediaProductions.WebRtc
         private readonly BehaviorSubject<SignalingState> _signalingStateStream = new BehaviorSubject<SignalingState>(SignalingState.Closed);
 
         private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
-        private readonly Subject<VideoFrameYuvAlpha> _receivedVideoStream = new Subject<VideoFrameYuvAlpha>();
+        private readonly Subject<VideoFrame> _receivedVideoStream = new Subject<VideoFrame>();
         private readonly Subject<VideoFrameMessage> _localVideoFrameEncodedStream = new Subject<VideoFrameMessage>();
         private readonly Subject<RemoteTrackChange> _remoteTrackChangeStream = new Subject<RemoteTrackChange>();
 
@@ -25,7 +25,7 @@ namespace WonderMediaProductions.WebRtc
         public IObservable<ConnectionState> ConnectionStateStream => _connectionStateStream;
 
         public IObservable<DataMessage> ReceivedDataStream => _receivedDataStream;
-        public IObservable<VideoFrameYuvAlpha> ReceivedVideoStream => _receivedVideoStream;
+        public IObservable<VideoFrame> ReceivedVideoStream => _receivedVideoStream;
 
         public IObservable<RemoteTrackChange> RemoteTrackChangeStream => _remoteTrackChangeStream;
 
@@ -75,11 +75,11 @@ namespace WonderMediaProductions.WebRtc
 
             RemoteTrackChanged += (pc, transceiverMid, mediaKind, changeKind) =>
             {
-                DebugLog($"{Name} transceiver ${transceiverMid} ${mediaKind} track ${changeKind}");
+                DebugLog($"{Name} transceiver {transceiverMid} {mediaKind} track {changeKind}");
                 _remoteTrackChangeStream.OnNext(new RemoteTrackChange(transceiverMid, mediaKind, changeKind));
             };
 
-            RemoteVideoFrameReady += (pc, frame) => 
+            RemoteVideoFrameReceived += (pc, frame) => 
                 _receivedVideoStream.OnNext(frame);
 
             LocalVideoFrameEncoded += (pc, trackId, pixels) => 
@@ -123,14 +123,12 @@ namespace WonderMediaProductions.WebRtc
 
         protected override void OnDispose(bool isDisposing)
         {
-            // First dispose the connection to break all event handlers
-            base.OnDispose(isDisposing);
-
             if (isDisposing)
             {
-                // Then dispose the rest.
                 _disposables?.Dispose();
             }
+
+            base.OnDispose(isDisposing);
         }
     }
 }

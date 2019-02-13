@@ -16,9 +16,9 @@ namespace WonderMediaProductions.WebRtc
         private readonly Native.FailureMessageCallback _failureMessageDelegate;
         private readonly Native.IceCandidateReadyToSendCallback _iceCandidateReadyToSendDelegate;
         private readonly Native.LocalDataChannelReadyCallback _localDataChannelReadyDelegate;
-        private readonly Native.I420FrameReadyCallback _localI420FrameReadyDelegate;
+        private readonly Native.VideoFrameCallback _localVideoFrameDelegate;
         private readonly Native.LocalSdpReadyToSendCallback _localSdpReadyToSendDelegate;
-        private readonly Native.I420FrameReadyCallback _remoteI420FrameReadyDelegate;
+        private readonly Native.VideoFrameCallback _remoteVideoFrameDelegate;
         private readonly Native.StateChangedCallback _signalingStateChangedCallback;
         private readonly Native.StateChangedCallback _connectionStateChangedCallback;
         private readonly Native.VideoFrameEncodedCallback _videoFrameEncodedCallback;
@@ -34,23 +34,23 @@ namespace WonderMediaProductions.WebRtc
         public static void Configure(GlobalOptions options)
         {
             Native.Check(Native.Configure(
-                options.UseSignalingThread, 
-                options.UseWorkerThread, 
-                options.ForceSoftwareVideoEncoder, 
+                options.UseSignalingThread,
+                options.UseWorkerThread,
+                options.ForceSoftwareVideoEncoder,
                 options.AutoShutdown,
                 options.UseFakeEncoders,
                 options.UseFakeDecoders,
                 options.LogToStandardError,
                 options.LogToDebugOutput,
                 options.MinimumLogLevel != TraceLevel.Off ? OnMessageLogged : null,
-                4-(int)(options.MinimumLogLevel)
+                4 - (int)(options.MinimumLogLevel)
                 ));
         }
 
         public static event LoggingDelegate MessageLogged;
 
-        private static readonly Native.LoggingCallback OnMessageLogged = (message, severity) => 
-            MessageLogged?.Invoke(message.TrimEnd('\n'), (TraceLevel) (4 - severity));
+        private static readonly Native.LoggingCallback OnMessageLogged = (message, severity) =>
+            MessageLogged?.Invoke(message.TrimEnd('\n'), (TraceLevel)(4 - severity));
 
         /// <summary>
         /// This shuts down the global webrtc module.
@@ -76,7 +76,7 @@ namespace WonderMediaProductions.WebRtc
 
         public PeerConnection(PeerConnectionOptions options)
         {
-            Name = options.Name ?? $"PC#${Interlocked.Increment(ref g_LastId)}";
+            Name = options.Name ?? $"PC#{Interlocked.Increment(ref g_LastId)}";
 
             _nativePtr = Native.CreatePeerConnection(
                 options.TurnServers.ToArray(),
@@ -95,8 +95,8 @@ namespace WonderMediaProductions.WebRtc
             RegisterCallback(out _dataAvailableDelegate, Native.RegisterOnDataFromDataChannelReady, RaiseDataAvailable);
             RegisterCallback(out _failureMessageDelegate, Native.RegisterOnFailure, RaiseFailureMessage);
             RegisterCallback(out _audioBusReadyDelegate, Native.RegisterOnAudioBusReady, RaiseAudioBusReady);
-            RegisterCallback(out _localI420FrameReadyDelegate, Native.RegisterOnLocalI420FrameReady, RaiseLocalVideoFrameReady);
-            RegisterCallback(out _remoteI420FrameReadyDelegate, Native.RegisterOnRemoteI420FrameReady, RaiseRemoteVideoFrameReady);
+            RegisterCallback(out _localVideoFrameDelegate, Native.RegisterLocalVideoFrameReady, RaiseLocalVideoFrameReady);
+            RegisterCallback(out _remoteVideoFrameDelegate, Native.RegisterRemoteVideoFrameReceived, RaiseRemoteVideoFrameReady);
             RegisterCallback(out _localSdpReadyToSendDelegate, Native.RegisterOnLocalSdpReadyToSend, RaiseLocalSdpReadyToSend);
             RegisterCallback(out _iceCandidateReadyToSendDelegate, Native.RegisterOnIceCandidateReadyToSend, RaiseIceCandidateReadyToSend);
             RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseSignalingStateChange);
@@ -136,7 +136,7 @@ namespace WonderMediaProductions.WebRtc
             FailureMessage = null;
             AudioBusReady = null;
             LocalVideoFrameReady = null;
-            RemoteVideoFrameReady = null;
+            RemoteVideoFrameReceived = null;
             LocalSdpReadyToSend = null;
             IceCandidateReadyToSend = null;
             SignalingStateChanged = null;
@@ -263,25 +263,31 @@ namespace WonderMediaProductions.WebRtc
         }
 
         private void RaiseLocalVideoFrameReady(
+            IntPtr texture,
             IntPtr dataY, IntPtr dataU, IntPtr dataV, IntPtr dataA,
             int strideY, int strideU, int strideV, int strideA,
             int width, int height, long timeStampUs)
         {
-            LocalVideoFrameReady?.Invoke(this, new VideoFrameYuvAlpha(
-                dataY, dataU, dataV, dataA,
-                strideY, strideU, strideV, strideA,
-                width, height, timeStampUs));
+            LocalVideoFrameReady?.Invoke(this,
+                VideoFrame.FromNative(
+                    texture,
+                    dataY, dataU, dataV, dataA,
+                    strideY, strideU, strideV, strideA,
+                    width, height, timeStampUs));
         }
 
         private void RaiseRemoteVideoFrameReady(
+            IntPtr texture,
             IntPtr dataY, IntPtr dataU, IntPtr dataV, IntPtr dataA,
             int strideY, int strideU, int strideV, int strideA,
             int width, int height, long timeStampUs)
         {
-            RemoteVideoFrameReady?.Invoke(this, new VideoFrameYuvAlpha(
-                dataY, dataU, dataV, dataA,
-                strideY, strideU, strideV, strideA,
-                width, height, timeStampUs));
+            RemoteVideoFrameReceived?.Invoke(this,
+                VideoFrame.FromNative(
+                    texture,
+                    dataY, dataU, dataV, dataA,
+                    strideY, strideU, strideV, strideA,
+                    width, height, timeStampUs));
         }
 
         private void RaiseLocalSdpReadyToSend(string type, string sdp)
@@ -306,7 +312,7 @@ namespace WonderMediaProductions.WebRtc
 
         private void RaiseRemoteTrackChanged(string transceiverMid, int mediaKind, int changeKind)
         {
-            RemoteTrackChanged?.Invoke(this, transceiverMid, (TrackMediaKind) mediaKind, (TrackChangeKind) changeKind);
+            RemoteTrackChanged?.Invoke(this, transceiverMid, (TrackMediaKind)mediaKind, (TrackChangeKind)changeKind);
         }
 
         private void RaiseVideoFrameEncodedDelegate(int trackId, IntPtr rgbaPixels)
@@ -329,8 +335,8 @@ namespace WonderMediaProductions.WebRtc
         public event DataAvailableDelegate DataAvailable;
         public event FailureMessageDelegate FailureMessage;
         public event AudioBusReadyDelegate AudioBusReady;
-        public event I420FrameReadyDelegate LocalVideoFrameReady;
-        public event I420FrameReadyDelegate RemoteVideoFrameReady;
+        public event VideoFrameReadyDelegate LocalVideoFrameReady;
+        public event VideoFrameReadyDelegate RemoteVideoFrameReceived;
         public event LocalSdpReadyToSendDelegate LocalSdpReadyToSend;
         public event IceCandidateReadyToSendDelegate IceCandidateReadyToSend;
         public event SignalingStateChangedDelegate SignalingStateChanged;

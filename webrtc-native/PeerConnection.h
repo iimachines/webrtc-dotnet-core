@@ -44,8 +44,8 @@ public:
 
 
     // Register callback functions.
-    void RegisterOnLocalI420FrameReady(I420FrameReadyCallback callback) const;
-    void RegisterOnRemoteI420FrameReady(I420FrameReadyCallback callback) const;
+    void RegisterOnLocalI420FrameReady(IncomingVideoFrameCallback callback) const;
+    void RegisterOnRemoteI420FrameReady(IncomingVideoFrameCallback callback) const;
     void RegisterOnLocalDataChannelReady(LocalDataChannelReadyCallback callback);
     void RegisterOnDataFromDataChannelReady(DataAvailableCallback callback);
     void RegisterOnFailure(FailureCallback callback);
@@ -54,7 +54,7 @@ public:
     void RegisterOnIceCandidateReadyToSend(IceCandidateReadyToSendCallback callback);
     void RegisterSignalingStateChanged(StateChangedCallback callback);
     void RegisterConnectionStateChanged(StateChangedCallback callback);
-    void RegisterVideoFrameEncoded(VideoFrameCallback callback);
+    void RegisterVideoFrameEncoded(VideoFrameEncodedCallback callback);
     void RegisterRemoteTrackChanged(RemoteTrackChangedCallback callback);
 
     bool SetRemoteDescription(const char* type, const char* sdp) const;
@@ -64,6 +64,7 @@ public:
     rtc::RefCountReleaseStatus Release() const override;
 
 protected:
+    bool CreateTransceivers() const;
     bool SetAudioControl();
 
     // PeerConnectionObserver implementation.
@@ -148,7 +149,7 @@ private:
     DataAvailableCallback OnDataFromDataChannelReady = nullptr;
     FailureCallback OnFailureMessage = nullptr;
     AudioBusReadyCallback OnAudioReady = nullptr;
-    VideoFrameCallback OnVideoFrameEncoded = nullptr;
+    VideoFrameEncodedCallback OnVideoFrameEncoded = nullptr;
 
     LocalSdpReadyToSendCallback OnLocalSdpReadyToSend = nullptr;
     IceCandidateReadyToSendCallback OnIceCandidateReady = nullptr;
