@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using SharpDX;
 using D3D11 = SharpDX.Direct3D11;
 using DXGI = SharpDX.DXGI;
 
@@ -14,14 +14,17 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
     /// </summary>
     public class VideoRenderer : Disposable
     {
-        private readonly DisposableList<VideoFrame> _frames = new DisposableList<VideoFrame>();
-        private readonly ConcurrentQueue<long> _queue = new ConcurrentQueue<long>();
+        private readonly Dictionary<IntPtr, VideoFrame> _frameTable = new Dictionary<IntPtr,VideoFrame>();
+
+        private readonly ConcurrentQueue<IntPtr> _queue = new ConcurrentQueue<IntPtr>();
 
         public VideoTrack VideoTrack { get; }
 
         public int VideoFrameWidth { get; }
         public int VideoFrameHeight { get; }
         public int VideoFrameQueueSize { get; }
+
+        public int SendFrameCount { get; private set; }
         public int MissedFrameCount { get; private set; }
 
         public DXGI.Factory2 FactoryDXGI { get; }
@@ -30,7 +33,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         public DXGI.Device DeviceDXGI { get; }
         public D3D11.Multithread ThreadLock3D { get; }
 
-        protected VideoRenderer(VideoTrack videoTrack, RendererOptions options)
+        public VideoRenderer(VideoTrack videoTrack, RendererOptions options)
         {
             VideoTrack = videoTrack;
 
@@ -69,12 +72,13 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         /// </summary>
         public void EnsureVideoFrames()
         {
-            if (_frames.Count == 0)
+            if (_frameTable.Count == 0)
             {
                 for (int i = 0; i < VideoFrameQueueSize; ++i)
                 {
-                    _queue.Enqueue(i);
-                    _frames.Add(OnCreateFrame());
+                    var frame = OnCreateFrame();
+                    _frameTable.Add(frame.Texture.NativePointer, frame);
+                    _queue.Enqueue(frame.Texture.NativePointer);
                 }
             }
         }
@@ -97,7 +101,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
                 if (videoTrack != null)
                     videoTrack.LocalVideoFrameEncoded -= OnLocalVideoFrameEncoded;
 
-                _frames?.Dispose();
+                _frameTable.Values.DisposeAll();
 
                 ThreadLock3D?.Dispose();
                 DeviceDXGI?.Dispose();
@@ -124,27 +128,31 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 
             EnsureVideoFrames();
 
-            if (_queue.TryDequeue(out long frameId))
+            if (_queue.TryDequeue(out var texturePtr))
             {
-                int index = (int)frameId;
-                var frame = _frames[index];
-
                 ThreadLock3D.Enter();
-                
-                return new MaybePendingFrame(this, frame, frameId);
+                var frame = _frameTable[texturePtr];
+                return new MaybePendingFrame(this, frame);
             }
 
             OnMissedFrame();
             return default;
         }
 
-        internal void FinishDequeuedFrame(in MaybePendingFrame af)
+        internal void FinishPendingFrame(in MaybePendingFrame af)
         {
-            if (af.Frame != null)
+            var frame = af.Frame;
+            if (frame != null)
             {
                 ThreadLock3D.Leave();
-                af.Frame.Send(VideoTrack, af.FrameId);
+                frame.Send(VideoTrack);
+                OnFrameSend(frame);
             }
+        }
+
+        protected virtual void OnFrameSend(VideoFrame frame)
+        {
+            SendFrameCount += 1;
         }
 
         protected virtual void OnMissedFrame()
@@ -152,14 +160,15 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             MissedFrameCount += 1;
         }
 
-        protected virtual void OnLocalVideoFrameEncoded(PeerConnection pc, int trackId, long frameId, IntPtr rgbaPixels)
+        protected virtual void OnLocalVideoFrameEncoded(PeerConnection pc, int trackId, IntPtr texturePtr)
         {
             if (IsDisposed)
                 return;
 
             // Put the texture back in the queue.
-            Debug.Assert(!_queue.Contains(frameId));
-            _queue.Enqueue(frameId);
+            Debug.Assert(!_queue.Contains(texturePtr));
+
+            _queue.Enqueue(texturePtr);
         }
     }
 }

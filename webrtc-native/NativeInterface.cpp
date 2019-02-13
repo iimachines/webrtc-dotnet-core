@@ -328,9 +328,9 @@ extern "C"
         return connection->SendData(label, data, length, is_binary);
     }
     
-    WEBRTC_PLUGIN_API bool SendVideoFrame(PeerConnection* connection, int trackId, VideoFrameId frame_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format)
+    WEBRTC_PLUGIN_API bool SendVideoFrame(PeerConnection* connection, int trackId, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format)
     {
-        return connection->SendVideoFrame(trackId, frame_id, pixels, stride, width, height, format);
+        return connection->SendVideoFrame(trackId, pixels, stride, width, height, format);
     }
 
     WEBRTC_PLUGIN_API bool SetAudioControl(PeerConnection* connection, bool is_mute, bool is_record)

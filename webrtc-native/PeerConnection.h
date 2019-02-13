@@ -32,7 +32,7 @@ public:
 
     // TODO: Allow the user to select the kind of stream (what camera, etc...)
     int AddVideoTrack(const std::string& label, int min_bps, int max_bps, int max_fps);
-    bool SendVideoFrame(int video_track_id, VideoFrameId frame_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format);
+    bool SendVideoFrame(int video_track_id, const uint8_t* pixels, int stride, int width, int height, VideoFrameFormat format);
 
     bool CreateOffer();
     bool CreateAnswer();
@@ -95,7 +95,7 @@ protected:
         size_t number_of_channels,
         size_t number_of_frames) override;
 
-    void OnFrameEncoded(int video_track_id, VideoFrameId frame_id, const void* pixels) override;
+    void OnFrameEncoded(int video_track_id, const void* pixels) override;
 
     // Get remote audio tracks ssrcs.
     std::vector<uint32_t> GetRemoteAudioTrackSynchronizationSources() const;

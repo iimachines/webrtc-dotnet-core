@@ -22,5 +22,5 @@ namespace WonderMediaProductions.WebRtc
 
     public delegate void SignalingStateChangedDelegate(PeerConnection pc, SignalingState state);
 
-    public delegate void VideoFrameEncodedDelegate(PeerConnection pc, int trackId, long frameId, IntPtr rgbaPixels);
+    public delegate void VideoFrameEncodedDelegate(PeerConnection pc, int trackId, IntPtr rgbaPixels);
 }

@@ -68,7 +68,7 @@ namespace WonderMediaProductions.WebRtc
 
             RemoteVideoFrameReady += (pc, frame) => _receivedVideoStream.OnNext(frame);
 
-            LocalVideoFrameEncoded += (pc, trackId, frameId, pixels) => _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, frameId, pixels));
+            LocalVideoFrameEncoded += (pc, trackId, pixels) => _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, pixels));
 
             SignalingStateChanged += (pc, state) =>
             {

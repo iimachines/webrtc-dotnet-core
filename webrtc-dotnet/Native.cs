@@ -62,7 +62,7 @@ namespace WonderMediaProductions.WebRtc
         internal delegate void SignalingStateChangedCallback(int state);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void VideoFrameEncodedCallback(int videoTrackId, long frameId, IntPtr rgbaPixels);
+        internal delegate void VideoFrameEncodedCallback(int videoTrackId, IntPtr rgbaPixels);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void LoggingCallback(string message, int severity);
@@ -120,7 +120,7 @@ namespace WonderMediaProductions.WebRtc
         internal static extern bool SendData(IntPtr connection, string label, IntPtr data, int length, bool isBinary);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool SendVideoFrame(IntPtr connection, int trackId, long frameId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat);
+        internal static extern bool SendVideoFrame(IntPtr connection, int trackId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool SetAudioControl(IntPtr connection, bool isMute, bool isRecord);

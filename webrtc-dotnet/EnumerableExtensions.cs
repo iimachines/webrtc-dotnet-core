@@ -13,5 +13,14 @@ namespace WonderMediaProductions.WebRtc
         {
             return new DisposableList<T>(items);
         }
+
+        public static void DisposeAll<T>(this IEnumerable<T> items)
+            where T : IDisposable
+        {
+            foreach (var item in items)
+            {
+                item.Dispose();
+            }
+        }
     }
 }

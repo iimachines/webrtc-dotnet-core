@@ -45,6 +45,6 @@ typedef void(*AudioBusReadyCallback)(const void* audio_data,
 
 typedef void(*SignalingStateChangedCallback)(int state);
 
-typedef void(*VideoFrameCallback)(int video_track_id, VideoFrameId frame_id, const void *pixels);
+typedef void(*VideoFrameCallback)(int video_track_id, const void *pixels);
 
 typedef void(*LogSink)(const char* message, int severity);

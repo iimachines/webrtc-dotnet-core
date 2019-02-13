@@ -1,4 +1,5 @@
-﻿using D3D11 = SharpDX.Direct3D11;
+﻿using System;
+using D3D11 = SharpDX.Direct3D11;
 using DXGI = SharpDX.DXGI;
 
 namespace WonderMediaProductions.WebRtc.GraphicsD3D11
@@ -43,12 +44,11 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             }
         }
 
-        public virtual void Send(VideoTrack videoTrack, long frameId)
+        public virtual void Send(VideoTrack videoTrack)
         {
             var description = Texture.Description;
 
-            videoTrack.SendVideoFrame(
-                frameId, Texture.NativePointer,
+            videoTrack.SendVideoFrame(Texture.NativePointer,
                 0, description.Width, description.Height, 
                 VideoFrameFormat.GpuTextureD3D11);
         }

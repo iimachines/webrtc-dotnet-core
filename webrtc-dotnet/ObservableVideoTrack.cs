@@ -16,10 +16,10 @@ namespace WonderMediaProductions.WebRtc
 
         public IObservable<VideoFrameMessage> LocalVideoFrameEncodedStream => _localVideoFrameEncodedStream;
 
-        protected override void OnLocalVideoFrameEncoded(PeerConnection pc, int trackId, long frameId, IntPtr rgbaPixels)
+        protected override void OnLocalVideoFrameEncoded(PeerConnection pc, int trackId, IntPtr rgbaPixels)
         {
-            _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, frameId, rgbaPixels));
-            base.OnLocalVideoFrameEncoded(pc, trackId, frameId, rgbaPixels);
+            _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, rgbaPixels));
+            base.OnLocalVideoFrameEncoded(pc, trackId, rgbaPixels);
         }
 
         protected override void OnDispose(bool isDisposing)

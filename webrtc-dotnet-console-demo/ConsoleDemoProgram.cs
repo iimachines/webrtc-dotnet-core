@@ -93,9 +93,7 @@ namespace WonderMediaProductions.WebRtc
                     {
                         var frame = imageFrame.Frames[0];
                         var pixels = MemoryMarshal.Cast<Argb32, uint>(frame.GetPixelSpan());
-                        videoTrack.SendVideoFrame(
-                            localFrameIndex,
-                            MemoryMarshal.GetReference(pixels),
+                        videoTrack.SendVideoFrame(MemoryMarshal.GetReference(pixels),
                             frame.Width * 4,
                             frame.Width,
                             frame.Height,

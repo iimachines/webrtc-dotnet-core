@@ -190,9 +190,9 @@ namespace WonderMediaProductions.WebRtc
             SendData(msg.Label, msg.Content, msg.Encoding);
         }
 
-        internal void SendVideoFrame(int trackId, long frameId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
+        internal void SendVideoFrame(int trackId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
         {
-            Native.Check(Native.SendVideoFrame(_nativePtr, trackId, frameId, rgbaPixels, stride, width, height, videoFrameFormat));
+            Native.Check(Native.SendVideoFrame(_nativePtr, trackId, rgbaPixels, stride, width, height, videoFrameFormat));
         }
 
         public void SetAudioControl(bool isMute, bool isRecord)
@@ -291,9 +291,9 @@ namespace WonderMediaProductions.WebRtc
             SignalingStateChanged?.Invoke(this, (SignalingState)state);
         }
 
-        private void RaiseVideoFrameEncodedDelegate(int trackId, long frameId, IntPtr rgbaPixels)
+        private void RaiseVideoFrameEncodedDelegate(int trackId, IntPtr rgbaPixels)
         {
-            LocalVideoFrameEncoded?.Invoke(this, trackId, frameId, rgbaPixels);
+            LocalVideoFrameEncoded?.Invoke(this, trackId, rgbaPixels);
         }
 
         //public void AddQueuedIceCandidate(IEnumerable<IceCandidate> iceCandidateQueue)

@@ -14,11 +14,8 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         [CanBeNull]
         internal readonly VideoFrame Frame;
 
-        internal readonly long FrameId;
-
-        internal MaybePendingFrame(VideoRenderer renderer, VideoFrame frame, long frameId)
+        internal MaybePendingFrame(VideoRenderer renderer, VideoFrame frame)
         {
-            FrameId = frameId;
             Renderer = renderer;
             Frame = frame;
         }
@@ -37,7 +34,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 
         public void Dispose()
         {
-            Renderer?.FinishDequeuedFrame(this);
+            Renderer?.FinishPendingFrame(this);
         }
     }
 }

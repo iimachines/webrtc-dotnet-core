@@ -10,7 +10,7 @@ namespace webrtc
     class NativeVideoBuffer : public VideoFrameBuffer
     {
     public:
-        NativeVideoBuffer(int track_id, VideoFrameId frame_id, VideoFrameFormat format, int width, int height, const void* texture, VideoFrameEvents* events);
+        NativeVideoBuffer(int track_id, VideoFrameFormat format, int width, int height, const void* texture, VideoFrameEvents* events);
         ~NativeVideoBuffer() override;
 
         Type type() const override;
@@ -25,7 +25,6 @@ namespace webrtc
         rtc::scoped_refptr<I420BufferInterface> ToI420() override;
 
         const int track_id_;
-        VideoFrameId frame_id_;
         VideoFrameFormat format_;
         const int width_;
         const int height_;

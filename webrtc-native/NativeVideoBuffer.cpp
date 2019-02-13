@@ -5,14 +5,12 @@ namespace webrtc
 {
     NativeVideoBuffer::NativeVideoBuffer(
         int track_id,
-        VideoFrameId frame_id,
         VideoFrameFormat format,
         int width, 
         int height, 
         const void* texture, 
         VideoFrameEvents* events)
         : track_id_(track_id)
-        , frame_id_(frame_id)
         , format_(format)
         , width_(width)
         , height_(height)
@@ -31,7 +29,7 @@ namespace webrtc
     {
         if (events_ && texture_)
         {
-            events_->OnFrameEncoded(track_id_, frame_id_, texture_);
+            events_->OnFrameEncoded(track_id_, texture_);
         }
 
         if (texture_ && format_ == VideoFrameFormat::GpuTextureD3D11)
