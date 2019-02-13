@@ -8,6 +8,9 @@ using WIC = SharpDX.WIC;
 
 namespace WonderMediaProductions.WebRtc
 {
+    /// <summary>
+    /// Renders a bouncing ball using D3D11 textures
+    /// </summary>
     public sealed class D3D11Renderer : VideoRenderer, IRenderer
     {
         private readonly D2D1.DeviceContext _context2D;

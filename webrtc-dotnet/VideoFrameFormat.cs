@@ -16,27 +16,27 @@
     public enum VideoFrameFormat
     {
         /// <summary>
-        /// Software encoder pixel format, 8-bit R G B A in memory
+        /// Software encoder pixel format, 8-bit R G B A in system memory
         /// </summary>
         Rgba32,
 
         /// <summary>
-        /// Software encoder pixel format,  8-bit B G R A in memory 
+        /// Software encoder pixel format,  8-bit B G R A in system memory 
         /// </summary>
         Bgra32,
 
         /// <summary>
-        /// Software encoder pixel format, 8-bit A R G B in memory 
+        /// Software encoder pixel format, 8-bit A R G B in system memory 
         /// </summary>
-        Argb32, 
+        Argb32,
 
         /// <summary>
-        /// Software encoder pixel format, 8-bit A B G R in memory 
+        /// Software encoder pixel format, 8-bit A B G R in system memory 
         /// </summary>
         Abgr32,
 
         /// <summary>
-        /// Hardware encoder pixel format, 8-bit B G R A in memory 
+        /// Hardware encoder pixel format, 8-bit B G R A in system memory 
         /// </summary>
         /// <remarks>
         /// The texture must reside in CPU memory, 
@@ -45,7 +45,7 @@
         CpuTexture,
 
         /// <summary>
-        /// Hardware encoder pixel format, 8-bit B G R A, D3D11 Texture 2 on GPU host memory
+        /// Hardware encoder pixel format, 8-bit B G R A, D3D11 Texture2D in GPU host memory
         /// </summary>
         GpuTextureD3D11,
     };

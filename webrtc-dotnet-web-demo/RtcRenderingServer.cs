@@ -25,10 +25,11 @@ namespace WonderMediaProductions.WebRtc
         private static IRenderer CreateRenderer(ObservableVideoTrack videoTrack, ILogger logger)
         {
             bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            bool supportsNvEnc = PeerConnection.SupportsHardwareTextureEncoding;
 
             // TODO: Add support for OpenGL, and test it.
             // Maybe use https://github.com/mellinoe/veldrid
-            return isWindows
+            return isWindows &&  supportsNvEnc
                 ? (IRenderer)new D3D11Renderer(videoTrack,
                     new GraphicsD3D11.RendererOptions
                     {
