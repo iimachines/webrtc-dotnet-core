@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using SharpDX;
 using SharpDX.Mathematics.Interop;
+using WonderMediaProductions.WebRtc.GraphicsD3D11;
 
 namespace WonderMediaProductions.WebRtc
 {
@@ -29,7 +30,7 @@ namespace WonderMediaProductions.WebRtc
 
             // TODO: Add support for OpenGL, and test it.
             // Maybe use https://github.com/mellinoe/veldrid
-            return isWindows &&  supportsNvEnc
+            return isWindows && supportsNvEnc
                 ? (IRenderer)new D3D11Renderer(videoTrack,
                     new GraphicsD3D11.RendererOptions
                     {
@@ -68,39 +69,25 @@ namespace WonderMediaProductions.WebRtc
 
             try
             {
+                var clock = new PreciseWaitableClock(EventResetMode.AutoReset);
+                var waitHandles = new WaitHandle[] { clock.WaitHandle };
 
-                TimeSpan startTime = TimeSpan.Zero;
-                TimeSpan nextFrameTime = TimeSpan.Zero;
-                TimeSpan previousTime = TimeSpan.Zero;
+                DateTime startTime = default;
 
-                long nextFrameIndex = 0;
+                int frameIndex = 0;
 
-                var sw = new Stopwatch();
+                // var sw = new Stopwatch();
 
-                // TODO: Stop using polling, use a Win32 WaitableTimer and GetSystemTimePreciseAsFileTime as I did in the 3D Streaming Toolkit fork.
                 using (var renderer = CreateRenderer(videoTrack, logger))
                 {
                     while (Thread.CurrentThread.IsAlive && !peerConnection.IsDisposed)
                     {
                         if (peerConnection.SignalingState == SignalingState.Stable)
                         {
-                            var currentTime = PeerConnection.GetRealtimeClockTimeInMicroseconds();
-
-                            if (currentTime == previousTime)
+                            if (frameIndex == 0)
                             {
-                                Thread.Sleep(0);
-                                continue;
+                                startTime = clock.GetCurrentTime();
                             }
-
-                            previousTime = currentTime;
-
-                            if (startTime == TimeSpan.Zero)
-                            {
-                                startTime = currentTime;
-                                sw.Start();
-                            }
-
-                            var sleep = nextFrameTime - currentTime;
 
                             MouseMessage lastMouseMessage = null;
 
@@ -111,45 +98,44 @@ namespace WonderMediaProductions.WebRtc
 
                             if (lastMouseMessage != null)
                             {
+                                // Render mouse events as quickly as possible.
                                 renderer.BallPosition = lastMouseMessage.Kind != MouseEventKind.Up
                                     ? lastMouseMessage.Pos
                                     : (RawVector2?)null;
 
+                                var currentTime = clock.GetCurrentTime();
                                 var elapsedTime = currentTime - startTime;
-                                var frameIndex = (int)(elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
                                 renderer.SendFrame(elapsedTime, frameIndex);
                             }
-                            else if (sleep.Ticks <= 0)
+                            else
                             {
-                                // Console.Write($"{sw.ElapsedMilliseconds:D06}\t");
-                                sw.Restart();
+                                var elapsedTime = TimeSpan.FromTicks(frameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
+                                renderer.SendFrame(elapsedTime, frameIndex);
 
-                                var elapsedTime = currentTime - startTime;
-                                var frameIndex =
-                                    (int)(elapsedTime.Ticks * videoTrack.FrameRate / TimeSpan.TicksPerSecond);
+                                // Wait until we can render the next frame
+                                var currentTime = clock.GetCurrentTime();
 
-                                var skippedFrameCount = frameIndex - nextFrameIndex;
-                                Debug.Assert(skippedFrameCount >= 0);
+                                var skippedFrameCount = 0;
+                                for(;;)
+                                {
+                                    var nextFrameTime = startTime.AddTicks(++frameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
+                                    if (nextFrameTime >= currentTime)
+                                    {
+                                        clock.SetFutureEventTime(nextFrameTime);
+                                        break;
+                                    }
 
-                                if (skippedFrameCount >= 1)
+                                    ++skippedFrameCount;
+                                }
+
+                                if (skippedFrameCount > 0)
                                 {
                                     logger.LogWarning($"Skipped {skippedFrameCount} frames!");
                                 }
 
-                                renderer.SendFrame(elapsedTime, frameIndex);
 
-                                nextFrameIndex = frameIndex + 1;
-
-                                // TODO: Use Math.DivRem and take remainder into account?
-                                // TODO: Should get feedback from connected peer about frame-rate and resolution.
-                                nextFrameTime =
-                                    startTime + TimeSpan.FromTicks(
-                                        nextFrameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
-                            }
-                            else
-                            {
-                                // TODO: Use Win32 waitable timers, or expose webrtc's high-precision (?) TaskQueue
-                                Thread.Sleep(0);
+                                // Wait for the next frame.
+                                WaitHandle.WaitAny(waitHandles);
                             }
                         }
                         else
