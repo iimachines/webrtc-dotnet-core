@@ -18,6 +18,8 @@ function main() {
 
     const video = document.querySelector('video');
     const logElem = document.getElementById('log');
+    const playElem = document.getElementById('play-trigger');
+    playElem.style.visibility = "hidden";
 
     // Clear log
     logElem.innerText = "";
@@ -79,23 +81,29 @@ function main() {
     }
 
     video.onmousedown = async (e: MouseEvent) => {
+        if (e.button === 0) {
+            sendMousePos(e, 0);
+            video.onmousemove = (e2: MouseEvent) => sendMousePos(e2, 1);
+            video.onmouseup = (e2: MouseEvent) => sendMousePos(e2, 2);
+        }
+    }
+
+    playElem.onmousedown = async (e: MouseEvent) => {
         try {
             if (e.button === 0) {
-                if (isPlaying(video)) {
-                    sendMousePos(e, 0);
-                    video.onmousemove = (e2: MouseEvent) => sendMousePos(e2, 1);
-                    video.onmouseup = (e2: MouseEvent) => sendMousePos(e2, 2);
-                } else {
-                    log(`🛈 Playing video`);
-                    await video.play();
-                }
+                log(`🛈 Playing video`);
+                await video.play();
+                playElem.style.visibility = "hidden";
             }
         } catch (err) {
             log(`✘ ${err}`);
         }
     }
 
-    video.oncanplay = () => log(`🛈 Video can play`);
+    video.oncanplay = () => {
+        log(`🛈 Video can play`);
+        playElem.style.visibility = "visible";
+    };
 
     ws.onerror = () => log(`✘ websocket error`);
     ws.onclose = () => retry("websocket closed");
@@ -106,7 +114,7 @@ function main() {
         };
 
         pc.oniceconnectionstatechange = e => {
-            log(`🛈 ice connection state = ${pc.iceConnectionState}`);
+            log(`🛈 ice connection state = ${pc && pc.iceConnectionState}`);
         };
 
         pc.ontrack = ({ transceiver }) => {
