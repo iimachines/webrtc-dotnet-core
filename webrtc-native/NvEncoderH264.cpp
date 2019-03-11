@@ -118,7 +118,7 @@ namespace webrtc {
             NvPipe::Format::BGRA32,
             NvPipe::Codec::H264,
             NvPipe::Compression::LOSSY,
-            codec_.startBitrate * 1000, 
+            codec_.maxBitrate * 1000, 
             codec_.maxFramerate);
 
         if (!nvEncoder)
