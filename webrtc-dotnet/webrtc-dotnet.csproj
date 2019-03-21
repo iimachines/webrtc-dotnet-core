@@ -16,8 +16,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="$(SolutionDir)out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="$(SolutionDir)out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(SolutionDir)out\bin\webrtc-native_Release_x64\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(SolutionDir)out\bin\webrtc-native_Release_x64\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(ProjectDir)..\dependencies\nvpipe-build\bin\windows_$(Configuration)_x64\NvPipe.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

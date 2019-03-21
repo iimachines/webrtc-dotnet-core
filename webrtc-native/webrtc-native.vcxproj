@@ -58,10 +58,10 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>c:\wc\src;c:\wc\src\third_party\libyuv\include;c:\wc\src\third_party\abseil-cpp;$(SolutionDir)dependencies\webrtc-build\include\webrtc;$(SolutionDir)dependencies\webrtc-build\include\third_party\libyuv\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>c:\wc\src;c:\wc\src\third_party\libyuv\include;c:\wc\src\third_party\abseil-cpp;$(ProjectDir)..\dependencies\webrtc-build\include\webrtc;$(ProjectDir)..\dependencies\webrtc-build\include\third_party\libyuv\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>c:\wc\windows_msvc_$(Configuration)_$(Platform)\obj;$(SolutionDir)dependencies\webrtc-build\lib\windows_$(Configuration)_$(Platform)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>c:\wc\windows_msvc_$(Configuration)_$(Platform)\obj;$(ProjectDir)..\dependencies\webrtc-build\lib\windows_$(Configuration)_$(Platform)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
