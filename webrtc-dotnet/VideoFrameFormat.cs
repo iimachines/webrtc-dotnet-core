@@ -48,5 +48,10 @@
         /// Hardware encoder pixel format, 8-bit B G R A, D3D11 Texture2D in GPU host memory
         /// </summary>
         GpuTextureD3D11,
-    };
+
+		/// <summary>
+		/// Pre-encoded H264 data.
+		/// </summary>
+		EncodedH264,
+	};
 }

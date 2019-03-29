@@ -55,6 +55,9 @@
     <ClInclude Include="main.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="NvPipeEncoderH264.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DummySetSessionDescriptionObserver.cpp">
@@ -97,6 +100,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="NvPipeEncoderH264.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

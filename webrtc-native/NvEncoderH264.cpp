@@ -1,47 +1,21 @@
 #include "pch.h"
 #include "NativeVideoBuffer.h"
 #include "NvEncoderH264.h"
-#include "NvPipe.h"
+#include "AppEncD3D11.h"
 
 namespace webrtc {
 
-    namespace {
+	namespace
+	{
 
-        // Used by histograms. Values of entries should not be changed.
-        enum H264EncoderImplEvent {
-            kH264EncoderEventInit = 0,
-            kH264EncoderEventError = 1,
-            kH264EncoderEventMax = 16,
-        };
-
-        NvPipe::Library& getNvPipe()
-        {
-            static NvPipe::Library nvPipeLib;
-            return nvPipeLib;
-        }
-
-        bool isNvEncoderPresent()
-        {
-            bool is_available = false;
-
-            // TODO: Find a better way to see if we can create the NvEnc encoder.
-            auto& nvPipe = getNvPipe();
-            if (nvPipe.IsAvailable())
-            {
-                const auto encoder = nvPipe.CreateEncoder(
-                    NvPipe::Format::BGRA32, 
-                    NvPipe::Codec::H264, 
-                    NvPipe::Compression::LOSSY, 
-                    1000000, 
-                    60);
-
-                is_available = encoder != nullptr;
-
-                nvPipe.Destroy(encoder);
-            }
-            return is_available;
-        }
-    }  // namespace
+		// Used by histograms. Values of entries should not be changed.
+		enum H264EncoderImplEvent
+		{
+			kH264EncoderEventInit = 0,
+			kH264EncoderEventError = 1,
+			kH264EncoderEventMax = 16,
+		};
+	}
 
     NvEncoderH264::NvEncoderH264()
         : max_payload_size_(0)
@@ -112,7 +86,11 @@ namespace webrtc {
         is_sending_ = false;
         key_frame_request_ = false;
 
-        auto& nvPipe = getNvPipe();
+		encoder = new nvenc::NvEncoder(width, height);
+
+		// TODO initial configuration of bitrate etc
+
+       /* auto& nvPipe = getNvPipe();
 
         const auto nvEncoder = nvPipe.CreateEncoder(
             NvPipe::Format::BGRA32,
@@ -132,7 +110,7 @@ namespace webrtc {
         }
 
         // Store h264 encoder.
-        encoder_ = nvEncoder;
+        encoder_ = nvEncoder;*/
 
         // Create encoded output buffer
         const size_t new_capacity = 4 * width * height;
@@ -149,11 +127,10 @@ namespace webrtc {
     }
 
     int32_t NvEncoderH264::Release() {
-        if (encoder_)
+        if (encoder)
         {
-            auto& nvPipe = getNvPipe();
-            nvPipe.Destroy(encoder_);
-            encoder_ = nullptr;
+			delete encoder;
+			encoder = nullptr;
         }
 
         encoded_output_buffer_.clear();
@@ -172,8 +149,6 @@ namespace webrtc {
     }
 
     int32_t NvEncoderH264::SetRateAllocation(const VideoBitrateAllocation& bitrate, uint32_t new_framerate) {
-        if (!encoder_)
-            return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
         if (new_framerate < 1)
             return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -199,8 +174,9 @@ namespace webrtc {
             // Reconfigure encoder
             SetStreamState(true);
 
-            auto& nvPipe = getNvPipe();
-            nvPipe.SetBitrate(encoder_, target_bps, new_framerate);
+			// TODO set bit rate???
+            /*auto& nvPipe = getNvPipe();
+            nvPipe.SetBitrate(encoder_, target_bps, new_framerate);*/
         }
         else {
             SetStreamState(false);
@@ -212,10 +188,10 @@ namespace webrtc {
     int32_t NvEncoderH264::Encode(const VideoFrame& input_frame,
         const CodecSpecificInfo* codec_specific_info,
         const std::vector<FrameType>* frame_types) {
-        if (!encoder_) {
+        /*if (!encoder_) {
             ReportError();
             return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
-        }
+        }*/
         if (!encoded_image_callback_) {
             RTC_LOG(LS_WARNING)
                 << "InitEncode() has been called, but a callback function "
@@ -253,28 +229,14 @@ namespace webrtc {
             // Encode!
             uint64_t encoded_buffer_size = 0;
 
-            auto& nvPipe = getNvPipe();
-
             switch (native_buffer->format())
             {
-            case VideoFrameFormat::CpuTexture:
-                encoded_buffer_size = nvPipe.Encode(
-                    encoder_,
-                    native_buffer->texture(), width * 4,
-                    encoded_buffer_ptr, encoded_output_buffer_.size(),
-                    width, height, send_key_frame);
-                break;
-
             case VideoFrameFormat::GpuTextureD3D11:
             {
                 auto* texture = reinterpret_cast<ID3D11Texture2D*>(const_cast<void*>(native_buffer->texture()));
-                encoded_buffer_size = nvPipe.EncodeTextureD3D11(
-                    encoder_,
-                    texture,
-                    encoded_buffer_ptr, 
-                    encoded_output_buffer_.size(),
-                    send_key_frame);
-                break;
+
+				encoded_buffer_size = encoder->EncodeFrame(texture, encoded_buffer_ptr, encoded_output_buffer_.size());
+				break;
             }
 
             default:
@@ -282,12 +244,12 @@ namespace webrtc {
                 return WEBRTC_VIDEO_CODEC_ERROR;
             }
 
-            if (encoded_buffer_size == 0)
+           /* if (encoded_buffer_size == 0)
             {
                 RTC_LOG(LS_ERROR) << "NVENC H264 frame encoding failed, EncodeFrame returned " << nvPipe.GetError(encoder_);
                 ReportError();
                 return WEBRTC_VIDEO_CODEC_ERROR;
-            }
+            }*/
 
             if (debug_output_file)
             {
@@ -404,7 +366,9 @@ namespace webrtc {
 
     bool NvEncoderH264::IsAvailable()
     {
-        static bool is_present = isNvEncoderPresent();
-        return is_present;
+		// TODO detect presence of nvenc??
+        /*static bool is_present = isNvEncoderPresent();
+        return is_present;*/
+		return true;
     }
 }  // namespace webrtc

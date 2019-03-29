@@ -44,8 +44,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Label="Output">
-    <OutDir>$(SolutionDir)out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)out\obj\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</IntDir>
+    <OutDir>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutDir>
+    <IntDir>$(ProjectDir)..\out\obj\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -58,7 +58,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>c:\wc\src;c:\wc\src\third_party\libyuv\include;c:\wc\src\third_party\abseil-cpp;$(ProjectDir)..\dependencies\webrtc-build\include\webrtc;$(ProjectDir)..\dependencies\webrtc-build\include\third_party\libyuv\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>c:\wc\src;c:\wc\src\third_party\libyuv\include;c:\wc\src\third_party\abseil-cpp;$(ProjectDir)..\dependencies\webrtc-build\include\webrtc;$(ProjectDir)..\dependencies\webrtc-build\include\third_party\libyuv\include;$(ProjectDir)..\webrtc-native-nvenc\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>c:\wc\windows_msvc_$(Configuration)_$(Platform)\obj;$(ProjectDir)..\dependencies\webrtc-build\lib\windows_$(Configuration)_$(Platform)</AdditionalLibraryDirectories>
@@ -79,6 +79,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>DebugFastLink</GenerateDebugInformation>
       <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>$(ProjectDir)..\out\lib\webrtc-native-nvenc_$(Configuration)_$(Platform)\webrtc-native-nvenc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreLinkEvent>
       <Command>
@@ -112,6 +113,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>$(ProjectDir)..\out\lib\webrtc-native-nvenc_$(Configuration)_$(Platform)\webrtc-native-nvenc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -129,6 +131,7 @@
     <ClInclude Include="NativeInterface.h" />
     <ClInclude Include="EncoderFactory.h" />
     <ClInclude Include="NvPipe.h" />
+    <ClInclude Include="NvPipeEncoderH264.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PeerConnection.h" />
     <ClInclude Include="TestVideoCapturer.h" />
@@ -146,6 +149,7 @@
     <ClCompile Include="NativeInterface.cpp" />
     <ClCompile Include="EncoderFactory.cpp" />
     <ClCompile Include="NvPipe.cpp" />
+    <ClCompile Include="NvPipeEncoderH264.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
