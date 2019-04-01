@@ -24,12 +24,42 @@ using Microsoft::WRL::ComPtr;
 namespace nvenc
 {
 
-	NvEncoder::NvEncoder(int width, int height)
+	NvEncoder::NvEncoder(int width, int height, uint64_t bitrate, uint32_t targetFrameRate)
 	{
 		this->width = width;
 		this->height = height;
+		this->bitrate = bitrate;
+		this->targetFrameRate = targetFrameRate;
 	}
 
+	void NvEncoder::SetBitrate(uint64_t bitrate, uint32_t targetFrameRate)
+	{
+		this->bitrate = bitrate;
+		this->targetFrameRate = targetFrameRate;
+		this->doReconfigure = true;
+	}
+
+	void NvEncoder::Reconfigure() {
+		printf("UPDATE target frame rate to %d and bitrate to %d\n", this->targetFrameRate, this->bitrate);
+		return;
+		NV_ENC_CONFIG config;
+		memset(&config, 0, sizeof(config));
+		config.version = NV_ENC_CONFIG_VER;
+		config.rcParams.averageBitRate = bitrate;
+
+		NV_ENC_RECONFIGURE_PARAMS reconfigureParams;
+		memset(&reconfigureParams, 0, sizeof(reconfigureParams));
+		reconfigureParams.version = NV_ENC_RECONFIGURE_PARAMS_VER;
+		reconfigureParams.resetEncoder = 1;
+		reconfigureParams.forceIDR = 1;
+		reconfigureParams.reInitEncodeParams.encodeConfig = &config;
+
+		encoder->GetInitializeParams(&reconfigureParams.reInitEncodeParams);
+		reconfigureParams.reInitEncodeParams.frameRateNum = targetFrameRate;
+		reconfigureParams.reInitEncodeParams.frameRateDen = 1;
+
+		encoder->Reconfigure(&reconfigureParams);
+	}
 
 	int NvEncoder::EncodeFrame(ID3D11Texture2D* texture, uint8_t* outputBuffer, int outputBufferSize)
 	{
@@ -46,12 +76,51 @@ namespace nvenc
 		if (encoder == nullptr)
 		{
 			encoder = new NvEncoderD3D11(device, width, height, NV_ENC_BUFFER_FORMAT_ARGB);
+
+			// create the initial structures to hold the config
 			NV_ENC_INITIALIZE_PARAMS initializeParams = { NV_ENC_INITIALIZE_PARAMS_VER };
 			NV_ENC_CONFIG encodeConfig = { NV_ENC_CONFIG_VER };
 			initializeParams.encodeConfig = &encodeConfig;
-			encoder->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_H264_GUID, NV_ENC_PRESET_DEFAULT_GUID);
+
+			// fill them with default values
+			encoder->CreateDefaultEncoderParams(&initializeParams, NV_ENC_CODEC_H264_GUID, NV_ENC_PRESET_LOW_LATENCY_HQ_GUID);
+
+			// override some values to configure them according to the requirements of the user
+			/*initializeParams.frameRateNum = this->targetFrameRate;
+			initializeParams.frameRateDen = 1;*/
+			printf("INIT target frame rate to %d and bitrate to %d\n", this->targetFrameRate, this->bitrate);
+
+			// set the max bit rate
+			//encodeConfig.rcParams.maxBitRate = bitrate;
+			printf("OK");
+
+			encodeConfig.rcParams.averageBitRate = bitrate;
+			encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+			// these are the recommended settings for low-latency use cases like game streaming,
+			// as defined in the 9.0 documentation by nVidia.
+			//encodeConfig.rcParams.disableBadapt = 1;
+			//encodeConfig.rcParams.vbvBufferSize = encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum; // bitrate / framerate = one frame
+			//encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
+			//encodeConfig.rcParams.enableAQ = 1;
+
+			/*encodeConfig.rcParams.averageBitRate = this->bitrate;
+			encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+			encodeConfig.rcParams.vbvBufferSize = encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum; // bitrate / framerate = one frame
+			encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
+			encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;*/
+
 			encoder->CreateEncoder(&initializeParams);
 
+			// if we triggered a reconfigure before this point, we don't need to do it anymore,
+			// since it is already dealt with by the encoder creation.
+			doReconfigure = false; 
+		}
+
+		// Reconfigure the encoder if requested.
+		if (doReconfigure)
+		{
+			doReconfigure = false;
+			Reconfigure();
 		}
 
 		// copy the frame into an internal buffer of nvEnc so we can encode it

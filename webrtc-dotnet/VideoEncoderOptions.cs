@@ -15,9 +15,11 @@
             return new VideoEncoderOptions
             {
                 MaxFramesPerSecond = maxFramesPerSecond,
-                MinBitsPerSecond = OptimalBitsPerSecond(width, height, maxFramesPerSecond, VideoMotion.High),
+				/*MinBitsPerSecond = 10 * 1000 * 1000,
+				MaxBitsPerSecond = 10 * 1000 * 1000*/
+				MinBitsPerSecond = OptimalBitsPerSecond(width, height, maxFramesPerSecond, VideoMotion.Low),
                 MaxBitsPerSecond = OptimalBitsPerSecond(width, height, maxFramesPerSecond, VideoMotion.High)
-            };
+			};
         }
 
         /// <summary>

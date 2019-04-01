@@ -86,7 +86,8 @@ namespace webrtc {
         is_sending_ = false;
         key_frame_request_ = false;
 
-		encoder = new nvenc::NvEncoder(width, height);
+		//encoder = new nvenc::NvEncoder(width, height, codec_.maxBitrate, codec_.maxFramerate);
+		encoder = new nvenc::NvEncoder(width, height, codec_.maxBitrate * 1000, codec_.maxFramerate);
 
 		// TODO initial configuration of bitrate etc
 
@@ -169,10 +170,13 @@ namespace webrtc {
         codec_.maxFramerate = new_framerate;
 
         const auto target_bps = bitrate.get_sum_bps();
+		printf("Received new frame rate allocation of %d\n", new_framerate);
 
         if (target_bps) {
             // Reconfigure encoder
             SetStreamState(true);
+
+			encoder->SetBitrate(target_bps, new_framerate);
 
 			// TODO set bit rate???
             /*auto& nvPipe = getNvPipe();

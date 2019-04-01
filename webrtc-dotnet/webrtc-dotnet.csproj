@@ -3,11 +3,16 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>WonderMediaProductions.WebRtc</RootNamespace>
-    <OutputPath>$(SolutionDir)out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
+    <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
     <LangVersion>7.3</LangVersion>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
@@ -15,9 +20,13 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
-    <Content Include="$(SolutionDir)out\bin\webrtc-native_Release_x64\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="$(SolutionDir)out\bin\webrtc-native_Release_x64\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(ProjectDir)..\out\bin\webrtc-native_$(Configuration)_$(Platform)\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(ProjectDir)..\out\bin\webrtc-native_$(Configuration)_$(Platform)\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(ProjectDir)..\dependencies\nvpipe-build\bin\windows_$(Configuration)_x64\NvPipe.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
