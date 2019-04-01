@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>WonderMediaProductions.WebRtc.GraphicsD3D11</RootNamespace>
-    <OutputPath>$(SolutionDir)out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
+    <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 

@@ -162,6 +162,11 @@
   <ItemGroup>
     <Text Include="LICENSE" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\webrtc-native-nvenc\webrtc-native-nvenc.vcxproj">
+      <Project>{4645fff5-9866-4cd4-b432-8bac320e560e}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

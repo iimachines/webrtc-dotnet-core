@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <RootNamespace>WonderMediaProductions.WebRtc</RootNamespace>
-    <OutputPath>$(SolutionDir)out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
+    <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="$(SolutionDir)out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="$(SolutionDir)out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(ProjectDir)..\out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="$(ProjectDir)..\out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="$(ProjectDir)..\dependencies\nvpipe-build\bin\windows_$(Configuration)_x64\NvPipe.dll" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="background-small.jpg" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <OutputPath>$(SolutionDir)out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
+    <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
     <TypeScriptToolsVersion>3.1</TypeScriptToolsVersion>
     <LangVersion>latest</LangVersion>
     <ApplicationIcon />
