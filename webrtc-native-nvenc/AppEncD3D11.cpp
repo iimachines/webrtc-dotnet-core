@@ -40,8 +40,8 @@ namespace nvenc
 	}
 
 	void NvEncoder::Reconfigure() {
-		printf("UPDATE target frame rate to %d and bitrate to %d\n", this->targetFrameRate, this->bitrate);
-		return;
+		//printf("UPDATE target frame rate to %d and bitrate to %d\n", this->targetFrameRate, this->bitrate);
+
 		NV_ENC_CONFIG config;
 		memset(&config, 0, sizeof(config));
 		config.version = NV_ENC_CONFIG_VER;
@@ -88,26 +88,18 @@ namespace nvenc
 			// override some values to configure them according to the requirements of the user
 			/*initializeParams.frameRateNum = this->targetFrameRate;
 			initializeParams.frameRateDen = 1;*/
-			printf("INIT target frame rate to %d and bitrate to %d\n", this->targetFrameRate, this->bitrate);
+			//printf("INIT target frame rate to %d and bitrate to %d\n", this->targetFrameRate, this->bitrate);
 
 			// set the max bit rate
-			//encodeConfig.rcParams.maxBitRate = bitrate;
-			printf("OK");
-
 			encodeConfig.rcParams.averageBitRate = bitrate;
 			encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+
 			// these are the recommended settings for low-latency use cases like game streaming,
 			// as defined in the 9.0 documentation by nVidia.
-			//encodeConfig.rcParams.disableBadapt = 1;
-			//encodeConfig.rcParams.vbvBufferSize = encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum; // bitrate / framerate = one frame
-			//encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
-			//encodeConfig.rcParams.enableAQ = 1;
-
-			/*encodeConfig.rcParams.averageBitRate = this->bitrate;
-			encodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+			encodeConfig.rcParams.disableBadapt = 1;
 			encodeConfig.rcParams.vbvBufferSize = encodeConfig.rcParams.averageBitRate * initializeParams.frameRateDen / initializeParams.frameRateNum; // bitrate / framerate = one frame
-			encodeConfig.rcParams.maxBitRate = encodeConfig.rcParams.averageBitRate;
-			encodeConfig.rcParams.vbvInitialDelay = encodeConfig.rcParams.vbvBufferSize;*/
+			encodeConfig.gopLength = NVENC_INFINITE_GOPLENGTH;
+			encodeConfig.rcParams.enableAQ = 1;
 
 			encoder->CreateEncoder(&initializeParams);
 

@@ -527,18 +527,32 @@ bool PeerConnection::SendVideoFrame(int video_track_id, const uint8_t* pixels, i
         return false;
     }
 
-   // auto senders = peer_connection_->GetSenders();
-   // if (!senders.empty())
-   // {
-   //     for (auto& sender : senders)
-   //     {
-   //         auto params = sender->GetParameters();
-   //         for (auto& encoding : params.encodings)
-   //         {
-   //             printf("%d %d %d\n", encoding.min_bitrate_bps.value_or(0), encoding.max_bitrate_bps.value_or(0), encoding.max_framerate.value_or(0));
-   //         }
-   //     }
-   // }
+    /*auto senders = peer_connection_->GetSenders();
+    if (!senders.empty())
+    {
+        for (auto& sender : senders)
+        {
+            auto params = sender->GetParameters();
+            for (auto& encoding : params.encodings)
+            {
+                printf("SENDER %d %d %d %d\n", encoding.min_bitrate_bps.value_or(0), encoding.max_bitrate_bps.value_or(0), encoding.max_framerate.value_or(0), (int)params.degradation_preference);
+				encoding.min_bitrate_bps = 5 * 1000 * 1000;
+				encoding.max_bitrate_bps = 5 * 1000 * 1000;
+            }
+
+			params.degradation_preference = webrtc::DegradationPreference::DISABLED;
+			sender->SetParameters(params);
+        }
+
+		for (auto& receiver : peer_connection_->GetReceivers())
+		{
+			auto params = receiver->GetParameters();
+			for (auto& encoding : params.encodings)
+			{
+				printf("RECEIVER %d %d %d\n", encoding.min_bitrate_bps.value_or(0), encoding.max_bitrate_bps.value_or(0), encoding.max_framerate.value_or(0));
+			}
+		}
+    }*/
 
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer;
 
