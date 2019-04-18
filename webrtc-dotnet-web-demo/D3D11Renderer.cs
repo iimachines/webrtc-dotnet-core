@@ -60,31 +60,36 @@ namespace WonderMediaProductions.WebRtc
 
         public bool SendFrame(TimeSpan elapsedTime, int frameIndex)
         {
-            var a = Math.PI * elapsedTime.TotalSeconds;
-            var h = VideoFrameHeight - _ballEllipse.RadiusY;
-            var y = (float)(VideoFrameHeight - Math.Abs(Math.Sin(a) * h));
-            var pos = new RawVector2(VideoFrameWidth * 0.5f, y);
+            const int BallCount = 10;
 
             using (var df = TakeNextFrameForSending())
             {
                 if (!df.TryGetFrame(out FrameD3D11 frame))
                     return false;
 
-                // TODO: Draw bouncing ball.
-                _context2D.Target = frame.Bitmap;
-                _context2D.BeginDraw();
-                _context2D.Transform = Matrix3x2.Identity;
-                _context2D.DrawBitmap(_backgroundBitmap, new RawRectangleF(0, 0, VideoFrameWidth, VideoFrameHeight),
-                    1, D2D1.BitmapInterpolationMode.NearestNeighbor);
+                // Draw many balls to simulate high motion
+                for (int i = 0; i < BallCount; ++i)
+                {
+                    var a = Math.PI * elapsedTime.TotalSeconds + i * Math.PI / BallCount;
+                    var h = VideoFrameHeight - _ballEllipse.RadiusY;
+                    var y = (float) (VideoFrameHeight - Math.Abs(Math.Sin(a) * h));
+                    var pos = new RawVector2(i * (VideoFrameWidth - _ballEllipse.RadiusX*2f) / BallCount + _ballEllipse.RadiusX, y);
 
-                _context2D.Transform = BallPosition.HasValue
-                    ? Matrix3x2.Translation(BallPosition.Value * new Vector2(VideoFrameWidth, VideoFrameHeight))
-                    : Matrix3x2.Translation(pos);
+                    // TODO: Draw bouncing ball.
+                    _context2D.Target = frame.Bitmap;
+                    _context2D.BeginDraw();
+                    _context2D.Transform = Matrix3x2.Identity;
+                    _context2D.DrawBitmap(_backgroundBitmap, new RawRectangleF(0, 0, VideoFrameWidth, VideoFrameHeight),
+                        1, D2D1.BitmapInterpolationMode.NearestNeighbor);
 
-                _context2D.FillEllipse(_ballEllipse, _ballBrush);
-                _context2D.EndDraw();
-                _context2D.Target = null;
+                    _context2D.Transform = BallPosition.HasValue
+                        ? Matrix3x2.Translation(BallPosition.Value * new Vector2(VideoFrameWidth, VideoFrameHeight))
+                        : Matrix3x2.Translation(pos);
 
+                    _context2D.FillEllipse(_ballEllipse, _ballBrush);
+                    _context2D.EndDraw();
+                    _context2D.Target = null;
+                }
                 return true;
             }
         }
