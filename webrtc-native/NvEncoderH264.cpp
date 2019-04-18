@@ -151,7 +151,12 @@ namespace webrtc {
 
     int32_t NvEncoderH264::SetRateAllocation(const VideoBitrateAllocation& bitrate, uint32_t new_framerate) {
 
-        if (new_framerate < 1)
+		if (new_framerate < 10)
+		{
+			printf("WARNING: NvEncoderH264::SetRateAllocation %dkbps %d\n", bitrate.get_sum_kbps(), new_framerate);
+		}
+
+		if (new_framerate < 1)
             return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
 
         if (bitrate.get_sum_bps() == 0) {
@@ -170,7 +175,6 @@ namespace webrtc {
         codec_.maxFramerate = new_framerate;
 
         const auto target_bps = bitrate.get_sum_bps();
-		printf("Received new frame rate allocation of %d\n", new_framerate);
 
         if (target_bps) {
             // Reconfigure encoder
