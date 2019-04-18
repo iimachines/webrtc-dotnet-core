@@ -58,37 +58,37 @@ namespace WonderMediaProductions.WebRtc
             DataAvailable += (pc, msg) =>
             {
                 DebugLog($"{Name} received data: {msg}");
-                _receivedDataStream.OnNext(msg);
+                _receivedDataStream.TryOnNext(msg);
             };
 
             LocalSdpReadyToSend += (pc, sd) =>
             {
                 DebugLog($"{Name} received local session description: {sd}");
-                _localSessionDescriptionStream.OnNext(sd);
+                _localSessionDescriptionStream.TryOnNext(sd);
             };
 
             IceCandidateReadyToSend += (pc, ice) =>
             {
                 DebugLog($"{Name} received local ice candidate: {ice}");
-                _localIceCandidateStream.OnNext(ice);
+                _localIceCandidateStream.TryOnNext(ice);
             };
 
             RemoteTrackChanged += (pc, transceiverMid, mediaKind, changeKind) =>
             {
                 DebugLog($"{Name} transceiver {transceiverMid} {mediaKind} track {changeKind}");
-                _remoteTrackChangeStream.OnNext(new RemoteTrackChange(transceiverMid, mediaKind, changeKind));
+                _remoteTrackChangeStream.TryOnNext(new RemoteTrackChange(transceiverMid, mediaKind, changeKind));
             };
 
             RemoteVideoFrameReceived += (pc, frame) => 
-                _receivedVideoStream.OnNext(frame);
+                _receivedVideoStream.TryOnNext(frame);
 
-            LocalVideoFrameEncoded += (pc, trackId, pixels) => 
-                _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, pixels));
+            LocalVideoFrameEncoded += (pc, trackId, pixels) =>
+                _localVideoFrameEncodedStream.TryOnNext(new VideoFrameMessage(trackId, pixels));
 
             SignalingStateChanged += (pc, state) =>
             {
                 DebugLog($"{Name} signaling state changed: {state}");
-                _signalingStateStream.OnNext(state);
+                _signalingStateStream.TryOnNext(state);
 
                 if (state == SignalingState.HaveRemoteOffer)
                 {
@@ -99,7 +99,7 @@ namespace WonderMediaProductions.WebRtc
             ConnectionStateChanged += (pc, state) =>
             {
                 DebugLog($"{Name} connection state changed: {state}");
-                _connectionStateStream.OnNext(state);
+                _connectionStateStream.TryOnNext(state);
             };
 
             _disposables.Add(receivedIceCandidates.Subscribe(ice =>
