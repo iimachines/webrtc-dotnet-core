@@ -9,38 +9,31 @@
 *
 */
 
-#include <d3d11.h>
-#include <iostream>
-#include <unordered_map>
-#include <memory>
-#include <wrl.h>
+#include "pch.h"
 #include "NvCodec/NvEncoder/NvEncoderD3D11.h"
 #include "NvCodec/NvEncoder/NvEncoder.h"
-
-#include "AppEncD3D11.h"
+#include "NvEncFacadeD3D11.h"
 
 using Microsoft::WRL::ComPtr;
 
-namespace nvenc
-{
-
-	NvEncoder::NvEncoder(int width, int height, uint64_t bitrate, uint32_t targetFrameRate)
+	NvEncFacadeD3D11::NvEncFacadeD3D11(int width, int height, int bitrate, int targetFrameRate)
+		: width(width)
+		, height(height)
+		, bitrate(bitrate)
+		, targetFrameRate(targetFrameRate)
 	{
-		this->width = width;
-		this->height = height;
-		this->bitrate = bitrate;
-		this->targetFrameRate = targetFrameRate;
 	}
 
-	void NvEncoder::SetBitrate(uint64_t bitrate, uint32_t targetFrameRate)
+	void NvEncFacadeD3D11::SetBitrate(int bitrate, int targetFrameRate)
 	{
 		this->bitrate = bitrate;
 		this->targetFrameRate = targetFrameRate;
 		this->doReconfigure = true;
 	}
 
-	void NvEncoder::Reconfigure() {
-		//printf("UPDATE target frame rate to %d and bitrate to %d\n", this->targetFrameRate, this->bitrate);
+	void NvEncFacadeD3D11::Reconfigure() const
+	{
+		// printf("UPDATE target frame rate to %d and bitrate to %d\n", this->targetFrameRate, this->bitrate);
 
 		NV_ENC_CONFIG config;
 		memset(&config, 0, sizeof(config));
@@ -61,12 +54,9 @@ namespace nvenc
 		encoder->Reconfigure(&reconfigureParams);
 	}
 
-	int NvEncoder::EncodeFrame(ID3D11Texture2D* texture, uint8_t* outputBuffer, int outputBufferSize)
+	void NvEncFacadeD3D11::EncodeFrame(ID3D11Texture2D* source, std::vector<uint8_t>& vPacket)
 	{
-		std::vector<std::vector<uint8_t>> vPacket;
-
 		// get the device & context of the source texture
-		ID3D11Texture2D *source = reinterpret_cast<ID3D11Texture2D*>(texture);
 		ID3D11Device* device;
 		ID3D11DeviceContext* pContext;
 		source->GetDevice(&device);
@@ -105,7 +95,7 @@ namespace nvenc
 
 			// if we triggered a reconfigure before this point, we don't need to do it anymore,
 			// since it is already dealt with by the encoder creation.
-			doReconfigure = false; 
+			doReconfigure = false;
 		}
 
 		// Reconfigure the encoder if requested.
@@ -117,42 +107,21 @@ namespace nvenc
 
 		// copy the frame into an internal buffer of nvEnc so we can encode it
 		const NvEncInputFrame* encoderInputFrame = encoder->GetNextInputFrame();
-		ID3D11Texture2D *target = reinterpret_cast<ID3D11Texture2D*>(encoderInputFrame->inputPtr);
+		const auto target = reinterpret_cast<ID3D11Texture2D*>(encoderInputFrame->inputPtr);
 		pContext->CopyResource(target, source);
 		encoder->EncodeFrame(vPacket);
-
-		// process the packets and put them into one big buffer
-		nPackets += (int)vPacket.size();
-		int nBytes = 0;
-		for (std::vector<uint8_t> &packet : vPacket)
-		{
-			nBytes += packet.size();
-		}
-		int offset = 0;
-		for (int i = 0; i < vPacket.size(); ++i)
-		{
-			std::vector<uint8_t>& packet = vPacket[i];
-
-			uint8_t* data = packet.data();
-			int size = packet.size();
-
-			memcpy(outputBuffer + offset, data, size);
-			offset += size;
-		}
-
-		return nBytes;
 	}
 
-	NvEncoder::~NvEncoder()
+	NvEncFacadeD3D11::~NvEncFacadeD3D11()
 	{
-		if (encoder == nullptr) return;
-
-		// flush! This means that some packets might be lost and never sent,
-		// because we don't do anything with it here.
-		std::vector<std::vector<uint8_t>> vPacket;
-		encoder->EndEncode(vPacket);
-
-		encoder->DestroyEncoder();
-		encoder = nullptr;
+		if (encoder)
+		{
+			// Flush! This means that some packets might be lost and never sent, because we don't do anything with it here.
+			// [PV] Uncommented for now, since this is also done by the NvEncoder itself (at least under some conditions)
+			// std::vector<uint8_t> vPacket;
+			// encoder->EndEncode(vPacket);
+			encoder->DestroyEncoder();
+			delete encoder;
+			encoder = nullptr;
+		}
 	}
-}

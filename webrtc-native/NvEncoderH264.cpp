@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "NativeVideoBuffer.h"
 #include "NvEncoderH264.h"
-#include "AppEncD3D11.h"
+#include "NvEncFacadeD3D11.h"
 
 namespace webrtc {
 
@@ -23,16 +23,16 @@ namespace webrtc {
         , has_reported_init_(false)
         , has_reported_error_(false)
     {
-        // debug_output_file = fopen("c:\\temp\\debug.h264", "wb");
+        // debug_output_file_ = fopen("c:\\temp\\debug.h264", "wb");
     }
 
     NvEncoderH264::~NvEncoderH264() {
         Release();
 
-        if (debug_output_file)
+        if (debug_output_file_)
         {
-            fclose(debug_output_file);
-            debug_output_file = nullptr;
+            fclose(debug_output_file_);
+            debug_output_file_ = nullptr;
         }
     }
 
@@ -86,8 +86,7 @@ namespace webrtc {
         is_sending_ = false;
         key_frame_request_ = false;
 
-		//encoder = new nvenc::NvEncoder(width, height, codec_.maxBitrate, codec_.maxFramerate);
-		encoder = new nvenc::NvEncoder(width, height, codec_.maxBitrate * 1000, codec_.maxFramerate);
+		encoder = new NvEncFacadeD3D11(width, height, codec_.maxBitrate * 1000, codec_.maxFramerate);
 
 		// TODO initial configuration of bitrate etc
 
@@ -151,10 +150,7 @@ namespace webrtc {
 
     int32_t NvEncoderH264::SetRateAllocation(const VideoBitrateAllocation& bitrate, uint32_t new_framerate) {
 
-		if (new_framerate < 10)
-		{
-			printf("WARNING: NvEncoderH264::SetRateAllocation %dkbps %d\n", bitrate.get_sum_kbps(), new_framerate);
-		}
+		printf("NvEncoderH264::SetRateAllocation %dkbps %d\n", bitrate.get_sum_kbps(), new_framerate);
 
 		if (new_framerate < 1)
             return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -232,18 +228,15 @@ namespace webrtc {
 
         if (is_sending_ && (frame_types == nullptr || frame_types->at(0) != kEmptyFrame))
         {
-            const auto encoded_buffer_ptr = &encoded_output_buffer_[0];
-
             // Encode!
-            uint64_t encoded_buffer_size = 0;
+			encoded_output_buffer_.clear();
 
             switch (native_buffer->format())
             {
             case VideoFrameFormat::GpuTextureD3D11:
             {
                 auto* texture = reinterpret_cast<ID3D11Texture2D*>(const_cast<void*>(native_buffer->texture()));
-
-				encoded_buffer_size = encoder->EncodeFrame(texture, encoded_buffer_ptr, encoded_output_buffer_.size());
+				encoder->EncodeFrame(texture, encoded_output_buffer_);
 				break;
             }
 
@@ -259,13 +252,13 @@ namespace webrtc {
                 return WEBRTC_VIDEO_CODEC_ERROR;
             }*/
 
-            if (debug_output_file)
+            if (debug_output_file_)
             {
-                fwrite(encoded_buffer_ptr, 1, encoded_buffer_size, debug_output_file);
-                fflush(debug_output_file);
+                fwrite(&encoded_output_buffer_[0], 1, encoded_output_buffer_.size(), debug_output_file_);
+                fflush(debug_output_file_);
             }
 
-            encoded_image_.set_size(encoded_buffer_size);
+            encoded_image_.set_size(encoded_output_buffer_.size());
             encoded_image_.qp_ = 5; // TODO: Why was this hardcoded by Microsoft's 3D streaming toolkit? It seems it is replaced anyway by code below (GetLastSliceQp)
             encoded_image_._encodedWidth = width;
             encoded_image_._encodedHeight = height;
@@ -286,8 +279,10 @@ namespace webrtc {
             // This code is copied from the 3D Streaming Toolkit (MIT license)
             // https://github.com/3DStreamingToolkit/3DStreamingToolkit
             {
+				const auto encoded_buffer_size = encoded_output_buffer_.size();
+
                 std::vector<H264::NaluIndex> NALUidx;
-                auto p_nal = encoded_buffer_ptr;
+                auto p_nal = &encoded_output_buffer_[0];
                 NALUidx = H264::FindNaluIndices(p_nal, encoded_buffer_size);
                 size_t i_nal = NALUidx.size();
                 if (i_nal == 0)
@@ -319,8 +314,7 @@ namespace webrtc {
                 }
             }
 
-            // Encoder can skip frames to save bandwidth in which case
-            // |encoded_images_[i]._length| == 0.
+            // Encoder can skip frames to save bandwidth in which case |encoded_images_[i]._length| == 0.
             if (encoded_image_.size() > 0) {
                 // Parse QP.
                 h264_bitstream_parser_.ParseBitstream(encoded_image_.data(), encoded_image_.size());

@@ -9,9 +9,9 @@
 *
 */
 
+#include "pch.h"
 #include "NvEncoder/NvEncoder.h"
 #include "NvEncoder/NvEncoderOutputInVidMemD3D11.h"
-
 
 NvEncoderOutputInVidMemD3D11::NvEncoderOutputInVidMemD3D11(ID3D11Device* pD3D11Device,
         uint32_t nWidth, uint32_t nHeight, NV_ENC_BUFFER_FORMAT eBufferFormat,

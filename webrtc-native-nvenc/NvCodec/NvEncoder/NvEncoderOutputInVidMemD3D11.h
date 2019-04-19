@@ -11,14 +11,7 @@
 
 #pragma once
 
-#include <vector>
 #include "nvEncodeAPI.h"
-#include <stdint.h>
-#include <mutex>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <string.h>
 #include "NvEncoder/NvEncoderD3D11.h"
 
 #define ALIGN_UP(s,a) (((s) + (a) - 1) & ~((a) - 1))
@@ -37,7 +30,7 @@ public:
         bool bMotionEstimationOnly = false);
 
     /**
-    *  @brief  NvEncoder class virtual destructor.
+    *  @brief  NvEncFacadeD3D11 class virtual destructor.
     */
     virtual ~NvEncoderOutputInVidMemD3D11();
 

@@ -9,6 +9,7 @@
 *
 */
 
+#include "pch.h"
 #include "NvEncoder/NvEncoder.h"
 
 #ifndef _WIN32
@@ -397,7 +398,7 @@ void NvEncoder::MapResources(uint32_t bfrIdx)
     }
 }
 
-void NvEncoder::EncodeFrame(std::vector<std::vector<uint8_t>> &vPacket, NV_ENC_PIC_PARAMS *pPicParams)
+void NvEncoder::EncodeFrame(std::vector<uint8_t> &vPacket, NV_ENC_PIC_PARAMS *pPicParams)
 {
     vPacket.clear();
     if (!IsHWEncoderInitialized())
@@ -439,13 +440,8 @@ void NvEncoder::RunMotionEstimation(std::vector<uint8_t> &mvData)
     if (nvStatus == NV_ENC_SUCCESS)
     {
         m_iToSend++;
-        std::vector<std::vector<uint8_t>> vPacket;
-        GetEncodedPacket(m_vMVDataOutputBuffer, vPacket, true);
-        if (vPacket.size() != 1)
-        {
-            NVENC_THROW_ERROR("GetEncodedPacket() doesn't return one (and only one) MVData", NV_ENC_ERR_GENERIC);
-        }
-        mvData = vPacket[0];
+		mvData.clear();
+        GetEncodedPacket(m_vMVDataOutputBuffer, mvData, true);
     }
     else
     {
@@ -497,9 +493,10 @@ void NvEncoder::SendEOS()
     NVENC_API_CALL(m_nvenc.nvEncEncodePicture(m_hEncoder, &picParams));
 }
 
-void NvEncoder::EndEncode(std::vector<std::vector<uint8_t>> &vPacket)
+void NvEncoder::EndEncode(std::vector<uint8_t> &vPacket)
 {
     vPacket.clear();
+
     if (!IsHWEncoderInitialized())
     {
         NVENC_THROW_ERROR("Encoder device not initialized", NV_ENC_ERR_ENCODER_NOT_INITIALIZED);
@@ -510,9 +507,8 @@ void NvEncoder::EndEncode(std::vector<std::vector<uint8_t>> &vPacket)
     GetEncodedPacket(m_vBitstreamOutputBuffer, vPacket, false);
 }
 
-void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<std::vector<uint8_t>> &vPacket, bool bOutputDelay)
+void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<uint8_t> &vPacket, bool bOutputDelay)
 {
-    unsigned i = 0;
     int iEnd = bOutputDelay ? m_iToSend - m_nOutputDelay : m_iToSend;
     for (; m_iGot < iEnd; m_iGot++)
     {
@@ -523,13 +519,7 @@ void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, 
         NVENC_API_CALL(m_nvenc.nvEncLockBitstream(m_hEncoder, &lockBitstreamData));
   
         uint8_t *pData = (uint8_t *)lockBitstreamData.bitstreamBufferPtr;
-        if (vPacket.size() < i + 1)
-        {
-            vPacket.push_back(std::vector<uint8_t>());
-        }
-        vPacket[i].clear();
-        vPacket[i].insert(vPacket[i].end(), &pData[0], &pData[lockBitstreamData.bitstreamSizeInBytes]);
-        i++;
+        vPacket.insert(vPacket.end(), &pData[0], &pData[lockBitstreamData.bitstreamSizeInBytes]);
 
         NVENC_API_CALL(m_nvenc.nvEncUnlockBitstream(m_hEncoder, lockBitstreamData.outputBitstream));
 
@@ -625,7 +615,7 @@ void NvEncoder::FlushEncoder()
         // flush the encoder queue and then unmapped it if any surface is still mapped
         try
         {
-            std::vector<std::vector<uint8_t>> vPacket;
+            std::vector<uint8_t> vPacket;
             EndEncode(vPacket);
         }
         catch (...)

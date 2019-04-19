@@ -11,22 +11,25 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AppEncD3D11.cpp" />
+    <ClCompile Include="NvEncFacadeD3D11.cpp" />
     <ClCompile Include="NvCodec\NvEncoder\NvEncoder.cpp" />
     <ClCompile Include="NvCodec\NvEncoder\NvEncoderD3D11.cpp" />
     <ClCompile Include="NvCodec\NvEncoder\NvEncoderD3D9.cpp" />
     <ClCompile Include="NvCodec\NvEncoder\NvEncoderOutputInVidMemD3D11.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AppEncD3D11.h" />
+    <ClInclude Include="NvEncFacadeD3D11.h" />
     <ClInclude Include="AppEncUtilsD3D11.h" />
     <ClInclude Include="NvCodec\NvEncoder\NvEncoder.h" />
     <ClInclude Include="NvCodec\NvEncoder\NvEncoderD3D11.h" />
     <ClInclude Include="NvCodec\NvEncoder\NvEncoderD3D9.h" />
     <ClInclude Include="NvCodec\NvEncoder\NvEncoderOutputInVidMemD3D11.h" />
-    <ClInclude Include="NvEnc\include\cuviddec.h" />
-    <ClInclude Include="NvEnc\include\nvcuvid.h" />
     <ClInclude Include="NvEnc\include\nvEncodeAPI.h" />
+    <ClInclude Include="pch.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -73,7 +76,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
@@ -81,6 +84,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)NvCodec;$(ProjectDir);$(ProjectDir)NvEnc/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -89,7 +93,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -99,6 +103,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)NvCodec;$(ProjectDir);$(ProjectDir)NvEnc/include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

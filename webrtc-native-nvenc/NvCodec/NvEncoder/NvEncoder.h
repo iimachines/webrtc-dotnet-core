@@ -11,14 +11,7 @@
 
 #pragma once
 
-#include <vector>
 #include "nvEncodeAPI.h"
-#include <stdint.h>
-#include <mutex>
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <string.h>
 
 /**
 * @brief Exception class for error reporting from NvEncodeAPI calls.
@@ -123,7 +116,7 @@ public:
     *  data, which has been copied to an input buffer obtained from the
     *  GetNextInputFrame() function.
     */
-    void EncodeFrame(std::vector<std::vector<uint8_t>> &vPacket, NV_ENC_PIC_PARAMS *pPicParams = nullptr);
+    void EncodeFrame(std::vector<uint8_t> &vPacket, NV_ENC_PIC_PARAMS *pPicParams = nullptr);
 
     /**
     *  @brief  This function to flush the encoder queue.
@@ -132,7 +125,7 @@ public:
     *  from the encoder. The application must call this function before destroying
     *  an encoder session.
     */
-    void EndEncode(std::vector<std::vector<uint8_t>> &vPacket);
+    void EndEncode(std::vector<uint8_t> &vPacket);
 
     /**
     *  @brief  This function is used to query hardware encoder capabilities.
@@ -212,7 +205,7 @@ public:
     void GetSequenceParams(std::vector<uint8_t> &seqParams);
 
     /**
-    *  @brief  NvEncoder class virtual destructor.
+    *  @brief  NvEncFacadeD3D11 class virtual destructor.
     */
     virtual ~NvEncoder();
 
@@ -252,8 +245,8 @@ public:
 protected:
 
     /**
-    *  @brief  NvEncoder class constructor.
-    *  NvEncoder class constructor cannot be called directly by the application.
+    *  @brief  NvEncFacadeD3D11 class constructor.
+    *  NvEncFacadeD3D11 class constructor cannot be called directly by the application.
     */
     NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, void *pDevice, uint32_t nWidth, uint32_t nHeight,
         NV_ENC_BUFFER_FORMAT eBufferFormat, uint32_t nOutputDelay, bool bMotionEstimationOnly, bool bOutputInVideoMemory = false);
@@ -352,7 +345,7 @@ private:
     *  This is called by DoEncode() function. If there is buffering enabled,
     *  this may return without any output data.
     */
-    void GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<std::vector<uint8_t>> &vPacket, bool bOutputDelay);
+    void GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<uint8_t> &vPacket, bool bOutputDelay);
 
     /**
     *  @brief This is a private function which is used to initialize the bitstream buffers.

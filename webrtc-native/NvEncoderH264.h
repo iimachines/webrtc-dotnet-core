@@ -1,9 +1,7 @@
 #pragma once
 #include "macros.h"
 
-namespace nvenc {
-	class NvEncoder;
-}
+class NvEncFacadeD3D11;
 
 namespace webrtc {
 
@@ -49,7 +47,7 @@ namespace webrtc {
         void ReportError();
         void SetStreamState(bool send_stream);
 
-		nvenc::NvEncoder* encoder;
+		NvEncFacadeD3D11* encoder;
         std::vector<uint8_t> encoded_output_buffer_;
         EncodedImage encoded_image_;
 
@@ -63,7 +61,7 @@ namespace webrtc {
         bool is_sending_ = false;
         bool key_frame_request_ = false;
 
-        FILE* debug_output_file = nullptr;
+        FILE* debug_output_file_ = nullptr;
     };
 
 }  // namespace webrtc

@@ -1,32 +1,21 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="src">
-      <UniqueIdentifier>{39f59df1-3651-48f3-937e-cb347738822d}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="AppEncD3D11.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="NvCodec\NvEncoder\NvEncoder.cpp" />
     <ClCompile Include="NvCodec\NvEncoder\NvEncoderD3D9.cpp" />
     <ClCompile Include="NvCodec\NvEncoder\NvEncoderD3D11.cpp" />
     <ClCompile Include="NvCodec\NvEncoder\NvEncoderOutputInVidMemD3D11.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="NvEncFacadeD3D11.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AppEncD3D11.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="AppEncUtilsD3D11.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="NvEnc\include\cuviddec.h" />
-    <ClInclude Include="NvEnc\include\nvcuvid.h" />
     <ClInclude Include="NvEnc\include\nvEncodeAPI.h" />
     <ClInclude Include="NvCodec\NvEncoder\NvEncoder.h" />
     <ClInclude Include="NvCodec\NvEncoder\NvEncoderD3D9.h" />
     <ClInclude Include="NvCodec\NvEncoder\NvEncoderD3D11.h" />
     <ClInclude Include="NvCodec\NvEncoder\NvEncoderOutputInVidMemD3D11.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="AppEncUtilsD3D11.h" />
+    <ClInclude Include="NvEncFacadeD3D11.h" />
   </ItemGroup>
 </Project>

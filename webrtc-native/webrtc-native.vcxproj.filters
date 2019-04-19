@@ -46,16 +46,10 @@
     <ClInclude Include="VideoFrameEvents.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="NvPipe.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="filesystem.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="main.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="NvPipeEncoderH264.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -96,13 +90,7 @@
     <ClCompile Include="PeerConnection.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="NvPipe.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="NvPipeEncoderH264.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

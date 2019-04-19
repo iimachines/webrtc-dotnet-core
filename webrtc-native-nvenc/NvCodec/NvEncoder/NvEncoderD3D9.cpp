@@ -10,9 +10,8 @@
 */
 
 
+#include "pch.h"
 #include "NvEncoder/NvEncoderD3D9.h"
-#include <D3D9Types.h>
-#include <utility>
 
 #ifndef MAKEFOURCC
 #define MAKEFOURCC(a,b,c,d) (((unsigned int)a) | (((unsigned int)b)<< 8) | (((unsigned int)c)<<16) | (((unsigned int)d)<<24) )

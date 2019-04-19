@@ -130,8 +130,6 @@
     <ClInclude Include="NvEncoderH264.h" />
     <ClInclude Include="NativeInterface.h" />
     <ClInclude Include="EncoderFactory.h" />
-    <ClInclude Include="NvPipe.h" />
-    <ClInclude Include="NvPipeEncoderH264.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="PeerConnection.h" />
     <ClInclude Include="TestVideoCapturer.h" />
@@ -148,8 +146,6 @@
     <ClCompile Include="libs.cpp" />
     <ClCompile Include="NativeInterface.cpp" />
     <ClCompile Include="EncoderFactory.cpp" />
-    <ClCompile Include="NvPipe.cpp" />
-    <ClCompile Include="NvPipeEncoderH264.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

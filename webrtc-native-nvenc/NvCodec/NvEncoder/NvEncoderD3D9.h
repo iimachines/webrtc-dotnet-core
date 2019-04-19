@@ -11,12 +11,6 @@
 
 #pragma once
 
-#include <vector>
-#include <stdint.h>
-#include <mutex>
-#include <unordered_map>
-#include <d3d9.h>
-#include <dxva2api.h>
 #include "NvEncoder.h"
 
 
@@ -30,15 +24,15 @@ private:
 
     /**
     *  @brief This function is used to allocate input buffers for encoding.
-    *  This function is an override of virtual function NvEncoder::AllocateInputBuffers().
+    *  This function is an override of virtual function NvEncFacadeD3D11::AllocateInputBuffers().
     *  This function creates IDirect3DSurface9* which is used to accept input data.
-    *  To obtain handle to input buffers application must call NvEncoder::GetNextInputFrame()
+    *  To obtain handle to input buffers application must call NvEncFacadeD3D11::GetNextInputFrame()
     */
     virtual void AllocateInputBuffers(int32_t numInputBuffers) override;
 
     /**
     *  @brief This function is used to release the input buffers allocated for encoding.
-    *  This function is an override of virtual function NvEncoder::ReleaseInputBuffers().
+    *  This function is an override of virtual function NvEncFacadeD3D11::ReleaseInputBuffers().
     */
     virtual void ReleaseInputBuffers() override;
 private:
