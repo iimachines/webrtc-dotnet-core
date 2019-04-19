@@ -86,7 +86,10 @@ namespace webrtc {
         is_sending_ = false;
         key_frame_request_ = false;
 
-		encoder = new NvEncFacadeD3D11(width, height, codec_.maxBitrate * 1000, codec_.maxFramerate);
+		// We add just 1 extra buffer delay instead of the default NVENC 3, to reduce latency.
+		// Internally the NvEncoder adds 1 more buffer (well actually the P intervals), so we get two buffers,
+		// one that is being encoded, one that is already encoded, giving a good balance between throughput and latency
+		encoder = new NvEncFacadeD3D11(width, height, codec_.maxBitrate * 1000, codec_.maxFramerate, 1);
 
 		// TODO initial configuration of bitrate etc
 
@@ -237,6 +240,7 @@ namespace webrtc {
             {
                 auto* texture = reinterpret_cast<ID3D11Texture2D*>(const_cast<void*>(native_buffer->texture()));
 				encoder->EncodeFrame(texture, encoded_output_buffer_);
+				native_buffer->set_encoded(true);
 				break;
             }
 

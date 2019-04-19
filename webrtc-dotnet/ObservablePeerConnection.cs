@@ -16,7 +16,7 @@ namespace WonderMediaProductions.WebRtc
 
         private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
         private readonly Subject<VideoFrame> _receivedVideoStream = new Subject<VideoFrame>();
-        private readonly Subject<VideoFrameMessage> _localVideoFrameEncodedStream = new Subject<VideoFrameMessage>();
+        private readonly Subject<VideoFrameMessage> _localVideoFrameProcessedStream = new Subject<VideoFrameMessage>();
         private readonly Subject<RemoteTrackChange> _remoteTrackChangeStream = new Subject<RemoteTrackChange>();
 
         public IObservable<SessionDescription> LocalSessionDescriptionStream => _localSessionDescriptionStream;
@@ -29,7 +29,7 @@ namespace WonderMediaProductions.WebRtc
 
         public IObservable<RemoteTrackChange> RemoteTrackChangeStream => _remoteTrackChangeStream;
 
-        public IObservable<VideoFrameMessage> LocalVideoFrameEncodedStream => _localVideoFrameEncodedStream;
+        public IObservable<VideoFrameMessage> LocalVideoFrameProcessedStream => _localVideoFrameProcessedStream;
 
         public ObservablePeerConnection(PeerConnectionOptions options) : base(options)
         {
@@ -46,7 +46,7 @@ namespace WonderMediaProductions.WebRtc
             _disposables.Add(_localIceCandidateStream);
             _disposables.Add(_receivedDataStream);
             _disposables.Add(_receivedVideoStream);
-            _disposables.Add(_localVideoFrameEncodedStream);
+            _disposables.Add(_localVideoFrameProcessedStream);
             _disposables.Add(_remoteTrackChangeStream);
 
             LocalDataChannelReady += (pc, label) =>
@@ -82,8 +82,8 @@ namespace WonderMediaProductions.WebRtc
             RemoteVideoFrameReceived += (pc, frame) => 
                 _receivedVideoStream.TryOnNext(frame);
 
-            LocalVideoFrameEncoded += (pc, trackId, pixels) =>
-                _localVideoFrameEncodedStream.TryOnNext(new VideoFrameMessage(trackId, pixels));
+            LocalVideoFrameProcessed += (pc, trackId, pixels, isEncoded) =>
+                _localVideoFrameProcessedStream.TryOnNext(new VideoFrameMessage(trackId, pixels, isEncoded));
 
             SignalingStateChanged += (pc, state) =>
             {

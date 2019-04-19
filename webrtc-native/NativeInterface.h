@@ -47,7 +47,7 @@ typedef void(*AudioBusReadyCallback)(const void* audio_data,
 
 typedef void(*StateChangedCallback)(int state);
 
-typedef void(*VideoFrameEncodedCallback)(int video_track_id, const void *pixels);
+typedef void(*VideoFrameProcessedCallback)(int video_track_id, const void *pixels, bool is_encoded);
 
 typedef void(*RemoteTrackChangedCallback)(const char* track_id, int media_kind, int change_kind);
 

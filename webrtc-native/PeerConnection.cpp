@@ -249,9 +249,9 @@ void PeerConnection::RegisterConnectionStateChanged(StateChangedCallback callbac
     OnConnectionStateChanged = callback;
 }
 
-void PeerConnection::RegisterVideoFrameEncoded(VideoFrameEncodedCallback callback)
+void PeerConnection::RegisterVideoFrameProcessed(VideoFrameProcessedCallback callback)
 {
-    OnVideoFrameEncoded = callback;
+    OnVideoFrameProcessed = callback;
 }
 
 void PeerConnection::RegisterRemoteTrackChanged(RemoteTrackChangedCallback callback)
@@ -591,7 +591,8 @@ bool PeerConnection::SendVideoFrame(int video_track_id, const uint8_t* pixels, i
     {
         // Since we copied the RGBA frame to a YUV buffer, the input frame is already available again.
         // Native textures become available when the H264 encoder has processed them.
-        OnFrameEncoded(video_track_id, pixels);
+		// TODO: For now we assume the frame will be encoded, we don't know that yet here...
+        OnFrameProcessed(video_track_id, pixels, true);
     }
 
     return true;
@@ -623,10 +624,10 @@ void PeerConnection::OnData(const void* audio_data,
             static_cast<int>(number_of_frames));
 }
 
-void PeerConnection::OnFrameEncoded(int video_track_id, const void* pixels)
+void PeerConnection::OnFrameProcessed(int video_track_id, const void* pixels, bool is_encoded)
 {
-    if (OnVideoFrameEncoded)
-        OnVideoFrameEncoded(video_track_id, pixels);
+    if (OnVideoFrameProcessed)
+        OnVideoFrameProcessed(video_track_id, pixels, is_encoded);
 }
 
 std::vector<uint32_t> PeerConnection::GetRemoteAudioTrackSynchronizationSources() const

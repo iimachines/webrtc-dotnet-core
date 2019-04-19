@@ -54,7 +54,7 @@ public:
     void RegisterOnIceCandidateReadyToSend(IceCandidateReadyToSendCallback callback);
     void RegisterSignalingStateChanged(StateChangedCallback callback);
     void RegisterConnectionStateChanged(StateChangedCallback callback);
-    void RegisterVideoFrameEncoded(VideoFrameEncodedCallback callback);
+    void RegisterVideoFrameProcessed(VideoFrameProcessedCallback callback);
     void RegisterRemoteTrackChanged(RemoteTrackChangedCallback callback);
 
     bool SetRemoteDescription(const char* type, const char* sdp) const;
@@ -97,7 +97,7 @@ protected:
         size_t number_of_channels,
         size_t number_of_frames) override;
 
-    void OnFrameEncoded(int video_track_id, const void* pixels) override;
+    void OnFrameProcessed(int video_track_id, const void* pixels, bool is_encoded) override;
 
     // Get remote audio tracks ssrcs.
     std::vector<uint32_t> GetRemoteAudioTrackSynchronizationSources() const;
@@ -149,7 +149,7 @@ private:
     DataAvailableCallback OnDataFromDataChannelReady = nullptr;
     FailureCallback OnFailureMessage = nullptr;
     AudioBusReadyCallback OnAudioReady = nullptr;
-    VideoFrameEncodedCallback OnVideoFrameEncoded = nullptr;
+    VideoFrameProcessedCallback OnVideoFrameProcessed = nullptr;
 
     LocalSdpReadyToSendCallback OnLocalSdpReadyToSend = nullptr;
     IceCandidateReadyToSendCallback OnIceCandidateReady = nullptr;

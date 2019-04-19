@@ -21,7 +21,7 @@ namespace WonderMediaProductions.WebRtc
         private readonly Native.VideoFrameCallback _remoteVideoFrameDelegate;
         private readonly Native.StateChangedCallback _signalingStateChangedCallback;
         private readonly Native.StateChangedCallback _connectionStateChangedCallback;
-        private readonly Native.VideoFrameEncodedCallback _videoFrameEncodedCallback;
+        private readonly Native.VideoFrameProcessedCallback _videoFrameProcessedCallback;
         private readonly Native.RemoteTrackChangedCallback _remoteTrackChangedCallback;
 
         // ReSharper restore NotAccessedField.Local
@@ -101,7 +101,7 @@ namespace WonderMediaProductions.WebRtc
             RegisterCallback(out _iceCandidateReadyToSendDelegate, Native.RegisterOnIceCandidateReadyToSend, RaiseIceCandidateReadyToSend);
             RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseSignalingStateChange);
             RegisterCallback(out _connectionStateChangedCallback, Native.RegisterConnectionStateChanged, RaiseConnectionStateChange);
-            RegisterCallback(out _videoFrameEncodedCallback, Native.RegisterVideoFrameEncoded, RaiseVideoFrameEncodedDelegate);
+            RegisterCallback(out _videoFrameProcessedCallback, Native.RegisterVideoFrameProcessed, RaiseVideoFrameProcessedDelegate);
             RegisterCallback(out _remoteTrackChangedCallback, Native.RegisterRemoteTrackChanged, RaiseRemoteTrackChanged);
         }
 
@@ -141,7 +141,7 @@ namespace WonderMediaProductions.WebRtc
             IceCandidateReadyToSend = null;
             SignalingStateChanged = null;
             ConnectionStateChanged = null;
-            LocalVideoFrameEncoded = null;
+            LocalVideoFrameProcessed = null;
             RemoteTrackChanged = null;
 
             Native.ClosePeerConnection(ptr);
@@ -315,9 +315,9 @@ namespace WonderMediaProductions.WebRtc
             RemoteTrackChanged?.Invoke(this, transceiverMid, (TrackMediaKind)mediaKind, (TrackChangeKind)changeKind);
         }
 
-        private void RaiseVideoFrameEncodedDelegate(int trackId, IntPtr rgbaPixels)
+        private void RaiseVideoFrameProcessedDelegate(int trackId, IntPtr rgbaPixels, bool isEncoded)
         {
-            LocalVideoFrameEncoded?.Invoke(this, trackId, rgbaPixels);
+            LocalVideoFrameProcessed?.Invoke(this, trackId, rgbaPixels, isEncoded);
         }
 
         //public void AddQueuedIceCandidate(IEnumerable<IceCandidate> iceCandidateQueue)
@@ -341,7 +341,7 @@ namespace WonderMediaProductions.WebRtc
         public event IceCandidateReadyToSendDelegate IceCandidateReadyToSend;
         public event SignalingStateChangedDelegate SignalingStateChanged;
         public event ConnectionStateChangedDelegate ConnectionStateChanged;
-        public event VideoFrameEncodedDelegate LocalVideoFrameEncoded;
+        public event VideoFrameProcessedDelegate LocalVideoFrameProcessed;
         public event RemoteTrackChangedDelegate RemoteTrackChanged;
     }
 }

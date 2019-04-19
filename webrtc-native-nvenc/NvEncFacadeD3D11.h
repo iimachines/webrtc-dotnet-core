@@ -6,7 +6,7 @@
 class NvEncFacadeD3D11 final
 {
 public:
-	NvEncFacadeD3D11(int width, int height, int bitrate, int targetFrameRate);
+	NvEncFacadeD3D11(int width, int height, int bitrate, int targetFrameRate, int extraOutputDelay = 3);
 	~NvEncFacadeD3D11();
 
 	/** For best performance, set the vPacket to large capacity */
@@ -20,6 +20,7 @@ private:
 	int height;
 	int bitrate;
 	int targetFrameRate;
+	int extraOutputDelay;
 
 	int nPackets = 0;
 	bool doReconfigure = false;

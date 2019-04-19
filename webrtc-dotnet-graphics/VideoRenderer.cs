@@ -43,7 +43,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             VideoFrameHeight = options.VideoFrameHeight;
             VideoFrameQueueSize = options.VideoFrameQueueSize;
 
-            videoTrack.LocalVideoFrameEncoded += OnLocalVideoFrameEncoded;
+            videoTrack.LocalVideoFrameProcessed += OnLocalVideoFrameProcessed;
 
             // _onMissedFrame = options.OnMissedFrame ?? OnMissedFrame;
 
@@ -101,7 +101,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 
                 var videoTrack = VideoTrack;
                 if (videoTrack != null)
-                    videoTrack.LocalVideoFrameEncoded -= OnLocalVideoFrameEncoded;
+                    videoTrack.LocalVideoFrameProcessed -= OnLocalVideoFrameProcessed;
 
                 _frameTable.Values.DisposeAll();
 
@@ -162,10 +162,15 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             MissedFrameCount += 1;
         }
 
-        protected virtual void OnLocalVideoFrameEncoded(PeerConnection pc, int trackId, IntPtr texturePtr)
+        protected virtual void OnLocalVideoFrameProcessed(PeerConnection pc, int trackId, IntPtr texturePtr, bool isEncoded)
         {
             if (IsDisposed)
                 return;
+
+            if (!isEncoded)
+            {
+                // Console.WriteLine($"WARNING: A video frame was not encoded!");
+            }
 
             // Put the texture back in the queue.
             Debug.Assert(!_queue.Contains(texturePtr));

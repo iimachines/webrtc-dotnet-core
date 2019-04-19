@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Copyright 2017-2019 NVIDIA Corporation.  All rights reserved.
 *
 * Please refer to the NVIDIA end user license agreement (EULA) associated
@@ -512,7 +512,15 @@ void NvEncoder::GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, 
     int iEnd = bOutputDelay ? m_iToSend - m_nOutputDelay : m_iToSend;
     for (; m_iGot < iEnd; m_iGot++)
     {
+		//std::chrono::high_resolution_clock sw;
+		//const auto t1 = sw.now();
         WaitForCompletionEvent(m_iGot % m_nEncoderBuffer);
+		//const auto t2 = sw.now();
+
+		//char buffer[100];
+		//sprintf_s(buffer, "nvenc %lld microsec", std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count());
+		//SetConsoleTitleA(buffer);
+
         NV_ENC_LOCK_BITSTREAM lockBitstreamData = { NV_ENC_LOCK_BITSTREAM_VER };
         lockBitstreamData.outputBitstream = vOutputBuffer[m_iGot % m_nEncoderBuffer];
         lockBitstreamData.doNotWait = false;

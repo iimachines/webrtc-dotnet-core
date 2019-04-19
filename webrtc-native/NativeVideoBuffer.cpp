@@ -16,6 +16,8 @@ namespace webrtc
         , height_(height)
         , texture_(texture)
         , events_(events)
+		, request_time_(std::chrono::high_resolution_clock::now())
+		, encoded_time_(std::chrono::microseconds::max())
     {
         if (texture_ && format_ == VideoFrameFormat::GpuTextureD3D11)
         {
@@ -29,7 +31,7 @@ namespace webrtc
     {
         if (events_ && texture_)
         {
-            events_->OnFrameEncoded(track_id_, texture_);
+            events_->OnFrameProcessed(track_id_, texture_, is_encoded_);
         }
 
         if (texture_ && format_ == VideoFrameFormat::GpuTextureD3D11)
@@ -53,6 +55,16 @@ namespace webrtc
     int NativeVideoBuffer::height() const
     {
         return height_;
+    }
+
+    void NativeVideoBuffer::set_encoded(bool is_encoded)
+    {
+	    is_encoded_ = is_encoded;
+		encoded_time_ = std::chrono::high_resolution_clock::now();
+
+		//char buffer[100];
+		//sprintf_s(buffer, "webrtc-nvenc delay = %08lld microsec", request_encode_delay().count());
+		//SetConsoleTitleA(buffer);
     }
 
     rtc::scoped_refptr<I420BufferInterface> NativeVideoBuffer::ToI420()

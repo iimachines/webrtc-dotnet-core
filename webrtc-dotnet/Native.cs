@@ -63,7 +63,7 @@ namespace WonderMediaProductions.WebRtc
         internal delegate void StateChangedCallback(int state);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        internal delegate void VideoFrameEncodedCallback(int videoTrackId, IntPtr rgbaPixels);
+        internal delegate void VideoFrameProcessedCallback(int videoTrackId, IntPtr rgbaPixels, bool isEncoded);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void RemoteTrackChangedCallback(string transceiverMid, int mediaKind, int changeKind);
@@ -178,8 +178,8 @@ namespace WonderMediaProductions.WebRtc
             IntPtr connection, StateChangedCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern bool RegisterVideoFrameEncoded(
-            IntPtr connection, VideoFrameEncodedCallback callback);
+        internal static extern bool RegisterVideoFrameProcessed(
+            IntPtr connection, VideoFrameProcessedCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterRemoteTrackChanged(

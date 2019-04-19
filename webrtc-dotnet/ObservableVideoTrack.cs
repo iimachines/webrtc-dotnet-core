@@ -5,7 +5,7 @@ namespace WonderMediaProductions.WebRtc
 {
     public class ObservableVideoTrack : VideoTrack
     {
-        private readonly Subject<VideoFrameMessage> _localVideoFrameEncodedStream = new Subject<VideoFrameMessage>();
+        private readonly Subject<VideoFrameMessage> _localVideoFrameProcessedStream = new Subject<VideoFrameMessage>();
 
         public new ObservablePeerConnection PeerConnection => (ObservablePeerConnection) base.PeerConnection;
 
@@ -14,19 +14,19 @@ namespace WonderMediaProductions.WebRtc
         {
         }
 
-        public IObservable<VideoFrameMessage> LocalVideoFrameEncodedStream => _localVideoFrameEncodedStream;
+        public IObservable<VideoFrameMessage> LocalVideoFrameProcessedStream => _localVideoFrameProcessedStream;
 
-        protected override void OnLocalVideoFrameEncoded(PeerConnection pc, int trackId, IntPtr rgbaPixels)
+        protected override void OnLocalVideoFrameProcessed(PeerConnection pc, int trackId, IntPtr rgbaPixels, bool isEncoded)
         {
-            _localVideoFrameEncodedStream.OnNext(new VideoFrameMessage(trackId, rgbaPixels));
-            base.OnLocalVideoFrameEncoded(pc, trackId, rgbaPixels);
+            _localVideoFrameProcessedStream.TryOnNext(new VideoFrameMessage(trackId, rgbaPixels, isEncoded));
+            base.OnLocalVideoFrameProcessed(pc, trackId, rgbaPixels, isEncoded);
         }
 
         protected override void OnDispose(bool isDisposing)
         {
             if (isDisposing)
             {
-                _localVideoFrameEncodedStream.Dispose();
+                _localVideoFrameProcessedStream.Dispose();
             }
 
             base.OnDispose(isDisposing);

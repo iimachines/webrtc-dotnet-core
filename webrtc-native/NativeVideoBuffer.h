@@ -6,7 +6,6 @@
 namespace webrtc
 {
 
-    // TODO: Test!
     class NativeVideoBuffer : public VideoFrameBuffer
     {
     public:
@@ -19,6 +18,15 @@ namespace webrtc
         const void *texture() const { return texture_;  }
         VideoFrameFormat format() const { return format_; }
 
+		bool is_encoded() const { return is_encoded_; }
+        void set_encoded(bool is_encoded);
+
+		// Delay between the request to encode the frame, and the actual encoding time point.
+		std::chrono::microseconds request_encode_delay() const
+        {
+			return std::chrono::duration_cast<std::chrono::microseconds>(encoded_time_ - request_time_);
+        }
+
         DISALLOW_COPY_MOVE_ASSIGN(NativeVideoBuffer);
 
     private:
@@ -30,5 +38,8 @@ namespace webrtc
         const int height_;
         const void* texture_;
         VideoFrameEvents* events_;
-    };
+		bool is_encoded_ = false;
+		std::chrono::time_point<std::chrono::high_resolution_clock> request_time_;
+		std::chrono::time_point<std::chrono::high_resolution_clock> encoded_time_;
+	};
 } // namespace webrtc

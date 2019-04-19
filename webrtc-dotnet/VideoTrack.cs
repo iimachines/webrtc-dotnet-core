@@ -14,14 +14,14 @@ namespace WonderMediaProductions.WebRtc
         // TODO: Must be a rational number
         public int FrameRate { get; }
 
-        public event VideoFrameEncodedDelegate LocalVideoFrameEncoded;
+        public event VideoFrameProcessedDelegate LocalVideoFrameProcessed;
 
         public VideoTrack(PeerConnection peerConnection, VideoEncoderOptions options)
         {
             PeerConnection = peerConnection;
             FrameRate = options.MaxFramesPerSecond;
             TrackId = peerConnection.AddVideoTrack(options);
-            PeerConnection.LocalVideoFrameEncoded += OnLocalVideoFrameEncoded;
+            PeerConnection.LocalVideoFrameProcessed += OnLocalVideoFrameProcessed;
         }
 
         public unsafe void SendVideoFrame(in uint rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
@@ -41,16 +41,16 @@ namespace WonderMediaProductions.WebRtc
         {
             if (isDisposing)
             {
-                PeerConnection.LocalVideoFrameEncoded -= OnLocalVideoFrameEncoded;
-                LocalVideoFrameEncoded = null;
+                PeerConnection.LocalVideoFrameProcessed -= OnLocalVideoFrameProcessed;
+                LocalVideoFrameProcessed = null;
             }
         }
 
-        protected virtual void OnLocalVideoFrameEncoded(PeerConnection pc, int trackId, IntPtr rgbaPixels)
+        protected virtual void OnLocalVideoFrameProcessed(PeerConnection pc, int trackId, IntPtr rgbaPixels, bool isEncoded)
         {
             if (TrackId == trackId)
             {
-                LocalVideoFrameEncoded?.Invoke(pc, trackId, rgbaPixels);
+                LocalVideoFrameProcessed?.Invoke(pc, trackId, rgbaPixels, isEncoded);
             }
         }
     }

@@ -440,9 +440,9 @@ extern "C"
         return true;
     }
 
-    WEBRTC_PLUGIN_API bool RegisterVideoFrameEncoded(PeerConnection* connection, VideoFrameEncodedCallback callback)
+    WEBRTC_PLUGIN_API bool RegisterVideoFrameProcessed(PeerConnection* connection, VideoFrameProcessedCallback callback)
     {
-        connection->RegisterVideoFrameEncoded(callback);
+        connection->RegisterVideoFrameProcessed(callback);
         return true;
     }
 
