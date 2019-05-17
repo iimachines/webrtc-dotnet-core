@@ -153,7 +153,7 @@ namespace webrtc {
 
     int32_t NvEncoderH264::SetRateAllocation(const VideoBitrateAllocation& bitrate, uint32_t new_framerate) {
 
-		printf("NvEncoderH264::SetRateAllocation %dkbps %d\n", bitrate.get_sum_kbps(), new_framerate);
+		//printf("NvEncoderH264::SetRateAllocation %dkbps %d\n", bitrate.get_sum_kbps(), new_framerate);
 
 		if (new_framerate < 1)
             return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
