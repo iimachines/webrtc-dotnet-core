@@ -40,19 +40,16 @@ function main() {
         return url;
     }
 
-    var pc_config = {
-        sdpSemantics: 'unified-plan',
+    var pc_config: RTCConfiguration = {
         iceServers: [
-            { url: "stun:stun.l.google.com:19302" },
-            { url: "stun:stun1.l.google.com:19302" },
-            { url: "stun:stun2.l.google.com:19302" },
-            { url: "stun:stun3.l.google.com:19302" },
-            { url: "stun:stun4.l.google.com:19302" },
+            { urls: "stun:stun.l.google.com:19302" }
         ]
     };
 
     // https://docs.google.com/document/d/1-ZfikoUtoJa9k-GZG1daN0BU3IjIanQ_JSscHxQesvU/edit#
-    let pc = new RTCPeerConnection({ pc_config } as RTCConfiguration);
+    (pc_config as any)["sdpSemantics"] = "unified-plan";
+
+    let pc = new RTCPeerConnection(pc_config);
 
     let ws = new WebSocket(getSignalingSocketUrl());
     ws.binaryType = "arraybuffer";
