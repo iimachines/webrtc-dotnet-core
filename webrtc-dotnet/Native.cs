@@ -98,9 +98,8 @@ namespace WonderMediaProductions.WebRtc
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern IntPtr CreatePeerConnection(
-            string[] turnUrlArray, int turnUrlCount,
-            string[] stunUrlArray, int stunUrlCount,
-            string username, string credential,
+            string[] iceUrlArray, int iceUrlCount,
+            string iceUsername, string icePassword,
             bool canReceiveAudio, bool canReceiveVideo,
             bool isDtlsSrtpEnabled);
 

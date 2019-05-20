@@ -6,12 +6,11 @@ namespace WonderMediaProductions.WebRtc
     public class PeerConnectionOptions
     {
         public string Name;
-        public List<string> TurnServers  = new List<string>();
-        public List<string> StunServers  = new List<string>();
+        public List<string> IceServers  = new List<string>();
+        public string IceUsername; // TODO: Allow username/password per ICE server
+        public string IcePassword;
         public bool CanReceiveAudio;
         public bool CanReceiveVideo;
-        public string UserName;
-        public string PassWord;
         public bool IsDtlsSrtpEnabled  = true;
     }
 }

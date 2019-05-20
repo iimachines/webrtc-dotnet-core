@@ -36,11 +36,8 @@ namespace
 
 PeerConnection::PeerConnection(
     webrtc::PeerConnectionFactoryInterface* factory,
-    const char** turn_url_array,
-    const int turn_url_count,
-    const char** stun_url_array,
-    const int stun_url_count,
-    const char* username, const char* credential,
+    const char** ice_url_array, const int ice_url_count,
+    const char* ice_username, const char* ice_password,
     bool can_receive_audio, bool can_receive_video,
     bool enable_dtls_srtp)
     : factory_(factory)
@@ -57,39 +54,28 @@ PeerConnection::PeerConnection(
     remote_video_observer_.reset(new VideoObserver());
 #endif
 
-    // Add the turn server.
-    if (turn_url_array != nullptr && turn_url_count > 0)
+    // Add the turn and sturn servers.
+    if (ice_url_array != nullptr && ice_url_count > 0)
     {
-        webrtc::PeerConnectionInterface::IceServer turn_server;
-        for (int i = 0; i < turn_url_count; i++)
+        webrtc::PeerConnectionInterface::IceServer ice_server;
+        for (int i = 0; i < ice_url_count; i++)
         {
-            std::string url(turn_url_array[i]);
+            std::string url(ice_url_array[i]);
             if (url.length() > 0)
-                turn_server.urls.emplace_back(url);
+                ice_server.urls.emplace_back(url);
         }
 
-        std::string user_name(username);
-        if (user_name.length() > 0)
-            turn_server.username = username;
-
-        std::string password(credential);
-        if (password.length() > 0)
-            turn_server.password = credential;
-
-        config_.servers.push_back(turn_server);
-    }
-
-    // Add the stun server.
-    if (stun_url_array != nullptr && stun_url_count > 0)
-    {
-        webrtc::PeerConnectionInterface::IceServer stun_server;
-        for (int i = 0; i < turn_url_count; i++)
+        if (ice_username && strlen(ice_username))
         {
-            std::string url(turn_url_array[i]);
-            if (url.length() > 0)
-                stun_server.urls.emplace_back(url);
+          ice_server.username = ice_username;
         }
-        config_.servers.push_back(stun_server);
+
+        if (ice_password && strlen(ice_password))
+        {
+          ice_server.password = ice_password;
+        }
+
+        config_.servers.push_back(ice_server);
     }
 
     // TODO: Allow passing in this configuration

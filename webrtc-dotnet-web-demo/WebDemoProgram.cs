@@ -13,8 +13,8 @@ namespace WonderMediaProductions.WebRtc
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseSetting("https_port", "5000")
-                .UseUrls("https://0.0.0.0:5000")
+                .UseSetting("https_port", "8080")
+                .UseUrls("https://0.0.0.0:8080")
                 .UseStartup<Startup>()
                 .ConfigureLogging((hostingContext, logging) => logging.AddConsole());
     }

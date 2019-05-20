@@ -79,12 +79,10 @@ namespace WonderMediaProductions.WebRtc
             Name = options.Name ?? $"PC#{Interlocked.Increment(ref g_LastId)}";
 
             _nativePtr = Native.CreatePeerConnection(
-                options.TurnServers.ToArray(),
-                options.TurnServers.Count,
-                options.StunServers.ToArray(),
-                options.StunServers.Count,
-                options.UserName,
-                options.PassWord,
+                options.IceServers.ToArray(),
+                options.IceServers.Count,
+                options.IceUsername,
+                options.IcePassword,
                 options.CanReceiveAudio,
                 options.CanReceiveVideo,
                 options.IsDtlsSrtpEnabled);

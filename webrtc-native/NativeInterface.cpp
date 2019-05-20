@@ -284,14 +284,9 @@ extern "C"
     }
 
     WEBRTC_PLUGIN_API PeerConnection* CreatePeerConnection(
-        const char** turn_url_array,
-        const int turn_url_count,
-        const char** stun_url_array,
-        const int stun_url_count,
-        const char* username,
-        const char* credential,
-        bool can_receive_audio,
-        bool can_receive_video,
+        const char** ice_url_array, const int ice_url_count,
+        const char* ice_username, const char* ice_password,
+        bool can_receive_audio, bool can_receive_video,
         bool is_dtls_srtp_enabled)
     {
         rtc::CritScope scope(&g_lock);
@@ -303,9 +298,8 @@ extern "C"
             return nullptr;
 
         auto connection = new PeerConnection(factory,
-            turn_url_array, turn_url_count,
-            stun_url_array, stun_url_count,
-            username, credential,
+            ice_url_array, ice_url_count,
+            ice_username, ice_password,
             can_receive_audio, can_receive_video,
             is_dtls_srtp_enabled);
 

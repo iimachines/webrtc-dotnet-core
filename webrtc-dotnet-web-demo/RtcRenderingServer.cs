@@ -165,7 +165,15 @@ namespace WonderMediaProductions.WebRtc
 
             using (var pc = new ObservablePeerConnection(new PeerConnectionOptions
             {
-                Name = "WebRTC Server"
+                Name = "WebRTC Server",
+                IceServers =
+                {
+                     "stun:stun.l.google.com:19302",
+                     "stun:stun1.l.google.com:19302",
+                     "stun:stun2.l.google.com:19302",
+                     "stun:stun3.l.google.com:19302",
+                     "stun:stun4.l.google.com:19302",
+                }
             }))
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice, cancellation)))
             using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd, cancellation)))

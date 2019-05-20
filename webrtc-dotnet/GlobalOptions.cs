@@ -12,7 +12,7 @@ namespace WonderMediaProductions.WebRtc
         public bool UseFakeEncoders = false;
         public bool UseFakeDecoders = false;
 
-        public TraceLevel MinimumLogLevel = TraceLevel.Warning;
+        public TraceLevel MinimumLogLevel = TraceLevel.Verbose;
         public bool LogToStandardError = true;
         public bool LogToDebugOutput = false;
 

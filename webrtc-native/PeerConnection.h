@@ -16,11 +16,8 @@ class PeerConnection final
 public:
     PeerConnection(
         webrtc::PeerConnectionFactoryInterface* factory,
-        const char** turn_url_array,
-        const int turn_url_count,
-        const char** stun_url_array,
-        const int stun_url_count,
-        const char* username, const char* credential, 
+        const char** ice_url_array, const int ice_url_count,
+        const char* ice_username, const char* ice_password, 
         bool can_receive_audio, bool can_receive_video, 
         bool enable_dtls_srtp);
 
