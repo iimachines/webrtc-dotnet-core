@@ -63,6 +63,14 @@ void NvEncFacadeD3D11::EncodeFrame(ID3D11Texture2D* source, std::vector<uint8_t>
 	source->GetDevice(&device);
 	device->GetImmediateContext(&pContext);
 
+	// if the encoder was created with a different device, we re-create it
+	if (encoder != nullptr && encoder->GetDevice() != device)
+	{
+		encoder->DestroyEncoder();
+		delete encoder;
+		encoder = nullptr;
+	}
+
 	// if the encoder isn't created yet, we do so now
 	if (encoder == nullptr)
 	{
