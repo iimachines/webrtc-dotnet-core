@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -8,18 +8,20 @@ namespace WonderMediaProductions.WebRtc
 {
     public class ObservablePeerConnection : PeerConnection
     {
+	    private bool _canConnect = true;
         private readonly CompositeDisposable _disposables = new CompositeDisposable();
         private readonly Subject<SessionDescription> _localSessionDescriptionStream = new Subject<SessionDescription>();
         private readonly Subject<IceCandidate> _localIceCandidateStream = new Subject<IceCandidate>();
         private readonly BehaviorSubject<ConnectionState> _connectionStateStream = new BehaviorSubject<ConnectionState>(ConnectionState.Closed);
         private readonly BehaviorSubject<SignalingState> _signalingStateStream = new BehaviorSubject<SignalingState>(SignalingState.Closed);
 
-        private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
+		private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
         private readonly Subject<VideoFrame> _receivedVideoStream = new Subject<VideoFrame>();
         private readonly Subject<VideoFrameMessage> _localVideoFrameProcessedStream = new Subject<VideoFrameMessage>();
         private readonly Subject<RemoteTrackChange> _remoteTrackChangeStream = new Subject<RemoteTrackChange>();
+        private readonly Subject<string> _failureMessageStream = new Subject<string>();
 
-        public IObservable<SessionDescription> LocalSessionDescriptionStream => _localSessionDescriptionStream;
+		public IObservable<SessionDescription> LocalSessionDescriptionStream => _localSessionDescriptionStream;
         public IObservable<IceCandidate> LocalIceCandidateStream => _localIceCandidateStream;
         public IObservable<SignalingState> SignalingStateStream => _signalingStateStream;
         public IObservable<ConnectionState> ConnectionStateStream => _connectionStateStream;
@@ -31,25 +33,31 @@ namespace WonderMediaProductions.WebRtc
 
         public IObservable<VideoFrameMessage> LocalVideoFrameProcessedStream => _localVideoFrameProcessedStream;
 
-        public ObservablePeerConnection(PeerConnectionOptions options) : base(options)
+        public IObservable<string> FailureMessageStream => _failureMessageStream;
+
+		public ObservablePeerConnection(PeerConnectionOptions options) : base(options)
         {
+	        _disposables.Add(_localSessionDescriptionStream);
+	        _disposables.Add(_localIceCandidateStream);
+	        _disposables.Add(_receivedDataStream);
+	        _disposables.Add(_receivedVideoStream);
+	        _disposables.Add(_localVideoFrameProcessedStream);
+	        _disposables.Add(_remoteTrackChangeStream);
         }
 
-        public SignalingState SignalingState => _signalingStateStream.Value;
+		public SignalingState SignalingState => _signalingStateStream.Value;
 
         public void Connect(
             IObservable<DataMessage> outgoingMessages,
             IObservable<SessionDescription> receivedSessionDescriptions,
             IObservable<IceCandidate> receivedIceCandidates)
         {
-            _disposables.Add(_localSessionDescriptionStream);
-            _disposables.Add(_localIceCandidateStream);
-            _disposables.Add(_receivedDataStream);
-            _disposables.Add(_receivedVideoStream);
-            _disposables.Add(_localVideoFrameProcessedStream);
-            _disposables.Add(_remoteTrackChangeStream);
+	        if (!_canConnect)
+				throw new Exception($"{GetType().Name}.{nameof(Connect)} can only be called once!");
 
-            LocalDataChannelReady += (pc, label) =>
+	        _canConnect = false;
+
+			LocalDataChannelReady += (pc, label) =>
             {
                 DebugLog($"{Name} is ready to send data on channel '{label}'");
                 _disposables.Add(outgoingMessages.Where(data => data.Label == label).Subscribe(SendData));

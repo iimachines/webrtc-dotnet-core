@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace WonderMediaProductions.WebRtc
 {
@@ -13,6 +13,11 @@ namespace WonderMediaProductions.WebRtc
             TrackId = trackId;
             RgbaPixels = rgbaPixels;
             IsEncoded = isEncoded;
+        }
+
+        public override string ToString()
+        {
+	        return $"{nameof(TrackId)}: {TrackId}, {nameof(RgbaPixels)}: {RgbaPixels.ToInt64():X16}, {nameof(IsEncoded)}: {IsEncoded}";
         }
     }
 }
