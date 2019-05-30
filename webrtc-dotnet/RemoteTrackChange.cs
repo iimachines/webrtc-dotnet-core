@@ -1,4 +1,4 @@
-﻿namespace WonderMediaProductions.WebRtc
+namespace WonderMediaProductions.WebRtc
 {
     public sealed class RemoteTrackChange
     {
@@ -16,6 +16,11 @@
             TransceiverMid = transceiverMid ?? string.Empty;
             MediaKind = mediaKind;
             ChangeKind = changeKind;
+        }
+
+        public override string ToString()
+        {
+	        return $"{nameof(TransceiverMid)}: {TransceiverMid}, {nameof(MediaKind)}: {MediaKind}, {nameof(ChangeKind)}: {ChangeKind}";
         }
     }
 }
