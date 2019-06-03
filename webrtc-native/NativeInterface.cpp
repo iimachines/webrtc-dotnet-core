@@ -192,12 +192,30 @@ namespace
 
         void OnLogMessage(const std::string& message, rtc::LoggingSeverity severity) override
         {
-            const auto sink = g_log_sink;
+					if (severity >= g_minimum_logging_severity)
+					{
+						const auto sink = g_log_sink;
 
-            if (sink && severity >= g_minimum_logging_severity)
-            {
-                sink(message.c_str(), severity);
-            }
+						if (sink)
+						{
+							sink(message.c_str(), severity);
+						}
+						else
+						{
+							switch (severity)
+							{
+							case rtc::LoggingSeverity::LS_WARNING:
+								std::cout << "RTC WARN: " << message << std::endl;
+								break;
+							case rtc::LoggingSeverity::LS_ERROR:
+								std::cerr << "RTC FAIL: " << message << std::endl;
+								break;
+							default:
+								std::cout << "RTC INFO: " << message << std::endl;
+								break;
+							}
+						}
+					}
         }
 
         void OnLogMessage(const std::string& message) override
