@@ -121,8 +121,16 @@ function main() {
             send("ice", e.candidate);
         };
 
+        pc.onicegatheringstatechange = e => {
+            log(`🛈 ice gathering state = ${pc && pc.iceGatheringState}`);
+        };
+
         pc.oniceconnectionstatechange = e => {
             log(`🛈 ice connection state = ${pc && pc.iceConnectionState}`);
+        };
+
+        pc.onicecandidateerror = e => {
+            log(`✘ ice candidate error = ${e.errorText}#${e.errorCode}`);
         };
 
         pc.ontrack = ({ transceiver }) => {
