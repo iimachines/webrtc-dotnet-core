@@ -1,10 +1,15 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace WonderMediaProductions.WebRtc
 {
     public sealed class IceCandidate
     {
-        public IceCandidate(string candidate, int sdpMlineIndex, string sdpMid)
+	    private IceCandidate()
+	    {
+	    }
+
+		public IceCandidate(string candidate, int sdpMlineIndex, string sdpMid)
         {
             Candidate = candidate;
             SdpMlineIndex = sdpMlineIndex;
@@ -18,9 +23,14 @@ namespace WonderMediaProductions.WebRtc
             SdpMid = json.Value<string>(keySdpMid);
         }
 
+		[JsonProperty("candidate")]
         public string Candidate { get; }
+
+        [JsonProperty("sdpMlineIndex")]
         public int SdpMlineIndex { get; }
-        public string SdpMid { get; }
+
+        [JsonProperty("sdpMid")]
+		public string SdpMid { get; }
 
         public override string ToString()
         {

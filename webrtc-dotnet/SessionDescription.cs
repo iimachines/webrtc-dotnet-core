@@ -1,10 +1,15 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace WonderMediaProductions.WebRtc
 {
     public sealed class SessionDescription
     {
-        public SessionDescription(string type, string sdp)
+	    private SessionDescription()
+	    {
+	    }
+
+	    public SessionDescription(string type, string sdp)
         {
             Type = type;
             Sdp = sdp;
@@ -16,7 +21,10 @@ namespace WonderMediaProductions.WebRtc
             Sdp = json.Value<string>(keySdp);
         }
 
+		[JsonProperty("type")]
         public string Type { get; }
+
+        [JsonProperty("sdp")]
         public string Sdp { get; }
 
         public override string ToString()
