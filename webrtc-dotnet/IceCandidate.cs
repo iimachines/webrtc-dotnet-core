@@ -5,36 +5,25 @@ namespace WonderMediaProductions.WebRtc
 {
     public sealed class IceCandidate
     {
-	    private IceCandidate()
-	    {
-	    }
-
-		public IceCandidate(string candidate, int sdpMlineIndex, string sdpMid)
+		public IceCandidate(string candidate, int sdpMLineIndex, string sdpMid)
         {
             Candidate = candidate;
-            SdpMlineIndex = sdpMlineIndex;
+            SdpMLineIndex = sdpMLineIndex;
             SdpMid = sdpMid;
         }
 
-        public IceCandidate(JToken json, string keyCandidate = "candidate", string keySdpMlineIndex = "sdpMlineIndex", string keySdpMid = "sdpMid")
-        {
-            Candidate = json.Value<string>(keyCandidate);
-            SdpMlineIndex = json.Value<int>(keySdpMlineIndex);
-            SdpMid = json.Value<string>(keySdpMid);
-        }
-
 		[JsonProperty("candidate")]
-        public string Candidate { get; }
+		public readonly string Candidate;
 
-        [JsonProperty("sdpMlineIndex")]
-        public int SdpMlineIndex { get; }
+		[JsonProperty("sdpMLineIndex")]
+		public readonly int SdpMLineIndex;
 
-        [JsonProperty("sdpMid")]
-		public string SdpMid { get; }
+		[JsonProperty("sdpMid")]
+		public readonly string SdpMid;
 
         public override string ToString()
         {
-            return $"{nameof(Candidate)}: {Candidate}, {nameof(SdpMlineIndex)}: {SdpMlineIndex}, {nameof(SdpMid)}: {SdpMid}";
+            return $"{nameof(Candidate)}: {Candidate}, {nameof(SdpMLineIndex)}: {SdpMLineIndex}, {nameof(SdpMid)}: {SdpMid}";
         }
     }
 }

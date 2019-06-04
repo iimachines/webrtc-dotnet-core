@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -198,6 +198,7 @@ namespace WonderMediaProductions.WebRtc
 
         internal void SendVideoFrame(int trackId, IntPtr rgbaPixels, int stride, int width, int height, VideoFrameFormat videoFrameFormat)
         {
+	        Native.Check(rgbaPixels != default);
             Native.Check(Native.SendVideoFrame(_nativePtr, trackId, rgbaPixels, stride, width, height, videoFrameFormat));
         }
 
@@ -208,22 +209,26 @@ namespace WonderMediaProductions.WebRtc
 
         public void SetRemoteDescription(string type, string sdp)
         {
+	        Native.Check(type != null);
+	        Native.Check(sdp != null);
             Native.Check(Native.SetRemoteDescription(_nativePtr, type, sdp));
         }
 
         public void SetRemoteDescription(SessionDescription sd)
         {
-            Native.Check(Native.SetRemoteDescription(_nativePtr, sd.Type, sd.Sdp));
+	        SetRemoteDescription(sd.Type, sd.Sdp);
         }
 
         public void AddIceCandidate(string candidate, int sdpMlineindex, string sdpMid)
         {
+	        Native.Check(candidate != null);
+	        Native.Check(sdpMid != null);
             Native.Check(Native.AddIceCandidate(_nativePtr, candidate, sdpMlineindex, sdpMid));
         }
 
         public void AddIceCandidate(IceCandidate ice)
         {
-            Native.Check(Native.AddIceCandidate(_nativePtr, ice.Candidate, ice.SdpMlineIndex, ice.SdpMid));
+	        AddIceCandidate(ice.Candidate, ice.SdpMLineIndex, ice.SdpMid);
         }
 
         private void RegisterCallback<T>(out T delegateField, Func<IntPtr, T, bool> register, T raiseMethod) where T : Delegate

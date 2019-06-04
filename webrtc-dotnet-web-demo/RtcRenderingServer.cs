@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
@@ -10,6 +10,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SharpDX;
 using SharpDX.Mathematics.Interop;
@@ -21,7 +22,7 @@ namespace WonderMediaProductions.WebRtc
     {
         const int VideoFrameWidth = 1920/2;
         const int VideoFrameHeight = 1080/2;
-        const int VideoFrameRate = 60/2;
+        const int VideoFrameRate = 60;
 
         private static IRenderer CreateRenderer(ObservableVideoTrack videoTrack, ILogger logger)
         {
@@ -107,41 +108,33 @@ namespace WonderMediaProductions.WebRtc
                                 renderer.BallPosition = lastMouseMessage.Kind != MouseEventKind.Up
                                     ? lastMouseMessage.Pos
                                     : (RawVector2?)null;
-
-                                var currentTime = clock.GetCurrentTime();
-                                var elapsedTime = currentTime - startTime;
-                                renderer.SendFrame(elapsedTime, frameIndex);
                             }
-                            else
+                            var elapsedTime = TimeSpan.FromTicks(frameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
+                            renderer.SendFrame(elapsedTime, frameIndex);
+
+                            // Wait until we can render the next frame
+                            var currentTime = clock.GetCurrentTime();
+
+                            var skippedFrameCount = 0;
+                            for(;;)
                             {
-                                var elapsedTime = TimeSpan.FromTicks(frameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
-                                renderer.SendFrame(elapsedTime, frameIndex);
-
-                                // Wait until we can render the next frame
-                                var currentTime = clock.GetCurrentTime();
-
-                                var skippedFrameCount = 0;
-                                for(;;)
+                                var nextFrameTime = startTime.AddTicks(++frameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
+                                if (nextFrameTime >= currentTime)
                                 {
-                                    var nextFrameTime = startTime.AddTicks(++frameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
-                                    if (nextFrameTime >= currentTime)
-                                    {
-                                        clock.SetFutureEventTime(nextFrameTime);
-                                        break;
-                                    }
-
-                                    ++skippedFrameCount;
+                                    clock.SetFutureEventTime(nextFrameTime);
+                                    break;
                                 }
 
-                                if (skippedFrameCount > 0)
-                                {
-                                    logger.LogWarning($"Skipped {skippedFrameCount} frames!");
-                                }
-
-
-                                // Wait for the next frame.
-                                WaitHandle.WaitAny(waitHandles);
+                                ++skippedFrameCount;
                             }
+
+                            if (skippedFrameCount > 0)
+                            {
+                                logger.LogWarning($"Skipped {skippedFrameCount} frames!");
+                            }
+
+                            // Wait for the next frame.
+                            WaitHandle.WaitAny(waitHandles);
                         }
                         else
                         {
@@ -164,7 +157,15 @@ namespace WonderMediaProductions.WebRtc
 
         public static async Task Run(WebSocket ws, CancellationToken cancellation, ILogger logger)
         {
-            var renderThread = new Thread(VideoRenderer);
+	        T ToObject<T>(JToken token)
+	        {
+		        var obj = token.ToObject<T>();
+		        //var json = JToken.FromObject(obj);
+		        //Debug.Assert(JToken.DeepEquals(token, json));
+				return obj;
+	        }
+
+	        var renderThread = new Thread(VideoRenderer);
 
             // PeerConnection.Configure(options => options.IsSingleThreaded = true);
 
@@ -176,7 +177,7 @@ namespace WonderMediaProductions.WebRtc
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice, cancellation)))
             using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd, cancellation)))
             using (var videoTrack = new ObservableVideoTrack(pc,
-                VideoEncoderOptions.OptimizedFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate)))
+                VideoEncoderOptions.OptimizedFor(VideoFrameWidth, VideoFrameHeight, VideoFrameRate, VideoMotion.Medium, VideoMotion.High)))
             {
                 var msgStream = Observable.Never<DataMessage>();
                 var iceStream = new Subject<IceCandidate>();
@@ -207,19 +208,19 @@ namespace WonderMediaProductions.WebRtc
                         {
                             case "ice":
                             {
-                                iceStream.OnNext(new IceCandidate(payload));
+	                            iceStream.OnNext(ToObject<IceCandidate>(payload));
                                 break;
                             }
 
                             case "sdp":
                             {
-                                sdpStream.OnNext(new SessionDescription(payload));
+                                sdpStream.OnNext(ToObject<SessionDescription>(payload));
                                 break;
                             }
 
                             case "pos":
                             {
-                                sharedState.MouseMessageQueue.Enqueue(new MouseMessage(payload));
+                                sharedState.MouseMessageQueue.Enqueue(ToObject<MouseMessage>(payload));
                                 break;
                             }
                         }
