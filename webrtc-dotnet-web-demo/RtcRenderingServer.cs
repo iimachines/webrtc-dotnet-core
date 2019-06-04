@@ -19,12 +19,17 @@ namespace WonderMediaProductions.WebRtc
 {
     public static class RtcRenderingServer
     {
-        const int VideoFrameWidth = 1920;
-        const int VideoFrameHeight = 1080;
-        const int VideoFrameRate = 60;
+        const int VideoFrameWidth = 1920/2;
+        const int VideoFrameHeight = 1080/2;
+        const int VideoFrameRate = 60/2;
 
         private static IRenderer CreateRenderer(ObservableVideoTrack videoTrack, ILogger logger)
         {
+            PeerConnection.Configure(new GlobalOptions
+            {
+                MinimumLogLevel = TraceLevel.Info
+            });
+
             bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             bool supportsNvEnc = PeerConnection.SupportsHardwareTextureEncoding;
 
@@ -166,14 +171,7 @@ namespace WonderMediaProductions.WebRtc
             using (var pc = new ObservablePeerConnection(new PeerConnectionOptions
             {
                 Name = "WebRTC Server",
-                IceServers =
-                {
-                     "stun:stun.l.google.com:19302",
-                     "stun:stun1.l.google.com:19302",
-                     "stun:stun2.l.google.com:19302",
-                     "stun:stun3.l.google.com:19302",
-                     "stun:stun4.l.google.com:19302",
-                }
+                IceServers = { "stun:stun.l.google.com:19302" }
             }))
             using (pc.LocalIceCandidateStream.Subscribe(ice => ws.SendJsonAsync("ice", ice, cancellation)))
             using (pc.LocalSessionDescriptionStream.Subscribe(sd => ws.SendJsonAsync("sdp", sd, cancellation)))
