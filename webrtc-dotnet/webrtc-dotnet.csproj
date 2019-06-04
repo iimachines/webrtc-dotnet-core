@@ -29,4 +29,8 @@
     <PackageReference Include="System.Reactive.Linq" Version="4.1.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\webrtc-dotnet-signalling\webrtc-dotnet-signalling.csproj" />
+  </ItemGroup>
+
 </Project>
