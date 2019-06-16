@@ -75,15 +75,12 @@ namespace WonderMediaProductions.WebRtc
 
             try
             {
-                var clock = new PreciseWaitableClock(EventResetMode.AutoReset);
-                var waitHandles = new WaitHandle[] { clock.WaitHandle };
+	            DateTime startTime = default;
 
-                DateTime startTime = default;
+	            int frameIndex = 0;
 
-                int frameIndex = 0;
-
-                // var sw = new Stopwatch();
-
+	            // var sw = new Stopwatch();
+	            using (var clock = new PreciseWaitableClock(EventResetMode.AutoReset))
                 using (var renderer = CreateRenderer(videoTrack, logger))
                 {
                     while (Thread.CurrentThread.IsAlive && !peerConnection.IsDisposed)
@@ -134,7 +131,7 @@ namespace WonderMediaProductions.WebRtc
                             }
 
                             // Wait for the next frame.
-                            WaitHandle.WaitAny(waitHandles);
+                            clock.WaitHandle.WaitOne();
                         }
                         else
                         {
