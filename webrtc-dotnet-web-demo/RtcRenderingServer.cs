@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
@@ -37,7 +37,8 @@ namespace WonderMediaProductions.WebRtc
             // TODO: Add support for OpenGL, and test it.
             // Maybe use https://github.com/mellinoe/veldrid
             return isWindows && supportsNvEnc
-                ? (IRenderer)new D3D11Renderer(videoTrack,
+                ? (IRenderer)new BouncingBallRenderer(videoTrack, 
+                    8,
                     new GraphicsD3D11.RendererOptions
                     {
                         VideoFrameWidth = VideoFrameWidth,
@@ -102,12 +103,12 @@ namespace WonderMediaProductions.WebRtc
                             if (lastMouseMessage != null)
                             {
                                 // Render mouse events as quickly as possible.
-                                renderer.BallPosition = lastMouseMessage.Kind != MouseEventKind.Up
+                                renderer.MousePosition = lastMouseMessage.Kind != MouseEventKind.Up
                                     ? lastMouseMessage.Pos
                                     : (RawVector2?)null;
                             }
                             var elapsedTime = TimeSpan.FromTicks(frameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
-                            renderer.SendFrame(elapsedTime, frameIndex);
+                            renderer.SendFrame(elapsedTime);
 
                             // Wait until we can render the next frame
                             var currentTime = clock.GetCurrentTime();

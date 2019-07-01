@@ -19,6 +19,8 @@ namespace WonderMediaProductions.WebRtc
 
         private readonly DisposableList<Image<PixelColor>> _videoFrames = new DisposableList<Image<Bgra32>>();
 
+        private int _frameIndex = 0;
+
         public ImageSharpRenderer(int frameWidth, int frameHeight, VideoTrack videoTrack)
         {
             VideoTrack = videoTrack;
@@ -51,11 +53,11 @@ namespace WonderMediaProductions.WebRtc
         }
 
         public VideoTrack VideoTrack { get; }
-        public RawVector2? BallPosition { get; set; }
+        public RawVector2? MousePosition { get; set; }
 
-        public bool SendFrame(TimeSpan elapsedTime, int frameIndex)
+        public bool SendFrame(TimeSpan elapsedTime)
         {
-            var imageFrameIndex = frameIndex % FrameCount;
+            var imageFrameIndex = (_frameIndex++) % FrameCount;
             var imageFrame = _videoFrames[imageFrameIndex].Frames[0];
             var pixels = MemoryMarshal.Cast<PixelColor, uint>(imageFrame.GetPixelSpan());
 

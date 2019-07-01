@@ -2,11 +2,11 @@
 
 namespace WonderMediaProductions.WebRtc
 {
-    public sealed class FrameD3D11 : GraphicsD3D11.VideoFrameBuffer
+    public sealed class BitmapFrameD2D1 : GraphicsD3D11.VideoFrameBuffer
     {
         public readonly D2D1.Bitmap1 Bitmap;
 
-        public FrameD3D11(D3D11Renderer renderer, D2D1.DeviceContext context2D)
+        public BitmapFrameD2D1(BouncingBallRenderer renderer, D2D1.DeviceContext context2D)
             : base(renderer)
         {
             using (var surface = Texture.QueryInterface<SharpDX.DXGI.Surface>())

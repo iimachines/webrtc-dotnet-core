@@ -91,9 +91,10 @@ namespace WonderMediaProductions.WebRtc
                     int localFrameIndex = 0;
 
                     var timeout = TimeSpan.FromMilliseconds(1000.0 / frameRate);
-                    while (!Console.KeyAvailable && PeerConnection.PumpQueuedMessages(timeout))
+                    //while (!Console.KeyAvailable && PeerConnection.PumpQueuedMessages(timeout))
+                    while (PeerConnection.PumpQueuedMessages(timeout))
                     {
-                        var frame = imageFrame.Frames[0];
+                            var frame = imageFrame.Frames[0];
                         var pixels = MemoryMarshal.Cast<Argb32, uint>(frame.GetPixelSpan());
                         videoTrack.SendVideoFrame(MemoryMarshal.GetReference(pixels),
                             frame.Width * 4,

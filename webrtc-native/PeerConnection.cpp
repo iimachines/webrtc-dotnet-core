@@ -100,11 +100,13 @@ bool PeerConnection::CreateOffer()
     if (!peer_connection_.get())
         return false;
 
-    if (!CreateTransceivers())
-        return false;
+    //if (!CreateTransceivers())
+    //    return false;
 
-    peer_connection_->CreateOffer(this, 
-        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    const auto options = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions(
+        can_receive_video_, can_receive_audio_, false, false, true);
+
+    peer_connection_->CreateOffer(this, options);
 
     return true;
 }
@@ -114,15 +116,20 @@ bool PeerConnection::CreateAnswer()
     if (!peer_connection_.get())
         return false;
 
-    peer_connection_->CreateAnswer(this,
-        webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
+    //if (!CreateTransceivers())
+    //    return false;
+
+    const auto options = webrtc::PeerConnectionInterface::RTCOfferAnswerOptions(
+        can_receive_video_, can_receive_audio_, false, false, true);
+
+    peer_connection_->CreateAnswer(this, options);
 
     return true;
 }
 
 bool PeerConnection::CreateTransceivers() const
 {
-    /*
+    // This code doesn't seem to be required to receive video anymore.
     if (can_receive_audio_)
     {
         webrtc::RtpTransceiverInit init;
@@ -136,7 +143,6 @@ bool PeerConnection::CreateTransceivers() const
         init.direction = webrtc::RtpTransceiverDirection::kRecvOnly;
         peer_connection_->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init);
     }
-    */
     return true;
 }
 
