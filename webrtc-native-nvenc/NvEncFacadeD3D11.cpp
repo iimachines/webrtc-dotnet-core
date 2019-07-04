@@ -15,6 +15,8 @@
 #include "NvEncFacadeD3D11.h"
 #include <algorithm>
 
+#define SHOW_ENCODING_DURATION
+
 using Microsoft::WRL::ComPtr;
 
 NvEncFacadeD3D11::NvEncFacadeD3D11(int width, int height, int bitrate, int targetFrameRate, int extraOutputDelay)
@@ -59,13 +61,13 @@ void NvEncFacadeD3D11::Reconfigure() const
 void NvEncFacadeD3D11::EncodeFrame(ID3D11Texture2D* source, std::vector<uint8_t>& vPacket)
 {
     // get the device & context of the source texture
-    ID3D11Device* device;
-    ID3D11DeviceContext* pContext;
+    ComPtr<ID3D11Device> device;
+    ComPtr<ID3D11DeviceContext> pContext;
     source->GetDevice(&device);
     device->GetImmediateContext(&pContext);
 
     // if the encoder was created with a different device, we re-create it
-    if (encoder != nullptr && encoder->GetDevice() != device)
+    if (encoder != nullptr && encoder->GetDevice() != device.Get())
     {
         encoder->DestroyEncoder();
         delete encoder;
@@ -75,7 +77,7 @@ void NvEncFacadeD3D11::EncodeFrame(ID3D11Texture2D* source, std::vector<uint8_t>
     // if the encoder isn't created yet, we do so now
     if (encoder == nullptr)
     {
-        encoder = new NvEncoderD3D11(device, width, height, NV_ENC_BUFFER_FORMAT_ARGB, extraOutputDelay);
+        encoder = new NvEncoderD3D11(device.Get(), width, height, NV_ENC_BUFFER_FORMAT_ARGB, extraOutputDelay);
 
         // create the initial structures to hold the config
         NV_ENC_INITIALIZE_PARAMS initializeParams = { NV_ENC_INITIALIZE_PARAMS_VER };

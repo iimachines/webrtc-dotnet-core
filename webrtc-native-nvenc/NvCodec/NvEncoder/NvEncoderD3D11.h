@@ -43,8 +43,8 @@ private:
     void ReleaseD3D11Resources();
 
 protected:
-    ID3D11Device *m_pD3D11Device = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11Device> m_pD3D11Device;
 
 private:
-    ID3D11DeviceContext* m_pD3D11DeviceContext = nullptr;
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pD3D11DeviceContext;
 };

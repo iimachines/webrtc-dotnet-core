@@ -51,7 +51,6 @@ NvEncoderD3D11::NvEncoderD3D11(ID3D11Device* pD3D11Device, uint32_t nWidth, uint
     }
 
     m_pD3D11Device = pD3D11Device;
-    m_pD3D11Device->AddRef();
     m_pD3D11Device->GetImmediateContext(&m_pD3D11DeviceContext);
 }
 
@@ -129,16 +128,7 @@ void NvEncoderD3D11::ReleaseD3D11Resources()
     }
     m_vReferenceFrames.clear();
 
-    if (m_pD3D11DeviceContext)
-    {
-        m_pD3D11DeviceContext->Release();
-        m_pD3D11DeviceContext = nullptr;
-    }
-
-    if (m_pD3D11Device)
-    {
-        m_pD3D11Device->Release();
-        m_pD3D11Device = nullptr;
-    }
+    m_pD3D11DeviceContext = nullptr;
+    m_pD3D11Device = nullptr;
 }
 

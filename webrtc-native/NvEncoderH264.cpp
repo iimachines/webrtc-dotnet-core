@@ -100,7 +100,6 @@ namespace webrtc
         // one that is being encoded, one that is already encoded, giving a good balance between throughput and latency
         // NOTE: We changed this to 0, since this code is already running on another thread anyway.
         encoder = new NvEncFacadeD3D11(width, height, codec_.maxBitrate * 1000, codec_.maxFramerate, 0);
-        printf("\n\n\nCreate nvEnc264!\n\n\n");
 
         // TODO initial configuration of bitrate etc
 
@@ -142,7 +141,6 @@ namespace webrtc
 
     int32_t NvEncoderH264::Release()
     {
-        printf("\n\n\nRelease nvEnc264!\n\n\n");
         if (encoder)
         {
             delete encoder;
