@@ -13,6 +13,7 @@
 #include "NvCodec/NvEncoder/NvEncoderD3D11.h"
 #include "NvCodec/NvEncoder/NvEncoder.h"
 #include "NvEncFacadeD3D11.h"
+#include <algorithm>
 
 using Microsoft::WRL::ComPtr;
 

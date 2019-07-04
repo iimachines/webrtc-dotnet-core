@@ -1,5 +1,7 @@
 #pragma once
 
+#define NOMINMAX
+
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -10,6 +12,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <algorithm>
 
 #include <d3d9.h>
 #include <D3D9Types.h>

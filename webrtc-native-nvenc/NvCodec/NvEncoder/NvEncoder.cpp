@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright 2017-2019 NVIDIA Corporation.  All rights reserved.
 *
 * Please refer to the NVIDIA end user license agreement (EULA) associated
