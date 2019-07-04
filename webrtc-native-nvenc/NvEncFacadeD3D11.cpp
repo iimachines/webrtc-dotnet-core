@@ -117,11 +117,42 @@ void NvEncFacadeD3D11::EncodeFrame(ID3D11Texture2D* source, std::vector<uint8_t>
         Reconfigure();
     }
 
+    std::chrono::high_resolution_clock sw;
+    const auto t1 = sw.now();
+
     // copy the frame into an internal buffer of nvEnc so we can encode it
     const NvEncInputFrame* encoderInputFrame = encoder->GetNextInputFrame();
     const auto target = reinterpret_cast<ID3D11Texture2D*>(encoderInputFrame->inputPtr);
     pContext->CopyResource(target, source);
     encoder->EncodeFrame(vPacket);
+
+    const auto t2 = sw.now();
+
+#ifdef SHOW_ENCODING_DURATION
+    // 100 = 10000 microsec.
+    char buffer[6 + 10*11+1];
+    int ms = static_cast<int>(std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() * 100 / 10000);
+
+    ms = std::min(100, ms);
+
+    strcpy_s(buffer, "nvenc:");
+
+    char* ptr = buffer;
+    int digit = '0';
+    while (ms > 0)
+    {
+        auto len = std::min<size_t>(ms, 10);
+        memset(ptr, digit, len);
+        ptr += len;
+        *ptr++ = ' ';
+        ++digit;
+        ms -= 10;
+    }
+    *ptr = 0;
+
+    //sprintf_s(buffer, "nvenc %05lld microsec", std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count());
+    SetConsoleTitleA(buffer);
+#endif
 }
 
 NvEncFacadeD3D11::~NvEncFacadeD3D11()
