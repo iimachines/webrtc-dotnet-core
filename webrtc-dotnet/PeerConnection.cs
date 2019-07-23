@@ -10,6 +10,8 @@ namespace WonderMediaProductions.WebRtc
     {
         private static int g_LastId;
 
+        private static GlobalOptions _options;
+
         // ReSharper disable NotAccessedField.Local
         private readonly Native.AudioBusReadyCallback _audioBusReadyDelegate;
         private readonly Native.DataAvailableCallback _dataAvailableDelegate;
@@ -17,8 +19,10 @@ namespace WonderMediaProductions.WebRtc
         private readonly Native.IceCandidateReadyToSendCallback _iceCandidateReadyToSendDelegate;
         private readonly Native.LocalDataChannelReadyCallback _localDataChannelReadyDelegate;
         private readonly Native.VideoFrameCallback _localVideoFrameDelegate;
-        private readonly Native.LocalSdpReadyToSendCallback _localSdpReadyToSendDelegate;
         private readonly Native.VideoFrameCallback _remoteVideoFrameDelegate;
+        private readonly Native.VideoFrameCallback _localArgbVideoFrameDelegate;
+        private readonly Native.VideoFrameCallback _remoteArgbVideoFrameDelegate;
+        private readonly Native.LocalSdpReadyToSendCallback _localSdpReadyToSendDelegate;
         private readonly Native.StateChangedCallback _signalingStateChangedCallback;
         private readonly Native.StateChangedCallback _connectionStateChangedCallback;
         private readonly Native.VideoFrameProcessedCallback _videoFrameProcessedCallback;
@@ -33,6 +37,8 @@ namespace WonderMediaProductions.WebRtc
         /// </summary>
         public static void Configure(GlobalOptions options)
         {
+            Debug.Assert(_options == null);
+            _options = options;
             Native.Check(Native.Configure(
                 options.UseSignalingThread,
                 options.UseWorkerThread,
@@ -95,6 +101,12 @@ namespace WonderMediaProductions.WebRtc
             RegisterCallback(out _audioBusReadyDelegate, Native.RegisterOnAudioBusReady, RaiseAudioBusReady);
             RegisterCallback(out _localVideoFrameDelegate, Native.RegisterLocalVideoFrameReady, RaiseLocalVideoFrameReady);
             RegisterCallback(out _remoteVideoFrameDelegate, Native.RegisterRemoteVideoFrameReceived, RaiseRemoteVideoFrameReady);
+            if (_options?.UseArgbIncomingFrames == true)
+            {
+                // Do not convert to ARGB if it is not requested by options explicitly (for performance reasons)
+                RegisterCallback(out _localArgbVideoFrameDelegate, Native.RegisterLocalArgbVideoFrameReady, RaiseLocalArgbVideoFrameReady);
+                RegisterCallback(out _remoteArgbVideoFrameDelegate, Native.RegisterRemoteArgbVideoFrameReceived, RaiseRemoteArgbVideoFrameReady);
+            }
             RegisterCallback(out _localSdpReadyToSendDelegate, Native.RegisterOnLocalSdpReadyToSend, RaiseLocalSdpReadyToSend);
             RegisterCallback(out _iceCandidateReadyToSendDelegate, Native.RegisterOnIceCandidateReadyToSend, RaiseIceCandidateReadyToSend);
             RegisterCallback(out _signalingStateChangedCallback, Native.RegisterSignalingStateChanged, RaiseSignalingStateChange);
@@ -293,6 +305,34 @@ namespace WonderMediaProductions.WebRtc
                     width, height, timeStampUs));
         }
 
+        private void RaiseLocalArgbVideoFrameReady(
+            IntPtr texture,
+            IntPtr dataY, IntPtr dataU, IntPtr dataV, IntPtr dataA,
+            int strideY, int strideU, int strideV, int strideA,
+            int width, int height, long timeStampUs)
+        {
+            LocalArgbVideoFrameReady?.Invoke(this,
+                VideoFrame.FromNative(
+                    texture,
+                    dataY, dataU, dataV, dataA,
+                    strideY, strideU, strideV, strideA,
+                    width, height, timeStampUs));
+        }
+
+        private void RaiseRemoteArgbVideoFrameReady(
+            IntPtr texture,
+            IntPtr dataY, IntPtr dataU, IntPtr dataV, IntPtr dataA,
+            int strideY, int strideU, int strideV, int strideA,
+            int width, int height, long timeStampUs)
+        {
+            RemoteArgbVideoFrameReceived?.Invoke(this,
+                VideoFrame.FromNative(
+                    texture,
+                    dataY, dataU, dataV, dataA,
+                    strideY, strideU, strideV, strideA,
+                    width, height, timeStampUs));
+        }
+
         private void RaiseLocalSdpReadyToSend(string type, string sdp)
         {
             LocalSdpReadyToSend?.Invoke(this, new SessionDescription(type, sdp));
@@ -340,6 +380,8 @@ namespace WonderMediaProductions.WebRtc
         public event AudioBusReadyDelegate AudioBusReady;
         public event VideoFrameReadyDelegate LocalVideoFrameReady;
         public event VideoFrameReadyDelegate RemoteVideoFrameReceived;
+        public event VideoFrameReadyDelegate LocalArgbVideoFrameReady;
+        public event VideoFrameReadyDelegate RemoteArgbVideoFrameReceived;
         public event LocalSdpReadyToSendDelegate LocalSdpReadyToSend;
         public event IceCandidateReadyToSendDelegate IceCandidateReadyToSend;
         public event SignalingStateChangedDelegate SignalingStateChanged;

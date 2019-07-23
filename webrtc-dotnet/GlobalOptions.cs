@@ -12,6 +12,8 @@ namespace WonderMediaProductions.WebRtc
         public bool UseFakeEncoders = false;
         public bool UseFakeDecoders = false;
 
+        public bool UseArgbIncomingFrames = false;
+
         public TraceLevel MinimumLogLevel = TraceLevel.Verbose;
         public bool LogToStandardError = true;
         public bool LogToDebugOutput = false;

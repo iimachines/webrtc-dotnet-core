@@ -39,10 +39,11 @@ public:
     bool SendData(const char* label, const uint8_t* data, int length, bool is_binary);
     bool RemoveDataChannel(const char* label);
 
-
     // Register callback functions.
     void RegisterOnLocalI420FrameReady(IncomingVideoFrameCallback callback) const;
     void RegisterOnRemoteI420FrameReady(IncomingVideoFrameCallback callback) const;
+    void RegisterOnLocalArgbFrameReady(IncomingVideoFrameCallback callback) const;
+    void RegisterOnRemoteArgbFrameReady(IncomingVideoFrameCallback callback) const;
     void RegisterOnLocalDataChannelReady(LocalDataChannelReadyCallback callback);
     void RegisterOnDataFromDataChannelReady(DataAvailableCallback callback);
     void RegisterOnFailure(FailureCallback callback);

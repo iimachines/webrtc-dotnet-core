@@ -17,6 +17,7 @@ namespace WonderMediaProductions.WebRtc
 
 		private readonly Subject<DataMessage> _receivedDataStream = new Subject<DataMessage>();
         private readonly Subject<VideoFrame> _receivedVideoStream = new Subject<VideoFrame>();
+        private readonly Subject<VideoFrame> _receivedArgbVideoStream = new Subject<VideoFrame>();
         private readonly Subject<VideoFrameMessage> _localVideoFrameProcessedStream = new Subject<VideoFrameMessage>();
         private readonly Subject<RemoteTrackChange> _remoteTrackChangeStream = new Subject<RemoteTrackChange>();
         private readonly Subject<string> _failureMessageStream = new Subject<string>();
@@ -28,6 +29,7 @@ namespace WonderMediaProductions.WebRtc
 
         public IObservable<DataMessage> ReceivedDataStream => _receivedDataStream;
         public IObservable<VideoFrame> ReceivedVideoStream => _receivedVideoStream;
+        public IObservable<VideoFrame> ReceivedArgbVideoStream => _receivedArgbVideoStream;
 
         public IObservable<RemoteTrackChange> RemoteTrackChangeStream => _remoteTrackChangeStream;
 
@@ -41,6 +43,7 @@ namespace WonderMediaProductions.WebRtc
 	        _disposables.Add(_localIceCandidateStream);
 	        _disposables.Add(_receivedDataStream);
 	        _disposables.Add(_receivedVideoStream);
+	        _disposables.Add(_receivedArgbVideoStream);
 	        _disposables.Add(_localVideoFrameProcessedStream);
 	        _disposables.Add(_remoteTrackChangeStream);
         }
@@ -89,6 +92,9 @@ namespace WonderMediaProductions.WebRtc
 
             RemoteVideoFrameReceived += (pc, frame) => 
                 _receivedVideoStream.TryOnNext(frame);
+
+            RemoteArgbVideoFrameReceived += (pc, frame) =>
+                _receivedArgbVideoStream.TryOnNext(frame);
 
             LocalVideoFrameProcessed += (pc, trackId, pixels, isEncoded) =>
                 _localVideoFrameProcessedStream.TryOnNext(new VideoFrameMessage(trackId, pixels, isEncoded));

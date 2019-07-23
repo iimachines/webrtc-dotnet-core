@@ -9,6 +9,7 @@ public:
     ~VideoObserver() = default;
 
     void SetVideoCallback(IncomingVideoFrameCallback callback);
+    void SetArgbVideoCallback(IncomingVideoFrameCallback callback);
 
 protected:
     // VideoSinkInterface implementation
@@ -16,5 +17,6 @@ protected:
 
 private:
     IncomingVideoFrameCallback OnIncomingVideoFrame = nullptr;
+    IncomingVideoFrameCallback OnIncomingArgbVideoFrame = nullptr;
     std::mutex mutex;
 };

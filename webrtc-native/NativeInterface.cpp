@@ -404,6 +404,18 @@ extern "C"
         return true;
     }
 
+    WEBRTC_PLUGIN_API bool RegisterLocalArgbVideoFrameReady(PeerConnection* connection, IncomingVideoFrameCallback callback)
+    {
+        connection->RegisterOnLocalArgbFrameReady(callback);
+        return true;
+    }
+
+    WEBRTC_PLUGIN_API bool RegisterRemoteArgbVideoFrameReceived(PeerConnection* connection, IncomingVideoFrameCallback callback)
+    {
+        connection->RegisterOnRemoteArgbFrameReady(callback);
+        return true;
+    }
+
     WEBRTC_PLUGIN_API bool RegisterOnLocalDataChannelReady(PeerConnection* connection, LocalDataChannelReadyCallback callback)
     {
         connection->RegisterOnLocalDataChannelReady(callback);

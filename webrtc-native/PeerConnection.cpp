@@ -201,6 +201,22 @@ void PeerConnection::RegisterOnRemoteI420FrameReady(IncomingVideoFrameCallback c
 #endif
 }
 
+void PeerConnection::RegisterOnLocalArgbFrameReady(IncomingVideoFrameCallback callback) const
+{
+#ifdef HAS_LOCAL_VIDEO_OBSERVER
+    if (local_video_observer_)
+        local_video_observer_->SetArgbVideoCallback(callback);
+#endif
+}
+
+void PeerConnection::RegisterOnRemoteArgbFrameReady(IncomingVideoFrameCallback callback) const
+{
+#ifdef HAS_REMOTE_VIDEO_OBSERVER
+    if (remote_video_observer_)
+        remote_video_observer_->SetArgbVideoCallback(callback);
+#endif
+}
+
 void PeerConnection::RegisterOnLocalDataChannelReady(LocalDataChannelReadyCallback callback)
 {
     OnLocalDataChannelReady = callback;

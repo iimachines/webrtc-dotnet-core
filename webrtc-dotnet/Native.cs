@@ -161,6 +161,14 @@ namespace WonderMediaProductions.WebRtc
             VideoFrameCallback callback);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern bool RegisterLocalArgbVideoFrameReady(IntPtr connection,
+            VideoFrameCallback callback);
+
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern bool RegisterRemoteArgbVideoFrameReceived(IntPtr connection,
+            VideoFrameCallback callback);
+
+        [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool RegisterOnLocalSdpReadyToSend(IntPtr connection,
             LocalSdpReadyToSendCallback callback);
 
