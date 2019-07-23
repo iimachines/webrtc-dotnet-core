@@ -23,6 +23,12 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         [DllImport("Kernel32", SetLastError = false, ExactSpelling = true)]
         private static extern void GetSystemTimePreciseAsFileTime(out FILETIME lpSystemTimeAsFileTime);
 
+        [DllImport("Kernel32", SetLastError = false)]
+        private static extern bool QueryPerformanceFrequency(out long lpPerformanceFreq);
+
+        [DllImport("Kernel32", SetLastError = true)]
+        private static extern bool QueryPerformanceCounter(out long lpPerformanceCount);
+
         [DllImport("Kernel32", SetLastError = true, ExactSpelling = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool SetWaitableTimer(
@@ -33,6 +39,31 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         [DllImport("Kernel32", SetLastError = true, ExactSpelling = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool CancelWaitableTimer([In] SafeWaitHandle hTimer);
+
+        private static readonly double performanceTicks;
+        private static readonly DateTime performanceCounterStart;
+        private static readonly Func<DateTime> currentTimeFunc;
+
+        static PreciseWaitableClock()
+        {
+            bool Windows8OrLater = Environment.OSVersion.Version >= new Version(6, 2);
+            if (Windows8OrLater)
+            {
+                currentTimeFunc = GetCurrentTimeWin8;
+            }
+            else
+            {
+                if (!QueryPerformanceFrequency(out var performanceFrequency))
+                {
+                    throw new Win32Exception();
+                }
+                QueryPerformanceCounter(out var lpPerformanceCount);
+                performanceTicks = (TimeSpan.TicksPerSecond / (double)performanceFrequency);
+                long ticks = (long)(lpPerformanceCount * performanceTicks);
+                performanceCounterStart = DateTime.Now.AddTicks(-ticks);
+                currentTimeFunc = GetCurrentTimeWin7;
+            }
+        }
 
         public PreciseWaitableClock(EventResetMode eventResetMode)
         {
@@ -52,13 +83,22 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 
         public EventWaitHandle WaitHandle { get; }
 
-        public DateTime GetCurrentTime()
+        public DateTime GetCurrentTime() => currentTimeFunc();
+
+        private static DateTime GetCurrentTimeWin8()
+        {
+            GetSystemTimePreciseAsFileTime(out var fileTime);
+            long ticks = (((long)fileTime.dwHighDateTime) << 32) | fileTime.dwLowDateTime;
+            return DateTime.FromFileTimeUtc(ticks);
+        }
+
+        private static DateTime GetCurrentTimeWin7()
         {
             unchecked
             {
-                GetSystemTimePreciseAsFileTime(out var fileTime);
-                long ticks = (((long)fileTime.dwHighDateTime) << 32) | fileTime.dwLowDateTime;
-                return DateTime.FromFileTimeUtc(ticks);
+                QueryPerformanceCounter(out var lpPerformanceCount);
+                long ticks = (long)(lpPerformanceCount * performanceTicks);
+                return performanceCounterStart.AddTicks(ticks);
             }
         }
 
