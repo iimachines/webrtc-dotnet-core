@@ -10,6 +10,8 @@ namespace WonderMediaProductions.WebRtc
     {
         private static int g_LastId;
 
+        private static GlobalOptions _options;
+
         // ReSharper disable NotAccessedField.Local
         private readonly Native.AudioBusReadyCallback _audioBusReadyDelegate;
         private readonly Native.DataAvailableCallback _dataAvailableDelegate;
@@ -33,6 +35,8 @@ namespace WonderMediaProductions.WebRtc
         /// </summary>
         public static void Configure(GlobalOptions options)
         {
+            Debug.Assert(_options == null);
+            _options = options;
             Native.Check(Native.Configure(
                 options.UseSignalingThread,
                 options.UseWorkerThread,
@@ -43,7 +47,8 @@ namespace WonderMediaProductions.WebRtc
                 options.LogToStandardError,
                 options.LogToDebugOutput,
                 options.MinimumLogLevel != TraceLevel.Off ? OnMessageLogged : null,
-                4 - (int)(options.MinimumLogLevel)
+                4 - (int)(options.MinimumLogLevel),
+                options.StartBitrate
                 ));
         }
 
@@ -72,7 +77,8 @@ namespace WonderMediaProductions.WebRtc
         /// </summary>
         public static bool HasFactory => Native.HasFactory();
 
-        public static bool SupportsHardwareTextureEncoding => Native.CanEncodeHardwareTextures();
+        public static bool SupportsHardwareTextureEncoding => Native.CanEncodeHardwareTextures() &&
+                                                              _options?.ForceSoftwareVideoEncoder != true;
 
         public PeerConnection(PeerConnectionOptions options)
         {

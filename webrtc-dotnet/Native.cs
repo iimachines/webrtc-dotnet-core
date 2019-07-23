@@ -82,7 +82,8 @@ namespace WonderMediaProductions.WebRtc
             bool logToStdErr,
             bool logToDebug,
             LoggingCallback loggingCallback,
-            int minimumLoggingSeverity);
+            int minimumLoggingSeverity,
+            int startBitrate);
 
         [DllImport(DllPath, CallingConvention = CallingConvention.Cdecl)]
         internal static extern bool Shutdown();

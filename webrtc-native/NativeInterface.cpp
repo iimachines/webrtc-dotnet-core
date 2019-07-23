@@ -25,6 +25,8 @@ namespace
 
     rtc::LoggingSeverity g_minimum_logging_severity = rtc::LS_INFO;
 
+    int g_startBitrate = 0;
+
     rtc::CriticalSection g_lock;
 
     webrtc::PeerConnectionFactoryInterface* g_peer_connection_factory = nullptr;
@@ -247,7 +249,8 @@ extern "C"
         bool log_to_stderr,
         bool log_to_debug,
         LogSink log_sink,
-        rtc::LoggingSeverity minimum_logging_severity)
+        rtc::LoggingSeverity minimum_logging_severity,
+        int startBitrate)
     {
         rtc::CritScope scope(&g_lock);
 
@@ -281,6 +284,15 @@ extern "C"
 
         rtc::LogMessage::SetLogToStderr(log_to_stderr);
         rtc::LogMessage::LogToDebug(log_to_debug ? minimum_logging_severity : rtc::LS_NONE);
+
+        if (startBitrate > 0)
+        {
+            g_startBitrate = startBitrate;
+        }
+        else if (g_force_software_encoder)
+        {
+            g_startBitrate = 500000;
+        }
 
         return true;
     }
@@ -326,6 +338,12 @@ extern "C"
             delete connection;
             releaseFactory();
             connection = nullptr;
+        }
+        else if (g_startBitrate > 0)
+        {
+            webrtc::BitrateSettings bitrate;
+            bitrate.start_bitrate_bps = g_startBitrate;
+            connection->SetBitrate(bitrate);
         }
 
         return connection;

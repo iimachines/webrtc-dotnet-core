@@ -453,6 +453,14 @@ int PeerConnection::AddVideoTrack(const std::string& label, int min_bps, int max
     return id;
 }
 
+bool PeerConnection::SetBitrate(const webrtc::BitrateSettings& bitrate)
+{
+    if (!peer_connection_)
+        return false;
+    peer_connection_->SetBitrate(bitrate);
+    return true;
+}
+
 bool PeerConnection::AddDataChannel(const char* label, bool is_ordered, bool is_reliable)
 {
     struct webrtc::DataChannelInit init;

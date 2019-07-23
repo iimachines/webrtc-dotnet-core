@@ -16,6 +16,8 @@ namespace WonderMediaProductions.WebRtc
         public bool LogToStandardError = true;
         public bool LogToDebugOutput = false;
 
+        public int StartBitrate = 0;
+
         public bool IsSingleThreaded
         {
             set => UseSignalingThread = UseWorkerThread = value;
