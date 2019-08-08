@@ -6,7 +6,6 @@ using System.Linq;
 using JetBrains.Annotations;
 using D3D11 = SharpDX.Direct3D11;
 using DXGI = SharpDX.DXGI;
-using static SDL2.SDL;
 
 namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 {
@@ -20,7 +19,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 
         private readonly ConcurrentQueue<IntPtr> _queue = new ConcurrentQueue<IntPtr>();
 
-        private IntPtr _sdlWindow;
+        private SdlWindow _sdlWindow;
 
         public VideoTrack VideoTrack { get; }
 
@@ -42,13 +41,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 
         public int VideoFrameQueueCount => _queue.Count;
 
-        static VideoRenderer()
-        {
-            SDL_Init(0);
-
-            SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
-        }
-
+        
         public VideoRenderer(VideoTrack videoTrack, RendererOptions options)
         {
             VideoTrack = videoTrack;
@@ -82,13 +75,8 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
                     var width = options.PreviewWindowOptions.Width ?? VideoFrameWidth;
                     var height = options.PreviewWindowOptions.Height ?? width * VideoFrameHeight / VideoFrameWidth;
 
-                    _sdlWindow = SDL_CreateWindow("WebRTC", 
-                        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
-                        width, height, 
-                        SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI);
+                    _sdlWindow = new SdlWindow("WebRTC server preview", width, height);
 
-                    var windowInfo = new SDL_SysWMinfo();
-                    SDL_GetWindowWMInfo(_sdlWindow, ref windowInfo);
 
                     // SwapChain description
                     var desc = new DXGI.SwapChainDescription1()
@@ -106,7 +94,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
                         SwapEffect = DXGI.SwapEffect.FlipDiscard,
                     };
 
-                    SwapChain = new DXGI.SwapChain1(FactoryDXGI, Device3D, windowInfo.info.win.window, ref  desc);
+                    SwapChain = new DXGI.SwapChain1(FactoryDXGI, Device3D, _sdlWindow.NativeHandle, ref  desc);
 
                     using (var swapChain2 = SwapChain.QueryInterface<DXGI.SwapChain2>())
                     {
@@ -161,6 +149,8 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
                 DeviceDXGI?.Dispose();
                 Device3D?.Dispose();
                 FactoryDXGI?.Dispose();
+
+                _sdlWindow?.Dispose();
             }
         }
 
@@ -192,11 +182,7 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
                     var backBuffer = D3D11.Resource.FromSwapChain<D3D11.Texture2D>(SwapChain, 0);
                     Device3D.ImmediateContext.CopyResource(frame.Texture, backBuffer);
                     SwapChain.Present(0, DXGI.PresentFlags.DoNotWait | DXGI.PresentFlags.AllowTearing);
-
-                    // Pump all SDL2 events.
-                    while (SDL_PollEvent(out var ev) > 0)
-                    {
-                    }
+                    _sdlWindow.PollAllPendingEvents();
                 }
 
                 return new MaybeSendableFrame(this, frame);

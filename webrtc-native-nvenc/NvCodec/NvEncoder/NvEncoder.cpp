@@ -106,6 +106,8 @@ void NvEncoder::LoadNvEncApi()
 
 NvEncoder::~NvEncoder()
 {
+    std::cout << __FUNCTION__ << std::endl;
+
     DestroyHWEncoder();
 
     if (m_hModule)

@@ -56,6 +56,7 @@ NvEncoderD3D11::NvEncoderD3D11(ID3D11Device* pD3D11Device, uint32_t nWidth, uint
 
 NvEncoderD3D11::~NvEncoderD3D11() 
 {
+    std::cout << __FUNCTION__ << std::endl;
     ReleaseD3D11Resources();
 }
 

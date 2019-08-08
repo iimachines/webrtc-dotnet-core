@@ -157,6 +157,8 @@ void NvEncFacadeD3D11::EncodeFrame(ID3D11Texture2D* source, std::vector<uint8_t>
 
 NvEncFacadeD3D11::~NvEncFacadeD3D11()
 {
+    std::cout << __FUNCTION__ << std::endl;
+
     if (encoder)
     {
         // Flush! This means that some packets might be lost and never sent, because we don't do anything with it here.
