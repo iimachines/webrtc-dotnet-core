@@ -16,20 +16,14 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <Target Name="InstallNative" BeforeTargets="Build">
-    <ItemGroup>
-      <WebRtcNative Include="$(ProjectDir)..\out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.dll"/>
-      <WebRtcNative Include="$(ProjectDir)..\out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.pdb"/>
-    </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)'=='Debug'">
+    <None Visible="False" CopyToOutputDirectory="Always" Include="$(ProjectDir)..\out\bin\webrtc-native_Debug_x64\webrtc-native_Debug_x64.dll"/>
+    <None Visible="False" CopyToOutputDirectory="Always" Include="$(ProjectDir)..\out\bin\webrtc-native_Debug_x64\webrtc-native_Debug_x64.pdb"/>
+  </ItemGroup>
 
-    <Copy SourceFiles="@(WebRtcNative)" DestinationFolder="$(ProjectDir)Native/$(Configuration)_x64"/>
-  </Target>
-
-  <ItemGroup>
-    <None Include="$(ProjectDir)Native/$(Configuration)_x64/**" Visible="False">
-      <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+  <ItemGroup Condition="'$(Configuration)'=='Release'">
+    <None Visible="False" CopyToOutputDirectory="Always" Include="$(ProjectDir)..\out\bin\webrtc-native_Release_x64\webrtc-native_Release_x64.dll"/>
+    <None Visible="False" CopyToOutputDirectory="Always" Include="$(ProjectDir)..\out\bin\webrtc-native_Release_x64\webrtc-native_Release_x64.pdb"/>
   </ItemGroup>
 
   <ItemGroup>

@@ -7,7 +7,11 @@ namespace WonderMediaProductions.WebRtc
 {
     public class Native
     {
-        internal const string DllPath = "webrtc-native";
+#if DEBUG
+        internal const string DllPath = "webrtc-native_Debug_x64";
+#else
+        internal const string DllPath = "webrtc-native_Release_x64";
+#endif
 
         static Native()
         {

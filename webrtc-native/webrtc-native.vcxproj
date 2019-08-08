@@ -51,10 +51,12 @@
     <LinkIncremental>true</LinkIncremental>
     <PreLinkEventUseInBuild>false</PreLinkEventUseInBuild>
     <SourcePath>$(VC_SourcePath);C:\wc\src</SourcePath>
+    <TargetName>$(ProjectName)_$(Configuration)_$(Platform)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <SourcePath>$(VC_SourcePath);C:\wc\src</SourcePath>
+    <TargetName>$(ProjectName)_$(Configuration)_$(Platform)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
