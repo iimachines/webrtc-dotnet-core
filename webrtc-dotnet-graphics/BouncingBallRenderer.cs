@@ -8,6 +8,20 @@ using WIC = SharpDX.WIC;
 
 namespace WonderMediaProductions.WebRtc
 {
+    public class TimeRulerOptions
+    {
+        public TimeSpan Duration = TimeSpan.FromSeconds(1);
+
+        public int MarkerCount = 60;
+        public int MarkerWidth = 7;
+        public int MarkerHeight = 50;
+    }
+
+    public sealed class BoundingBallOptions : RendererOptions
+    {
+        public TimeRulerOptions TimeRulerOptions;
+    }
+
     /// <summary>
     /// Renders a bouncing ball using a D2D1 bitmap.
     /// </summary>
@@ -19,18 +33,27 @@ namespace WonderMediaProductions.WebRtc
         private readonly D2D1.Bitmap1 _backgroundBitmap;
         private readonly D2D1.Ellipse _ballEllipse;
         private readonly D2D1.Brush _ballBrush;
+        private readonly D2D1.Brush _timeMarkerBrush1;
+        private readonly D2D1.Brush _timeMarkerBrush2;
+        private readonly D2D1.Brush _currentTimeBrush;
+        private readonly D2D1.Brush _timeRulerBrush;
+        
+        private readonly TimeRulerOptions _rulerOptions;
 
-        public BouncingBallRenderer(ObservableVideoTrack videoTrack, int ballCount, RendererOptions options)
+        public BouncingBallRenderer(ObservableVideoTrack videoTrack, int ballCount, BoundingBallOptions options)
             : base(videoTrack, options)
         {
+            _rulerOptions = options.TimeRulerOptions;
+
             BallCount = ballCount;
+
             // _factoryDWrite = new DWrite.Factory(DWrite.FactoryType.Shared);
 
             var device2D = new D2D1.Device(DeviceDXGI, new D2D1.CreationProperties
             {
                 DebugLevel = D2D1.DebugLevel.Warning,
                 ThreadingMode = D2D1.ThreadingMode.MultiThreaded,
-                Options = D2D1.DeviceContextOptions.None
+                Options = D2D1.DeviceContextOptions.None,
             });
 
             _context2D = new D2D1.DeviceContext(device2D, D2D1.DeviceContextOptions.None);
@@ -53,6 +76,10 @@ namespace WonderMediaProductions.WebRtc
             _ballEllipse = new D2D1.Ellipse { RadiusX = VideoFrameWidth / 20f, RadiusY = VideoFrameWidth / 20f };
 
             _ballBrush = new D2D1.SolidColorBrush(_context2D, new RawColor4(1f, 1f, 0f, 1f));
+            _timeMarkerBrush1 = new D2D1.SolidColorBrush(_context2D, new RawColor4(0.0f, 0.0f, 0.5f, 1f));
+            _timeMarkerBrush2 = new D2D1.SolidColorBrush(_context2D, new RawColor4(0.0f, 0.75f, 0.0f, 1f));
+            _currentTimeBrush = new D2D1.SolidColorBrush(_context2D, new RawColor4(1.0f, 0.0f, 0.0f, 1f));
+            _timeRulerBrush = new D2D1.SolidColorBrush(_context2D, new RawColor4(0.0f, 0.0f, 0.0f, 1.0f));
         }
 
         public new ObservableVideoTrack VideoTrack => (ObservableVideoTrack)base.VideoTrack;
@@ -71,7 +98,6 @@ namespace WonderMediaProductions.WebRtc
                 _context2D.Target = frame.Bitmap;
                 _context2D.BeginDraw();
 
-                // TODO: Draw bouncing ball.
                 _context2D.Transform = Matrix3x2.Identity;
                 _context2D.DrawBitmap(_backgroundBitmap, new RawRectangleF(0, 0, VideoFrameWidth, VideoFrameHeight),
                     1, D2D1.BitmapInterpolationMode.NearestNeighbor);
@@ -92,6 +118,40 @@ namespace WonderMediaProductions.WebRtc
                     _context2D.FillEllipse(_ballEllipse, _ballBrush);
                 }
 
+                if (_rulerOptions != null)
+                {
+                    _context2D.Transform = Matrix3x2.Identity;
+
+                    // Draw the time markers and current time to measure latency
+                    int markerCount = _rulerOptions.MarkerCount;
+                    int markerWidth = _rulerOptions.MarkerWidth;
+                    int markerHeight = _rulerOptions.MarkerHeight;
+                    int markerOffset = markerWidth / 2;
+
+                    var y = VideoFrameHeight - markerHeight;
+                    _context2D.FillRectangle(new RectangleF(0, y, VideoFrameWidth, markerHeight), _timeRulerBrush);
+
+                    for (int i = 0; i < markerCount; ++i)
+                    {
+                        var x = markerOffset + i * (VideoFrameWidth - markerWidth) / markerCount;
+                        var b = i % 10 == 0 ? _timeMarkerBrush2 : _timeMarkerBrush1;
+
+                        var r = new RectangleF(x - markerOffset, y, markerWidth, markerHeight);
+                        _context2D.FillRectangle(r, b);
+                    }
+
+                    // Draw current time
+                    {
+                        var duration = _rulerOptions.Duration.TotalMilliseconds;
+                        var t = elapsedTime.TotalMilliseconds % duration;
+                        var i = (float)(t * markerCount / duration);
+
+                        var x = markerOffset + i * (VideoFrameWidth - markerWidth) / markerCount;
+                        var r = new RectangleF(x - markerOffset, y, markerWidth, markerHeight);
+                        _context2D.FillRectangle(r, _currentTimeBrush);
+                    }
+                }
+
                 _context2D.EndDraw();
                 _context2D.Target = null;
 
@@ -106,6 +166,10 @@ namespace WonderMediaProductions.WebRtc
                 _context2D?.Dispose();
                 _backgroundBitmap?.Dispose();
                 _ballBrush?.Dispose();
+                _timeMarkerBrush1?.Dispose();
+                _timeMarkerBrush2?.Dispose();
+                _currentTimeBrush?.Dispose();
+                _timeRulerBrush?.Dispose();
             }
 
             base.OnDispose(isDisposing);

@@ -55,7 +55,7 @@ namespace WonderMediaProductions.WebRtc
             {
                 using (var vt = new ObservableVideoTrack(sender, options))
                 {
-                    using (var rnd = new BouncingBallRenderer(vt, 10, new RendererOptions
+                    using (var rnd = new BouncingBallRenderer(vt, 10, new BoundingBallOptions
                     {
                         VideoFrameWidth = frameWidth,
                         VideoFrameHeight = frameHeight,

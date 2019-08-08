@@ -1,23 +1,39 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk" InitialTargets="InstallSDL2">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>WonderMediaProductions.WebRtc.GraphicsD3D11</RootNamespace>
-    <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
-    <LangVersion>7.3</LangVersion>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <RootNamespace>WonderMediaProductions.WebRtc.GraphicsD3D11</RootNamespace>
+        <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
+        <LangVersion>7.3</LangVersion>
+    </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="JetBrains.Annotations" Version="2019.1.1" />
-      <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
-      <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
-      <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
-      <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
-      <PackageReference Include="System.Memory" Version="4.5.3" />
+        <PackageReference Include="JetBrains.Annotations" Version="2019.1.1" />
+        <PackageReference Include="SDL2-CS.NetCore" Version="2.0.8" />
+        <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
+        <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
+        <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
+        <PackageReference Include="System.Memory" Version="4.5.3" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\webrtc-dotnet\webrtc-dotnet.csproj" />
+        <ProjectReference Include="..\webrtc-dotnet\webrtc-dotnet.csproj" />
     </ItemGroup>
 
-  </Project>
+
+    <!--TODO: We really should fix the SDL2-CS nuget package to include the SDL2 native DLLs! -->
+
+    <Target Name="InstallSDL2" Condition="!Exists('$(ProjectDir)SDL2\SDL2.dll')">
+        <DownloadFile SourceUrl="https://www.libsdl.org/release/SDL2-2.0.10-win32-x64.zip" DestinationFolder="$(TargetDir)" />
+        <Unzip SourceFiles="$(TargetDir)SDL2-2.0.10-win32-x64.zip" DestinationFolder="$(ProjectDir)/SDL2" OverwriteReadOnlyFiles="true" />
+    </Target>
+
+    <ItemGroup>
+        <None Include="$(ProjectDir)SDL2/**" Visible="False">
+            <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+</Project>

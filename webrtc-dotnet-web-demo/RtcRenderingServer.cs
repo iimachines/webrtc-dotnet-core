@@ -20,8 +20,8 @@ namespace WonderMediaProductions.WebRtc
 {
     public static class RtcRenderingServer
     {
-        const int VideoFrameWidth = 1920/2;
-        const int VideoFrameHeight = 1080/2;
+        const int VideoFrameWidth = 1920*2;
+        const int VideoFrameHeight = 1080*2;
         const int VideoFrameRate = 60;
 
         private static IRenderer CreateRenderer(ObservableVideoTrack videoTrack, ILogger logger)
@@ -39,10 +39,16 @@ namespace WonderMediaProductions.WebRtc
             return isWindows && supportsNvEnc
                 ? (IRenderer)new BouncingBallRenderer(videoTrack, 
                     8,
-                    new GraphicsD3D11.RendererOptions
+                    new BoundingBallOptions
                     {
                         VideoFrameWidth = VideoFrameWidth,
                         VideoFrameHeight = VideoFrameHeight,
+                        PreviewWindowOptions = new PreviewWindowOptions
+                            {
+                                Width = 1920/2
+                            },
+
+                        TimeRulerOptions = new TimeRulerOptions()
                     })
                 : new ImageSharpRenderer(VideoFrameWidth, VideoFrameHeight, videoTrack);
         }
@@ -80,8 +86,11 @@ namespace WonderMediaProductions.WebRtc
 
 	            int frameIndex = 0;
 
-	            // var sw = new Stopwatch();
-	            using (var clock = new PreciseWaitableClock(EventResetMode.AutoReset))
+                // Create swap-chain for displaying rendered images on the server
+
+
+                // var sw = new Stopwatch();
+                using (var clock = new PreciseWaitableClock(EventResetMode.AutoReset))
                 using (var renderer = CreateRenderer(videoTrack, logger))
                 {
                     while (Thread.CurrentThread.IsAlive && !peerConnection.IsDisposed)
@@ -114,7 +123,7 @@ namespace WonderMediaProductions.WebRtc
                             var currentTime = clock.GetCurrentTime();
 
                             var skippedFrameCount = 0;
-                            for(;;)
+                            for (; ; )
                             {
                                 var nextFrameTime = startTime.AddTicks(++frameIndex * TimeSpan.TicksPerSecond / videoTrack.FrameRate);
                                 if (nextFrameTime >= currentTime)

@@ -1,82 +1,82 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-    <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
-    <TypeScriptToolsVersion>3.1</TypeScriptToolsVersion>
-    <LangVersion>latest</LangVersion>
-    <ApplicationIcon />
-    <OutputType>Exe</OutputType>
-    <StartupObject />
-    <RootNamespace>WonderMediaProductions.WebRtc</RootNamespace>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
+        <TypeScriptToolsVersion>3.1</TypeScriptToolsVersion>
+        <LangVersion>latest</LangVersion>
+        <ApplicationIcon />
+        <OutputType>Exe</OutputType>
+        <StartupObject />
+        <RootNamespace>WonderMediaProductions.WebRtc</RootNamespace>
+        <RuntimeIdentifiers>win10-x64</RuntimeIdentifiers>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="wwwroot\css\**" />
-    <Compile Remove="wwwroot\images\**" />
-    <Compile Remove="wwwroot\js\**" />
-    <Compile Remove="wwwroot\lib\**" />
-    <Content Remove="wwwroot\css\**" />
-    <Content Remove="wwwroot\images\**" />
-    <Content Remove="wwwroot\js\**" />
-    <Content Remove="wwwroot\lib\**" />
-    <EmbeddedResource Remove="wwwroot\css\**" />
-    <EmbeddedResource Remove="wwwroot\images\**" />
-    <EmbeddedResource Remove="wwwroot\js\**" />
-    <EmbeddedResource Remove="wwwroot\lib\**" />
-    <None Remove="wwwroot\css\**" />
-    <None Remove="wwwroot\images\**" />
-    <None Remove="wwwroot\js\**" />
-    <None Remove="wwwroot\lib\**" />
-  </ItemGroup>
+    <ItemGroup>
+        <Compile Remove="wwwroot\css\**" />
+        <Compile Remove="wwwroot\images\**" />
+        <Compile Remove="wwwroot\js\**" />
+        <Compile Remove="wwwroot\lib\**" />
+        <Content Remove="wwwroot\css\**" />
+        <Content Remove="wwwroot\images\**" />
+        <Content Remove="wwwroot\js\**" />
+        <Content Remove="wwwroot\lib\**" />
+        <EmbeddedResource Remove="wwwroot\css\**" />
+        <EmbeddedResource Remove="wwwroot\images\**" />
+        <EmbeddedResource Remove="wwwroot\js\**" />
+        <EmbeddedResource Remove="wwwroot\lib\**" />
+        <None Remove="wwwroot\css\**" />
+        <None Remove="wwwroot\images\**" />
+        <None Remove="wwwroot\js\**" />
+        <None Remove="wwwroot\lib\**" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Remove="background-small.jpg" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Remove="background-small.jpg" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Content Include="$(ProjectDir)..\out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.pdb" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="$(ProjectDir)..\out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.dll" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="background-small.jpg" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
+    <ItemGroup>
+        <Content Include="background-small.jpg" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta0005" />
-    <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
-    <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.App" />
+        <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
+        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta0005" />
+        <PackageReference Include="SharpDX.Direct2D1" Version="4.2.0" />
+        <PackageReference Include="SharpDX.Direct3D11" Version="4.2.0" />
+        <PackageReference Include="SharpDX.Mathematics" Version="4.2.0" />
+        <PackageReference Include="sdl2" Version="2.0.5" GeneratePathProperty="True" />
+        <PackageReference Include="Vanara.PInvoke.User32" Version="2.3.11" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\webrtc-dotnet-graphics\webrtc-dotnet-graphics-d3d11.csproj" />
-    <ProjectReference Include="..\webrtc-dotnet\webrtc-dotnet.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\webrtc-dotnet-graphics\webrtc-dotnet-graphics-d3d11.csproj" />
+        <ProjectReference Include="..\webrtc-dotnet\webrtc-dotnet.csproj" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <TypeScriptCompile Include="wwwroot\index.ts" />
-  </ItemGroup>
+    <ItemGroup>
+        <TypeScriptCompile Include="wwwroot\index.ts" />
+    </ItemGroup>
 
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <TypeScriptTarget>ES2016</TypeScriptTarget>
-    <TypeScriptJSXEmit>None</TypeScriptJSXEmit>
-    <TypeScriptModuleKind>None</TypeScriptModuleKind>
-    <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
-    <TypeScriptNoImplicitAny>True</TypeScriptNoImplicitAny>
-    <TypeScriptRemoveComments>False</TypeScriptRemoveComments>
-    <TypeScriptOutFile />
-    <TypeScriptOutDir />
-    <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
-    <TypeScriptNoEmitOnError>True</TypeScriptNoEmitOnError>
-    <TypeScriptSourceMap>True</TypeScriptSourceMap>
-    <TypeScriptMapRoot />
-    <TypeScriptSourceRoot />
-  </PropertyGroup>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <TypeScriptTarget>ES2016</TypeScriptTarget>
+        <TypeScriptJSXEmit>None</TypeScriptJSXEmit>
+        <TypeScriptModuleKind>None</TypeScriptModuleKind>
+        <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
+        <TypeScriptNoImplicitAny>True</TypeScriptNoImplicitAny>
+        <TypeScriptRemoveComments>False</TypeScriptRemoveComments>
+        <TypeScriptOutFile />
+        <TypeScriptOutDir />
+        <TypeScriptGeneratesDeclarations>False</TypeScriptGeneratesDeclarations>
+        <TypeScriptNoEmitOnError>True</TypeScriptNoEmitOnError>
+        <TypeScriptSourceMap>True</TypeScriptSourceMap>
+        <TypeScriptMapRoot />
+        <TypeScriptSourceRoot />
+    </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-
+    <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+        <PlatformTarget>x64</PlatformTarget>
+    </PropertyGroup>
 </Project>

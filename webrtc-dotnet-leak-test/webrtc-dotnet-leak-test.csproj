@@ -16,6 +16,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <OutputPath>$(ProjectDir)..\out\bin\$(MSBuildProjectName)_$(Configuration)_$(Platform)\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -85,14 +86,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.dll">
-      <Link>webrtc-native.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\out\bin\webrtc-native_$(Configuration)_x64\webrtc-native.pdb">
-      <Link>webrtc-native.pdb</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="..\webrtc-dotnet-web-demo\background-small.jpg">
       <Link>background-small.jpg</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

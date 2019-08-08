@@ -3,8 +3,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using JetBrains.Annotations;
 using D3D11 = SharpDX.Direct3D11;
 using DXGI = SharpDX.DXGI;
+using static SDL2.SDL;
 
 namespace WonderMediaProductions.WebRtc.GraphicsD3D11
 {
@@ -17,6 +19,8 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         private readonly Dictionary<IntPtr, VideoFrameBuffer> _frameTable = new Dictionary<IntPtr,VideoFrameBuffer>();
 
         private readonly ConcurrentQueue<IntPtr> _queue = new ConcurrentQueue<IntPtr>();
+
+        private IntPtr _sdlWindow;
 
         public VideoTrack VideoTrack { get; }
 
@@ -33,7 +37,17 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
         public DXGI.Device DeviceDXGI { get; }
         public D3D11.Multithread ThreadLock3D { get; }
 
+        [CanBeNull]
+        public DXGI.SwapChain1 SwapChain { get; }
+
         public int VideoFrameQueueCount => _queue.Count;
+
+        static VideoRenderer()
+        {
+            SDL_Init(0);
+
+            SDL_SetHint(SDL_HINT_WINDOWS_DISABLE_THREAD_NAMING, "1");
+        }
 
         public VideoRenderer(VideoTrack videoTrack, RendererOptions options)
         {
@@ -62,6 +76,44 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
                 // We need to access D3D11 on multiple threads, so enable multi-threading
                 ThreadLock3D = Device3D.ImmediateContext.QueryInterface<D3D11.Multithread>();
                 ThreadLock3D.SetMultithreadProtected(true);
+
+                if (options.PreviewWindowOptions != null)
+                {
+                    var width = options.PreviewWindowOptions.Width ?? VideoFrameWidth;
+                    var height = options.PreviewWindowOptions.Height ?? width * VideoFrameHeight / VideoFrameWidth;
+
+                    _sdlWindow = SDL_CreateWindow("WebRTC", 
+                        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
+                        width, height, 
+                        SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_ALLOW_HIGHDPI);
+
+                    var windowInfo = new SDL_SysWMinfo();
+                    SDL_GetWindowWMInfo(_sdlWindow, ref windowInfo);
+
+                    // SwapChain description
+                    var desc = new DXGI.SwapChainDescription1()
+                    {
+                        BufferCount = 2,
+                        AlphaMode = DXGI.AlphaMode.Unspecified,
+                        Format = DXGI.Format.B8G8R8A8_UNorm,
+                        Width = VideoFrameWidth,
+                        Height = VideoFrameHeight,
+                        Scaling = DXGI.Scaling.Stretch,
+                        Stereo = false,
+                        Flags = DXGI.SwapChainFlags.AllowTearing| DXGI.SwapChainFlags.FrameLatencyWaitAbleObject,
+                        Usage = DXGI.Usage.RenderTargetOutput,
+                        SampleDescription = new DXGI.SampleDescription(1, 0),
+                        SwapEffect = DXGI.SwapEffect.FlipDiscard,
+                    };
+
+                    SwapChain = new DXGI.SwapChain1(FactoryDXGI, Device3D, windowInfo.info.win.window, ref  desc);
+
+                    using (var swapChain2 = SwapChain.QueryInterface<DXGI.SwapChain2>())
+                    {
+                        var value = swapChain2.MaximumFrameLatency;
+                        swapChain2.MaximumFrameLatency = 1;
+                    }
+                }
             }
         }
 
@@ -134,6 +186,19 @@ namespace WonderMediaProductions.WebRtc.GraphicsD3D11
             {
                 ThreadLock3D.Enter();
                 var frame = _frameTable[texturePtr];
+
+                if (frame != null && SwapChain != null)
+                {
+                    var backBuffer = D3D11.Resource.FromSwapChain<D3D11.Texture2D>(SwapChain, 0);
+                    Device3D.ImmediateContext.CopyResource(frame.Texture, backBuffer);
+                    SwapChain.Present(0, DXGI.PresentFlags.DoNotWait | DXGI.PresentFlags.AllowTearing);
+
+                    // Pump all SDL2 events.
+                    while (SDL_PollEvent(out var ev) > 0)
+                    {
+                    }
+                }
+
                 return new MaybeSendableFrame(this, frame);
             }
 
