@@ -1,3 +1,6 @@
+
+# NOTE: This project is no longer maintained
+
 * Prequisites
     * a modern NVidia card installed with NVENC support
     * Visual Studio 2017
